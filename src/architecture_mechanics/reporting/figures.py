@@ -3,7 +3,8 @@
 §8.5's last required test is a property of this module: *report generated only
 from recorded artifacts*. It is enforced two ways. The narrow way is
 :data:`ARTIFACT_READ_ROOTS` — while a figure is being built, nothing inside this
-laboratory may be opened except ``runs/`` and ``reports/``, and
+laboratory may be read except ``runs/`` and ``reports/`` and the output
+directory the figure is writing into, and
 ``tests/reporting/test_figure_provenance.py`` audits every file the process
 opens to prove it. The wide way is that there is no code here that draws a
 number: every mark on every figure comes from a tensor the generator produced or
@@ -43,18 +44,42 @@ from . import figure_style as style
 FIGURE_VERSION = "am-fig-1.0.0"
 
 ARTIFACT_READ_ROOTS: tuple[str, ...] = ("runs", "reports")
-"""The only directories inside the laboratory a figure may read.
+"""The only directories inside the laboratory a figure may take a *number* from.
 
-``runs/`` holds recorded evidence and ``reports/`` holds derived artifacts and
-this module's own output. Everything else — ``configs/``, ``claims/``,
-``paper/``, a scratch file in the working directory — is off limits, so a figure
-cannot quietly acquire a number that no run produced. Datasets are not read at
-all: they are regenerated in process from a configuration recorded in the
-caption, which is stronger than reading a file, because it cannot drift from
-the generator.
+``runs/`` holds recorded evidence and ``reports/`` holds artifacts derived from
+it. Everything else — ``configs/``, ``claims/``, the source tree, a scratch file
+in the working directory — is off limits, so a figure cannot quietly acquire a
+number that no run produced. Datasets are not read at all: they are regenerated
+in process from a configuration recorded in the caption, which is stronger than
+reading a file, because it cannot drift from the generator.
+
+The output directory is the one other place a figure touches, and it is not an
+exception to the rule: everything the figure reads there it wrote itself on a
+previous line (:func:`write_index` merges the index it maintains). No datum
+enters a figure through its own output.
 """
 
-DEFAULT_OUT_DIR = "reports/figures"
+DEFAULT_OUT_DIR = "paper/figures"
+"""Where the paper's figures live, because that is where the paper reads them.
+
+``reports/`` is for artifacts derived from runs; a figure is a page element, and
+prompt 27 assembles the paper from this directory. The index and the caption
+sidecars live beside the PNGs so that a figure and the record of how it was made
+cannot be moved apart.
+"""
+
+FIGURE_STEMS: dict[int, str] = {
+    1: "fig1_benchmark_schematic",
+    2: "fig2_phase_diagram",
+    3: "fig3_mechanism_intervention",
+    4: "fig4_trajectory",
+}
+"""The paper's filenames for all four of north star 10.2's figures.
+
+Fixed here for figures that do not exist yet on purpose: the name is what prose,
+build rules and the reader's citation refer to, and renaming a figure after it
+has been referenced is how a paper acquires a broken cross-reference.
+"""
 
 
 # --------------------------------------------------------------------------- #
@@ -672,10 +697,11 @@ def build_figure1(out_dir: Path) -> FigureResult:
     dataset = figure1_dataset()
     params = figure1_params(dataset)
     fig = draw_figure1(dataset)
-    path = Path(out_dir) / "figure1_benchmark.png"
+    stem = FIGURE_STEMS[1]
+    path = Path(out_dir) / f"{stem}.png"
     digest = style.save_png(fig, path)
     caption = figure1_caption(params)
-    Path(out_dir).joinpath("figure1_benchmark.caption.md").write_text(caption + "\n")
+    Path(out_dir).joinpath(f"{stem}.caption.md").write_text(caption + "\n")
     return FigureResult(number=1, path=path, sha256=digest, caption=caption, params=params)
 
 

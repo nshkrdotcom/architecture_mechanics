@@ -24,7 +24,7 @@ everything.
 ## Reproduce a figure
 
 ```bash
-make figure1       # regenerates reports/figures/figure1_benchmark.png
+make figure1       # regenerates paper/figures/fig1_benchmark_schematic.png
 ```
 
 Figures are generated only from recorded artifacts — figure 1 from one real

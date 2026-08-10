@@ -150,8 +150,20 @@ def test_caption_carries_every_parameter_needed_to_regenerate(built, dataset):
 
 
 def test_caption_is_written_beside_the_png(built):
-    sidecar = built.path.with_name("figure1_benchmark.caption.md")
+    sidecar = built.path.with_name(f"{figures.FIGURE_STEMS[1]}.caption.md")
     assert sidecar.read_text().strip() == built.caption.strip()
+
+
+def test_the_figure_is_written_where_the_paper_looks_for_it(built):
+    """The one property of this module that other files depend on by name.
+
+    ``paper/figures/fig1_benchmark_schematic.png`` is what prompt 27's prose,
+    the Makefile and this programme's build checks all refer to. Renaming it is
+    allowed; renaming it silently is not, so the name is pinned here rather than
+    left implicit in a path expression."""
+    assert figures.DEFAULT_OUT_DIR == "paper/figures"
+    assert figures.FIGURE_STEMS[1] == "fig1_benchmark_schematic"
+    assert built.path.name == "fig1_benchmark_schematic.png"
 
 
 def test_caption_numbers_are_not_frozen_literals(dataset):

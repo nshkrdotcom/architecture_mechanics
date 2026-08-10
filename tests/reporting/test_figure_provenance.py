@@ -130,7 +130,7 @@ def test_the_audit_sees_the_figure_being_written(clean_build):
     out, opened = clean_build
     written = [e for e in opened if "w" in e["mode"] and e["path"].endswith(".png")]
     assert written, f"the audit hook recorded nothing about the PNG: {opened}"
-    assert (out / "figure1_benchmark.png").exists()
+    assert (out / f"{figures.FIGURE_STEMS[1]}.png").exists()
 
 
 def test_building_a_figure_reads_nothing_outside_recorded_artifacts(clean_build):
