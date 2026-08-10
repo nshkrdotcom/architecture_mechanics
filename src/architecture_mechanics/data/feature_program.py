@@ -1483,6 +1483,8 @@ def phase_diagram_grid(
 INVARIANTS: tuple[str, ...] = (
     "t0_reconstruction_oracle",
     "positive_control_oracle",
+    "positive_control_addressing_is_ordinal",
+    "capacity_stressed_oracle",
     "negative_control_oracle",
     "negative_control_answer_absent",
     "decoy_has_no_semantic_effect",
@@ -1558,6 +1560,42 @@ def run_selftest(*, break_invariant: str | None = None, verbose: bool = True) ->
         report.scores["key_match_exact"] >= _POSITIVE_CONTROL_FLOOR,
         f"key_match_exact R^2 = {report.scores['key_match_exact']:.4f} "
         f"(want >= {_POSITIVE_CONTROL_FLOOR})",
+    )
+
+    # The positive control carries exactly one binding (`n_associations=1`), so
+    # "return the value bound to this key" and "return the value at the one
+    # keyed position" are the same instruction. Recorded as a checked property
+    # rather than left implicit: R1 validates that the mixer can *move* a marked
+    # position's content, not that it addresses by content. If a later mission
+    # makes the positive control harder, this check says so instead of letting
+    # the scope of R1 change silently.
+    ordinal_pc = report.scores["copy_first_keyed"]
+    checks.record(
+        "positive_control_addressing_is_ordinal",
+        ordinal_pc >= _POSITIVE_CONTROL_FLOOR,
+        f"copy_first_keyed R^2 = {ordinal_pc:.4f} — with n_associations=1 the ordinal "
+        f"strategy solves the positive control outright, so R1 tests transport and not "
+        f"content addressing",
+    )
+
+    # The condition every recorded T1 run is trained and scored on, held to the
+    # same absolute bar as the positive control — and held to it by the *only*
+    # route in this laboratory that does not consult `step.source`.
+    #
+    # Without this the routing variable is untested here: `oracles[
+    # "capacity_stressed"]` was computed and used only in the permutation
+    # equality check below, which compares two conditions that share the routing
+    # and therefore cancels any error in it. A deliberate off-by-one in the
+    # source position left the program oracle at 1.0000, both selftests green,
+    # and the recorded R1 dataset hash unchanged; `key_match_exact` here reads
+    # -0.9479 under the same mutation. See state/10_instrument_review.md.
+    report = oracles["capacity_stressed"]
+    checks.record(
+        "capacity_stressed_oracle",
+        report.scores["key_match_exact"] >= _POSITIVE_CONTROL_FLOOR,
+        f"key_match_exact R^2 = {report.scores['key_match_exact']:.4f} "
+        f"(want >= {_POSITIVE_CONTROL_FLOOR}); this is the one check on the pilot condition "
+        f"that never reads step.source",
     )
 
     report = oracles["negative_control"]

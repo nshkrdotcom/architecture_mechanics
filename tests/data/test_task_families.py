@@ -108,6 +108,15 @@ def test_t1_query_key_matches_exactly_one_binding(t1):
         assert len(matching) == 1
         assert matching[0].role == "source_binding"
         assert matching[0].key_id == query.key_id == record.steps[0].key_id
+        # The routing assertion, and the only one here that does not go through
+        # `step.source`. Everything else in this file — and the program oracle,
+        # and every capability metric, and the §6.3 retrieval lift — reads the
+        # source position the generator wrote down, so an error in *choosing* it
+        # cancels everywhere at once. This locates the source by key match, from
+        # the position records, and requires it to be the position the step
+        # names. Added by prompt 10 after a deliberate off-by-one in
+        # `plan_example` left the oracle at 1.0000 and both selftests green.
+        assert matching[0].index == record.steps[0].source
 
 
 def test_t1_always_places_a_binding_before_the_source(t1):

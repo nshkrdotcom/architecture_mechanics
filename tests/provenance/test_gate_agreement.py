@@ -24,7 +24,7 @@ from pathlib import Path
 import pytest
 
 from architecture_mechanics.experiments.claim_packet import REQUIRED_FIELDS, RUNGS
-from architecture_mechanics.experiments.manifest import PROVENANCE_FIELDS
+from architecture_mechanics.experiments.manifest import MACHINE_SIDE_FILES, PROVENANCE_FIELDS
 from architecture_mechanics.reporting.evidence_bundle import (
     FINAL_DIRS,
     FINAL_FILES,
@@ -67,6 +67,23 @@ def test_screen_bundle_covers_what_check_evidence_demands_of_a_screen():
     demanded = set(_list_literal("check_evidence.sh", "SCREEN"))
     assert demanded <= set(SCREEN_FILES)
     assert set(SCREEN_FILES) - demanded == {"reproduce.sh"}
+
+
+def test_machine_side_files_match_check_evidence():
+    """Both sides skip the same files when verifying the evidence index. A gate
+    that skipped one the runner still indexed would fail on every agreeing
+    repeat; a runner that indexed one the gate skipped would record a digest
+    nobody could ever check."""
+    assert list(MACHINE_SIDE_FILES) == _list_literal("check_evidence.sh", "MACHINE_SIDE")
+
+
+def test_check_evidence_verifies_the_evidence_index():
+    """The index is a list of digests; a gate that never compares them records a
+    promise it does not keep. Added by prompt 10 after six recorded manifests
+    were found disagreeing with the bytes beside them."""
+    text = (BIN / "check_evidence.sh").read_text()
+    assert 'm.get("evidence_index")' in text
+    assert "evidence_index digest does not match" in text
 
 
 def test_pre_registration_fields_match_check_claims():

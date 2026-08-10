@@ -493,7 +493,11 @@ def verify_bundle(run_dir: Path | str) -> list[str]:
     function away, instead of at gate time when it is one mission away.
     ``tests/provenance/test_gate_agreement.py`` holds the two to each other.
     """
-    from architecture_mechanics.experiments.manifest import PROVENANCE_FIELDS
+    from architecture_mechanics.experiments.manifest import (
+        MACHINE_SIDE_FILES,
+        PROVENANCE_FIELDS,
+        file_digest,
+    )
 
     run_dir = Path(run_dir)
     problems: list[str] = []
@@ -532,5 +536,26 @@ def verify_bundle(run_dir: Path | str) -> list[str]:
     script = run_dir / "reproduce.sh"
     if script.is_file() and not os.access(script, os.X_OK):
         problems.append("reproduce.sh is not executable")
+
+    # §8.3 asks for a "generated evidence index". Recording digests and never
+    # comparing them makes the index decorative — prompt 10 found six recorded
+    # manifests whose index disagreed with the bytes beside it, and no gate that
+    # could see it.
+    #
+    # Two deliberate exemptions. :data:`MACHINE_SIDE_FILES` are skipped because
+    # an agreeing repeat legitimately rewrites them, which is why they are no
+    # longer indexed at all. A file the index names but that is *absent* is not
+    # reported here: checkpoints and raw tensors are gitignored, so a clone of
+    # this repository is missing them by design, and the files a bundle must
+    # actually contain are already checked above by name. What is enforced is
+    # the property the index exists for — that a file which is present is the
+    # file that was recorded.
+    for entry in manifest.get("evidence_index") or []:
+        relative = entry.get("path")
+        if not relative or relative in MACHINE_SIDE_FILES:
+            continue
+        target = run_dir / relative
+        if target.is_file() and file_digest(target) != entry.get("sha256"):
+            problems.append(f"evidence_index digest does not match the bytes of {relative}")
 
     return problems

@@ -42,6 +42,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 __all__ = [
+    "MACHINE_SIDE_FILES",
     "MANIFEST_SCHEMA",
     "PROVENANCE_FIELDS",
     "RunManifest",
@@ -57,6 +58,21 @@ __all__ = [
 ]
 
 MANIFEST_SCHEMA = "am.manifest.v1"
+
+MACHINE_SIDE_FILES: tuple[str, ...] = ("cost.json",)
+"""Files in a run directory that describe *this machine at that instant* rather
+than the experiment: wall clock, peak and reserved VRAM, free VRAM at start.
+
+They are gitignored for the reason recorded in ``runs/README.md`` — committing
+them would make an identical re-run dirty the tree — and an agreeing repeat
+rewrites them while leaving every scientific artifact alone. Indexing them was
+therefore a promise the laboratory could not keep: prompt 10 found six recorded
+manifests whose ``evidence_index`` names a ``cost.json`` digest that no longer
+matches the file, all six produced by exactly that repeat path. They are
+excluded from the index and skipped by the index verification, so that every
+remaining entry is a digest of something the repository actually carries and can
+be held to.
+"""
 
 PROVENANCE_FIELDS: tuple[str, ...] = (
     "git_commit",
@@ -231,13 +247,21 @@ def run_id_for(
     return f"{ladder}-{arch}-{condition}-s{seed}-{digest}"
 
 
-def evidence_index(run_dir: Path, *, exclude: tuple[str, ...] = ("manifest.json",)) -> list[dict]:
+def evidence_index(
+    run_dir: Path, *, exclude: tuple[str, ...] = ("manifest.json", *MACHINE_SIDE_FILES)
+) -> list[dict]:
     """§8.3's "generated evidence index": every file this run emitted, hashed.
 
     ``manifest.json`` excludes itself — it is written last and cannot contain
     its own digest. Checkpoints appear here as well as in ``checkpoint_hashes``;
     they are gitignored, so the index is the only committed record that a
     checkpoint existed and what it was.
+
+    :data:`MACHINE_SIDE_FILES` are excluded for the opposite reason: they are
+    rewritten by an agreeing repeat, so an index entry for them goes stale
+    against a run whose science never moved. An index that is wrong for a
+    legitimate reason cannot be enforced, and an index nobody enforces is not
+    provenance.
     """
     run_dir = Path(run_dir)
     entries: list[dict] = []

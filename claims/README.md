@@ -7,6 +7,14 @@ by code that evaluated evidence. Schemas in `ml/04_SCIENCE_GATES.md`.
 A packet must be committed before the run it predicts; `bin/check_prereg.sh`
 compares commit time against the run manifest's `started_utc`.
 
+**A packet is never edited after its runs.** The gate reads the *last* commit
+that touched the file, so any edit — including an honest correction — moves that
+timestamp past every run the packet governs and turns pre-registered runs into
+post-hoc ones. A component of a committed prediction that the evidence does not
+support is therefore recorded in a sibling `<claim_id>.corrections.md`, naming
+the mission that found it, what was measured, whether any kill condition fires,
+and who owns the repair. See `a0-t1-associative-recall.corrections.md`.
+
 A packet may also declare which runs it governs:
 
 ```yaml
