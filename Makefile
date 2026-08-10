@@ -1,5 +1,5 @@
-.PHONY: test lint gpu-check selftest metrics-selftest t0 gates r0 r1 r2 index \
-        figure1 figures
+.PHONY: test lint gpu-check selftest metrics-selftest geometry-selftest t0 gates \
+        r0 r1 r2 index figure1 figures geometry-table geometry-across-seeds
 
 # The pre-registration every ladder run below is a child of. A recorded run
 # must have one: bin/check_prereg.sh refuses a manifest without it, and the
@@ -29,12 +29,32 @@ selftest:
 metrics-selftest:
 	uv run python -m architecture_mechanics.metrics.capability --selftest
 
+# The geometry gate: measures every §6.2 ruler against five constructed
+# representations whose answer is known in advance — orthogonal, superposed,
+# rotated, collapsed, and pure noise — and re-derives which of them can carry a
+# claim alone. A measure whose noise null moves fails this gate.
+geometry-selftest:
+	uv run python -m architecture_mechanics.metrics.geometry --selftest
+
+# The recorded expected-versus-measured table, regenerated into reports/.
+geometry-table:
+	uv run python -m architecture_mechanics.metrics.geometry --table \
+	  --json reports/geometry_calibration.json
+
+# How much A0 differs from itself: the reference every later "architecture X
+# differs from architecture Y" claim has to be read against. Reads the recorded
+# summaries and npz files; runs no model.
+geometry-across-seeds:
+	uv run python -m architecture_mechanics.metrics.geometry \
+	  --across-runs $(wildcard runs/R1-softmax-positive_control-*) \
+	  --json reports/geometry_across_seeds.json
+
 # T0 end to end with no model anywhere: generate, apply each reference
 # predictor, compute every metric, print the table.
 t0:
 	uv run python -m architecture_mechanics.metrics.capability --t0
 
-gates: selftest metrics-selftest
+gates: selftest metrics-selftest geometry-selftest
 
 # The section 7.3 run ladder. R0 builds the model and checks the section 8.5
 # invariants without training; R1 is the known-easy positive control and exits

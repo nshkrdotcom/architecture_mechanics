@@ -228,9 +228,21 @@ class RunConfig:
     attention over. Bounded because the ``(B, H, T, T)`` weight tensor is the one
     object in this laboratory whose size is quadratic in anything."""
 
+    geometry_examples: int = 1024
+    """How many evaluation examples the §6.2 geometry pass captures hidden states
+    over. Larger than ``capture_examples`` because nothing here is quadratic in
+    sequence length, and it needs to be: the probe fits ``F`` regressors on half
+    the rows, so ``1024`` examples give roughly 6 000 fitting rows against a
+    feature bank of 36 to 124. Frozen in the config rather than chosen at the
+    call site because it is a §7.2 comparison variable — a candidate architecture
+    measured on more rows than its control would be measured more precisely, and
+    a difference in precision reads as a difference in geometry."""
+
     def __post_init__(self) -> None:
         if self.ladder not in LADDERS:
             raise RunConfigError(f"unknown ladder rung {self.ladder!r}; expected {sorted(LADDERS)}")
+        if self.geometry_examples < 2:
+            raise RunConfigError("geometry_examples must be >= 2; a probe split needs two examples")
 
     def as_dict(self) -> dict:
         return {
@@ -238,6 +250,7 @@ class RunConfig:
             "seed": self.seed,
             "device": self.device,
             "capture_examples": self.capture_examples,
+            "geometry_examples": self.geometry_examples,
             "arch": self.arch.as_dict(),
             "data": self.data.as_dict(),
             "optim": self.optim.as_dict(),
@@ -366,7 +379,10 @@ def run_config_from_dict(payload: dict) -> RunConfig:
                 "re-running it would be a different experiment under the same name"
             )
 
-    known = set(expected) | {"ladder", "seed", "device", "capture_examples", "arch", "data", "optim"}
+    known = set(expected) | {
+        "ladder", "seed", "device", "capture_examples", "geometry_examples",
+        "arch", "data", "optim",
+    }
     unknown = sorted(set(payload) - known)
     if unknown:
         raise RunConfigError(f"unknown configuration keys {unknown}")
@@ -386,6 +402,7 @@ def run_config_from_dict(payload: dict) -> RunConfig:
         seed=int(payload.get("seed", 20260809)),
         device=payload.get("device", "cuda"),
         capture_examples=int(payload.get("capture_examples", 256)),
+        geometry_examples=int(payload.get("geometry_examples", 1024)),
         arch=ArchSpec(**section("arch", ArchSpec)),
         data=DataSpec(**section("data", DataSpec)),
         optim=OptimizationConfig(**section("optim", OptimizationConfig)),

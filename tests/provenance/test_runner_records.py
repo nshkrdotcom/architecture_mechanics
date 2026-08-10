@@ -264,3 +264,32 @@ def test_the_index_shows_a_run_that_hid_its_provenance(tmp_path: Path):
     (orphan / "summary.json").write_text('{"passed": true}')
     row = index_runs(tmp_path)[0]
     assert row["manifest"] is False and row["claim"] is None
+
+
+def test_a_run_outside_the_laboratory_cannot_be_the_laboratorys_evidence(tmp_path: Path):
+    """The committed gates file may only cite paths a reader can open.
+
+    Found the hard way in prompt 07: one exploratory command that named the real
+    claim packet while writing its run into a temporary directory added a
+    permanent evidence entry pointing at ``/tmp``, and the committed record then
+    cited a path that would never resolve again for anyone.
+    """
+    from architecture_mechanics.experiments.claim_packet import ClaimPacketError
+    from architecture_mechanics.experiments.manifest import lab_root
+
+    gates = lab_root() / "claims" / "a0-baseline-solves-t0.gates.json"
+    before = gates.read_bytes() if gates.is_file() else None
+
+    with pytest.raises(ClaimPacketError, match="outside the laboratory"):
+        run(
+            ladder_config("R0", device="cpu"),
+            out_dir=tmp_path / "runs",
+            verbose=False,
+            claim=lab_root() / "claims" / "a0-baseline-solves-t0.yml",
+        )
+
+    # ...and the laboratory's gates file was not touched on the way to refusing.
+    # Compared byte for byte rather than inspected, because the point is that
+    # *nothing* moved, and read against its own prior state rather than against
+    # an expected content, so the test holds on a tree that has never run.
+    assert (gates.read_bytes() if gates.is_file() else None) == before

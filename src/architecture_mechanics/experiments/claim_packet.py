@@ -579,6 +579,22 @@ def load_gates(path: Path | str, *, claim_id: str | None = None) -> ClaimGates:
     return gates
 
 
+def _inside_laboratory(path: Path | str) -> bool:
+    """Does this path live under the source tree this module belongs to?
+
+    ``lab_root`` is imported lazily so that this module keeps its property of
+    importing nothing from the package — it is pure record-keeping over YAML and
+    JSON, and a top-level dependency on the manifest module would be the first
+    edge of a cycle through the runner.
+    """
+    from architecture_mechanics.experiments.manifest import lab_root
+
+    root = lab_root()
+    candidate = Path(path)
+    resolved = (candidate if candidate.is_absolute() else root / candidate).resolve()
+    return resolved == root or root in resolved.parents
+
+
 def update_gates_from_run(
     result,
     *,
@@ -590,8 +606,24 @@ def update_gates_from_run(
 
     The single writer. Everything it records came out of ``result``, which came
     out of a model that was actually run.
+
+    A run written *outside* the laboratory cannot be cited by the laboratory's
+    own gates file. This is not hypothetical: one exploratory command that named
+    ``claims/a0-baseline-solves-t0.yml`` while writing its run into a temporary
+    directory added a permanent evidence entry pointing at ``/tmp``, and the
+    committed record then cited a path nobody could ever open. The refusal is
+    scoped to exactly that case — a scratch lab with a scratch claims directory
+    is a perfectly good place to record a scratch run, and the tests depend on
+    it.
     """
     claims_dir = Path(claims_dir)
+    if _inside_laboratory(claims_dir) and not _inside_laboratory(run_dir):
+        raise ClaimPacketError(
+            f"refusing to record {run_dir} in the laboratory's gates file: a run written "
+            "outside the laboratory cannot be its evidence, because the path would not "
+            "resolve for anyone reading the committed record. Pass claims_dir alongside "
+            "out_dir, or write the run into the laboratory."
+        )
     path = claims_dir / f"{claim_id}.gates.json"
     gates = load_gates(path, claim_id=claim_id)
     for evaluation in evaluate_rungs(result, run_dir=run_dir):

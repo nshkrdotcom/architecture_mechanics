@@ -12,20 +12,29 @@ looks like a pilot invites being read as one. ``bin/check_evidence.sh``
 distinguishes them by ``ladder_rung`` and asks screens for less.
 
 **A missing file and an empty file mean different things.** For R3 and above
-every §8.4 artifact exists, and the ones with nothing in them yet — geometry
-before prompt 07, interventions before prompt 19 — are written as valid, loadable,
+every §8.4 artifact exists, and the ones with nothing in them yet —
+interventions before prompt 19 — are written as valid, loadable,
 *self-describing empty structures*. A reader who finds no ``interventions.jsonl``
 learns nothing; a reader who finds one containing a schema header and zero
 records learns that this run performed no interventions, which is a fact about
 the run. Omission would let "we did not measure it" and "we measured it and it
 was nothing" wear the same clothes.
+
+``geometry_metrics.npz`` was one of those placeholders until prompt 07. It is now
+written by **any run that trained**, screen or pilot, because §6.2's measures
+cost seconds beside the training and a screen whose representation was never
+looked at is a screen that cannot be revisited. The gate still only *requires* it
+of R3 and above; emitting more than the gate demands is allowed, and emitting
+less than the laboratory measured is not.
 """
 
 from __future__ import annotations
 
+import io
 import json
 import os
 import stat
+import zipfile
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -95,6 +104,7 @@ def write_bundle(
     run_dir: Path | str,
     claim_gates: dict | None = None,
     model=None,
+    geometry: dict | None = None,
     lab_root: Path | str | None = None,
 ) -> BundleReport:
     """Emit the §8.4 bundle appropriate to this run's rung.
@@ -102,6 +112,11 @@ def write_bundle(
     ``summary.json``, ``metrics.jsonl`` and ``cost.json`` are already on disk —
     the runner writes them — so this adds the rest and then writes the manifest
     last, because the manifest indexes and hashes everything beside it.
+
+    ``geometry`` is the §6.2 array payload. When a run measured geometry the file
+    is written whatever the rung, because the measurement exists and hiding it
+    behind a rung threshold would mean a screen's representation could never be
+    revisited.
     """
     run_dir = Path(run_dir)
     run_dir.mkdir(parents=True, exist_ok=True)
@@ -111,10 +126,11 @@ def write_bundle(
     write_reproduce_script(
         run_dir=run_dir, manifest=manifest, lab_root=lab_root, primary_metric=manifest.primary_metric
     )
+    if geometry or is_final:
+        _write_geometry(run_dir, manifest, geometry)
 
     if is_final:
         _write_mechanism_activity(run_dir, result, manifest)
-        _write_geometry(run_dir, manifest)
         _write_interventions(run_dir, manifest)
         _write_claim_gates(run_dir, manifest, claim_gates)
         _write_figures_index(run_dir, manifest)
@@ -151,22 +167,58 @@ def _write_mechanism_activity(run_dir: Path, result, manifest) -> None:
     _write_json(run_dir / "mechanism_activity.json", payload)
 
 
-def _write_geometry(run_dir: Path, manifest) -> None:
+def _write_geometry(run_dir: Path, manifest, geometry: dict | None) -> None:
     """§6.2 geometry, as an npz that loads whether or not it holds anything.
 
-    Prompt 07 fills this. Until then it is a real ``.npz`` carrying its schema
-    and an ``empty`` flag, so ``np.load`` on any run in the laboratory succeeds
-    and the answer to "was geometry measured here?" is in the file rather than
-    in its absence.
+    ``geometry`` is the per-feature and per-pair array payload from
+    :meth:`~architecture_mechanics.metrics.geometry.RunGeometry.arrays`. Its
+    scalar summary lives in ``summary.json``; the arrays live here because an
+    average over 36 features is where a bimodal feature bank goes to hide, and
+    the point of a ground-truth benchmark is that the per-feature record exists.
+
+    A run that measured nothing — R0, which never trains — still gets a real
+    ``.npz`` carrying its schema and an ``empty`` flag, so ``np.load`` on any run
+    in the laboratory succeeds and the answer to "was geometry measured here?" is
+    in the file rather than in its absence.
     """
-    path = run_dir / "geometry_metrics.npz"
-    np.savez(
-        path,
-        __schema__=np.array(GEOMETRY_SCHEMA),
-        __run_id__=np.array(manifest.run_id),
-        __empty__=np.array(True),
-        __written_by__=np.array("reporting.evidence_bundle; §6.2 metrics arrive in prompt 07"),
-    )
+    payload: dict[str, np.ndarray] = {
+        "__schema__": np.asarray(GEOMETRY_SCHEMA),
+        "__run_id__": np.asarray(manifest.run_id),
+        "__empty__": np.asarray(not geometry),
+    }
+    if geometry:
+        payload.update({key: np.asarray(value) for key, value in geometry.items()})
+    else:
+        payload["__written_by__"] = np.asarray(
+            "reporting.evidence_bundle; this rung trained no model, so it has no representation"
+        )
+    _savez_deterministic(run_dir / "geometry_metrics.npz", payload)
+
+
+def _savez_deterministic(path: Path, arrays: dict[str, np.ndarray]) -> None:
+    """``np.savez_compressed`` with the clock and the argument order pinned.
+
+    An ``.npz`` is a zip, and a zip records a modification time and an order per
+    member. The manifest hashes every file in the run directory, so if either
+    varied an identical re-run would report a different evidence index while
+    nothing about the experiment had moved — the exact confusion ``cost.json``
+    was pulled out of ``summary.json`` to avoid.
+
+    numpy 2.5 happens to normalise the timestamp already, and ``np.savez`` on
+    this machine is byte-reproducible today. That is an implementation detail of
+    a dependency and not a documented guarantee, and it says nothing about member
+    order, which follows the caller's dict. Twelve lines make the property belong
+    to the laboratory instead: members sorted, timestamp fixed, and ``np.load``
+    reads the result as an ordinary npz.
+    """
+    with zipfile.ZipFile(path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        for name in sorted(arrays):
+            buffer = io.BytesIO()
+            np.lib.format.write_array(buffer, np.asarray(arrays[name]), allow_pickle=False)
+            info = zipfile.ZipInfo(f"{name}.npy", date_time=(1980, 1, 1, 0, 0, 0))
+            info.compress_type = zipfile.ZIP_DEFLATED
+            info.external_attr = 0o644 << 16
+            archive.writestr(info, buffer.getvalue())
 
 
 def _write_interventions(run_dir: Path, manifest) -> None:

@@ -75,6 +75,11 @@ from architecture_mechanics.metrics.capability import (
     positive_control_datasets,
     reconstruction_loss,
 )
+from architecture_mechanics.metrics.geometry import (
+    GEOMETRY_VERSION,
+    flatten_site,
+    run_geometry,
+)
 from architecture_mechanics.metrics.mechanism import (
     MECHANISM_VERSION,
     attention_retrieval,
@@ -119,6 +124,10 @@ class RunResult:
     final: dict = field(default_factory=dict)
     references: dict = field(default_factory=dict)
     mechanism: dict = field(default_factory=dict)
+    geometry: dict = field(default_factory=dict)
+    """§6.2 scalars only. The per-feature arrays go to ``geometry_metrics.npz``:
+    a summary that carried 36 features times 12 measures times 10 sites would
+    stop being a summary."""
     positive_control: dict | None = None
     kill: dict | None = None
     cost: dict = field(default_factory=dict)
@@ -356,6 +365,87 @@ def capture_mechanism(
 
 
 # --------------------------------------------------------------------------- #
+# §6.2 representation geometry
+# --------------------------------------------------------------------------- #
+
+GEOMETRY_LOCAL_SITES: tuple[str, ...] = (
+    "embed",
+    "resid_mid",
+    "resid_out",
+    "final_norm",
+    "output",
+    "readout",
+)
+"""Bare site names the geometry pass records.
+
+``embed``, ``resid_mid``, ``resid_out`` and ``final_norm`` are the *ordinary*
+hidden states — the ones every architecture in §5 has — and they form the depth
+trajectory. ``output`` and ``readout`` are A0's mechanism sites, and each is
+compared against the ordinary residual stream at its own depth. A1 and A2 reuse
+both names, so this list should not need to grow when they arrive.
+"""
+
+
+@torch.no_grad()
+def capture_geometry(
+    model: FeatureModel,
+    batch: _Batchable,
+    dataset: FeatureProgramDataset,
+    config: RunConfig,
+) -> tuple[dict, dict]:
+    """One instrumented forward pass, then the §6.2 report. ``(summary, arrays)``.
+
+    The ground truth is the *input* feature tensor at every position, not the
+    supervised target at some of them. §6.2 asks what the representation does
+    with the features it was given; restricting to supervised positions would
+    answer a narrower question and would throw away five sixths of the rows on
+    the positive control.
+
+    The reference basis at the embedding site is the encoder's own weight matrix.
+    It is recorded as a diagnostic rather than as a check, because the trunk adds
+    a learned position embedding that the feature design matrix cannot see and
+    that is correlated with feature activity — operator features occur at
+    operator positions. The clean estimator check runs against a position-free
+    model in ``tests/metrics/test_geometry_estimators.py``.
+    """
+    model.eval()
+    rows = min(config.geometry_examples, batch.n_examples)
+    hooks = CaptureContext(capture=GEOMETRY_LOCAL_SITES)
+    model(batch.inputs[:rows], hooks=hooks)
+
+    states = {name: flatten_site(tensor) for name, tensor in hooks.captures.items()}
+    seq_len = int(batch.inputs.shape[1])
+    trajectory = [name for name in model.hook_sites() if name in states and ".mix." not in name]
+    mechanism = [name for name in model.hook_sites() if name in states and ".mix." in name]
+
+    features = dataset.inputs[:rows].cpu().numpy().reshape(rows * seq_len, -1)
+    active = dataset.active_mask[:rows].cpu().numpy().reshape(rows * seq_len, -1)
+    example_of_row = np.repeat(np.arange(rows), seq_len)
+    templates = np.asarray([record.template_id for record in dataset.programs[:rows]])
+
+    report = run_geometry(
+        states,
+        features,
+        active,
+        example_of_row,
+        trajectory_sites=trajectory,
+        mechanism_sites=mechanism,
+        references={"embed": model.encoder.weight.detach().cpu().numpy().T},
+        feature_banks={
+            "content": dataset.content_indices,
+            "key": dataset.key_indices,
+            "operator": dataset.op_indices,
+        },
+        primary_site="final_norm" if "final_norm" in trajectory else trajectory[-1],
+        template_of_example=templates,
+        split_seed=config.seed + 2,
+        projection_seed=config.seed + 3,
+    )
+    summary = report.summary() | {"n_examples": rows, "n_rows": rows * seq_len}
+    return summary, report.arrays()
+
+
+# --------------------------------------------------------------------------- #
 # R0 — the §8.5 invariants, as a runnable gate
 # --------------------------------------------------------------------------- #
 
@@ -587,6 +677,7 @@ def run(
     result.final = metrics
     result.mechanism = capture_mechanism(model, eval_batch, eval_dataset, config.capture_examples)
     result.mechanism["mechanism_version"] = MECHANISM_VERSION
+    result.geometry, geometry_arrays = capture_geometry(model, eval_batch, eval_dataset, config)
 
     # Reference predictors on the same evaluation data, so every number in the
     # summary has a floor and a ceiling attached rather than standing alone.
@@ -629,7 +720,8 @@ def run(
     result.cost = _cost(started, device) | {"train_seconds": round(train_seconds, 3)}
     result.cost["r4_five_seed_estimate_seconds"] = round(5 * (time.perf_counter() - started), 1)
     _record(
-        result, out_dir, manifest, model, packet, emit_bundle, verbose, claims_dir, overwrite
+        result, out_dir, manifest, model, packet, emit_bundle, verbose, claims_dir, overwrite,
+        geometry=geometry_arrays,
     )
     if verbose:
         _print_result(result)
@@ -867,6 +959,7 @@ def _record(
     verbose: bool,
     claims_dir: Path | None = None,
     overwrite: bool = False,
+    geometry: dict | None = None,
 ) -> None:
     """Write the run directory: results, claim gates, then the §8.4 bundle.
 
@@ -929,6 +1022,7 @@ def _record(
         run_dir=run_dir,
         claim_gates=gates_dict,
         model=model if manifest.ladder_rung in FINAL_RUNGS else None,
+        geometry=geometry,
     )
     if report.problems:
         message = f"incomplete §8.4 bundle for {result.run_id}: {report.problems}"
@@ -1031,6 +1125,16 @@ def _print_result(result: RunResult) -> None:
         f"entropy_ratio={mechanism.get('best_entropy_ratio')} "
         f"retrieval_lift={mechanism.get('best_retrieval_lift')}"
     )
+    primary = result.geometry.get("primary")
+    if primary:
+        print(
+            f"  geometry {result.geometry['primary_site']}: "
+            f"probe_r2={primary['probe_macro_r2']:.4f} "
+            f"purity={primary['mean_purity']:.4f} "
+            f"interference={primary['interference_fraction']:.4f} "
+            f"eff_rank={primary['effective_rank']:.2f}/{primary['d_model']} "
+            f"({GEOMETRY_VERSION})"
+        )
     print(
         f"  cost     {result.cost.get('wall_clock_seconds')} s wall, "
         f"{result.cost.get('peak_allocated_mib')} MiB peak allocated"
