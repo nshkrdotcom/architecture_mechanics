@@ -49,6 +49,7 @@ from architecture_mechanics.data.feature_program import (
 from architecture_mechanics.device import resolve_device
 from architecture_mechanics.experiments.claim_packet import (
     load_packet,
+    packets_covering,
     update_gates_from_run,
 )
 from architecture_mechanics.experiments.config import (
@@ -454,12 +455,15 @@ def run(
 ) -> RunResult:
     """Train, evaluate, and report. The whole entry point.
 
-    ``claim`` names the §7.1 pre-registration this run belongs to and is
-    **required whenever a run directory is written**. A recorded run that names
-    no prediction is an anecdote with a timestamp; ``bin/check_prereg.sh``
-    refuses it afterwards, and refusing it here is cheaper. The packet is loaded
-    and validated before the first gradient step, so a malformed
-    pre-registration costs no GPU time.
+    ``claim`` names the §7.1 pre-registration this run belongs to, and a parent
+    claim is **required whenever a run directory is written**. A recorded run
+    that names no prediction is an anecdote with a timestamp;
+    ``bin/check_prereg.sh`` refuses it afterwards, and refusing it here is
+    cheaper. Left ``None``, the parent is resolved from the packets' own
+    committed ``covers:`` blocks — see :func:`_resolve_claim`; the requirement
+    is that a parent exists, not that a human retyped its path. Either way the
+    packet is loaded and validated before the first gradient step, so a
+    malformed pre-registration costs no GPU time.
 
     ``emit_bundle`` makes §8.4 completeness fatal. The bundle for the rung is
     written either way — provenance is not an opt-in — but with this flag the
@@ -467,7 +471,9 @@ def run(
     """
     started = time.perf_counter()
     started_utc = utc_now()
-    packet, claim_path = _resolve_claim(claim, required=out_dir is not None)
+    packet, claim_path = _resolve_claim(
+        claim, required=out_dir is not None, config=config, claims_dir=claims_dir
+    )
     seed_record: SeedRecord = seed_everything(config.seed)
     torch.set_float32_matmul_precision(config.optim.float32_matmul_precision)
     device, device_record = resolve_device(config.device)
@@ -750,22 +756,35 @@ def _cost(started: float, device: torch.device) -> dict:
     return record
 
 
-def _resolve_claim(claim: str | Path | None, *, required: bool):
+def _resolve_claim(
+    claim: str | Path | None,
+    *,
+    required: bool,
+    config: RunConfig | None = None,
+    claims_dir: Path | None = None,
+):
     """Load the pre-registration, and give its path relative to the laboratory.
 
     Relative because ``bin/check_prereg.sh`` resolves ``parent_claim_packet``
     against the lab directory and then asks git when that file was committed. An
     absolute path would work on this machine and nowhere else, and provenance
     that only means something on the machine that produced it is not provenance.
+
+    A recorded run that names no claim is not refused outright: the laboratory
+    first asks the *packets* whether any of them declared, in its committed
+    ``covers:`` block, that it governs this rung, architecture, and condition.
+    Exactly one match is the run's parent. None is refused, and so is more than
+    one — a run two pre-registrations both claim has an ambiguous prediction,
+    and choosing between them is the researcher's job, not the runner's.
+
+    This is strictly stronger than a command-line flag. ``--claim`` asserts a
+    parent at run time; a ``covers:`` block asserted it at commit time, which is
+    the same timestamp ``check_prereg.sh`` already trusts.
     """
     if claim is None:
-        if required:
-            raise RunConfigError(
-                "a recorded run must name its §7.1 pre-registration: pass claim=... "
-                "(--claim claims/<id>.yml). A run directory with no parent claim packet "
-                "is refused by bin/check_prereg.sh, and refusing it here is cheaper."
-            )
-        return None, None
+        if not required:
+            return None, None
+        claim = _claim_by_declared_scope(config, claims_dir)
 
     path = Path(claim)
     if not path.is_absolute():
@@ -777,6 +796,46 @@ def _resolve_claim(claim: str | Path | None, *, required: bool):
     except ValueError:
         relative = str(path.resolve())
     return packet, relative
+
+
+def _claim_by_declared_scope(config: RunConfig | None, claims_dir: Path | None) -> Path:
+    """Find the one packet that declared it covers this run, or refuse."""
+    refusal = (
+        "a recorded run must name its §7.1 pre-registration: pass claim=... "
+        "(--claim claims/<id>.yml), or give a packet a covers: block declaring "
+        "this run. A run directory with no parent claim packet is refused by "
+        "bin/check_prereg.sh, and refusing it here is cheaper."
+    )
+    if config is None:
+        raise RunConfigError(refusal)
+
+    directory = Path(claims_dir) if claims_dir is not None else lab_root() / "claims"
+    scope = {
+        "ladder": config.ladder,
+        "arch": config.arch.arch,
+        "condition": config.data.condition,
+    }
+    matches, unreadable = packets_covering(directory, **scope)
+
+    if len(matches) == 1:
+        return matches[0].path
+
+    described = f"ladder={scope['ladder']} arch={scope['arch']} condition={scope['condition']}"
+    if not matches:
+        detail = f"no packet in {directory} declares covers: {described}"
+        if unreadable:
+            # A packet too broken to load must not be able to make itself
+            # invisible by failing quietly.
+            detail += "; unreadable packets: " + ", ".join(
+                f"{path.name} ({reason})" for path, reason in unreadable
+            )
+        raise RunConfigError(f"{refusal}\n  {detail}")
+
+    named = ", ".join(packet.claim_id for packet in matches)
+    raise RunConfigError(
+        f"{len(matches)} pre-registrations claim {described}: {named}. A run cannot have "
+        "two parents — narrow a covers: block, or name one with --claim."
+    )
 
 
 def _record(
@@ -912,7 +971,9 @@ def main(argv: Sequence[str] | None = None) -> int:
                              "this is what reproduce.sh uses")
     parser.add_argument("--claim", default=None,
                         help="the §7.1 pre-registration this run belongs to, e.g. "
-                             "claims/a0-baseline-solves-t0.yml. Required when --out writes a run.")
+                             "claims/a0-baseline-solves-t0.yml. Omitted, a recorded run takes "
+                             "the one packet whose covers: block declares this rung, "
+                             "architecture and condition; none or several is refused.")
     parser.add_argument("--out", default="runs", help="run directory root, or 'none'")
     parser.add_argument("--emit-bundle", action="store_true",
                         help="refuse to finish having written an incomplete §8.4 evidence bundle")

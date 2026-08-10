@@ -25,7 +25,9 @@ from architecture_mechanics.experiments.claim_packet import (
     evaluate_rungs,
     load_gates,
     load_packet,
+    packets_covering,
 )
+from architecture_mechanics.experiments.manifest import lab_root
 
 
 def _fields() -> dict:
@@ -112,6 +114,78 @@ def test_packet_round_trips_through_yaml(tmp_path: Path):
     assert reloaded.fields == _fields()
     assert reloaded.claimed_rung == 1
     assert yaml.safe_load(written.read_text())["CLAIM"] == "the mechanism does the thing"
+
+
+# --------------------------------------------------------------------------- #
+# Declared scope
+# --------------------------------------------------------------------------- #
+
+
+_SCOPE = {"ladder": ["R0", "R1"], "arch": ["softmax"], "condition": ["positive_control"]}
+_RUN = {"ladder": "R1", "arch": "softmax", "condition": "positive_control"}
+
+
+def test_a_packet_with_no_scope_covers_nothing():
+    """Valid, but it must be named by hand — it never adopts a run on its own."""
+    packet = _packet()
+    packet.validate()
+    assert packet.coverage is None
+    assert not packet.covers_run(**_RUN)
+
+
+def test_a_declared_scope_covers_exactly_what_it_lists():
+    packet = _packet(extra={"covers": _SCOPE})
+    packet.validate()
+    assert packet.covers_run(**_RUN)
+    assert not packet.covers_run(**{**_RUN, "ladder": "R2"})
+    assert not packet.covers_run(**{**_RUN, "arch": "linear"})
+    assert not packet.covers_run(**{**_RUN, "condition": "capacity_stressed"})
+
+
+@pytest.mark.parametrize("axis", ["ladder", "arch", "condition"])
+def test_a_scope_missing_an_axis_is_refused(axis):
+    """An open axis would adopt every future run on it."""
+    scope = {key: value for key, value in _SCOPE.items() if key != axis}
+    with pytest.raises(ClaimPacketError, match=f"covers is missing axis {axis}"):
+        _packet(extra={"covers": scope}).validate()
+
+
+@pytest.mark.parametrize("bad", ["R1", [], [""], ["R1", " "], None])
+def test_a_scope_axis_must_be_a_non_empty_list_of_text(bad):
+    with pytest.raises(ClaimPacketError, match="covers.ladder"):
+        _packet(extra={"covers": {**_SCOPE, "ladder": bad}}).validate()
+
+
+def test_a_scope_with_an_unrecognised_axis_is_refused():
+    with pytest.raises(ClaimPacketError, match="unrecognised axes"):
+        _packet(extra={"covers": {**_SCOPE, "seeds": ["20260809"]}}).validate()
+
+
+def test_a_scope_round_trips_and_is_found_in_its_directory(tmp_path: Path):
+    _packet(extra={"covers": _SCOPE}).write(tmp_path / "k0-test.yml")
+    elsewhere = _packet(extra={"covers": {**_SCOPE, "ladder": ["R2"]}})
+    elsewhere.claim_id = "k0-other"
+    elsewhere.write(tmp_path / "k0-other.yml")
+
+    matches, unreadable = packets_covering(tmp_path, **_RUN)
+    assert [packet.claim_id for packet in matches] == ["k0-test"]
+    assert unreadable == []
+
+
+def test_a_packet_too_broken_to_read_is_reported_not_skipped(tmp_path: Path):
+    (tmp_path / "broken.yml").write_text("claim_id: broken\nCLAIM: ''\n")
+    matches, unreadable = packets_covering(tmp_path, **_RUN)
+    assert matches == []
+    assert [path.name for path, _ in unreadable] == ["broken.yml"]
+
+
+def test_the_laboratorys_own_packet_declares_the_ladder_it_governs():
+    """The committed a0 packet must keep covering the runs the Makefile makes."""
+    packet = load_packet(lab_root() / "claims" / "a0-baseline-solves-t0.yml")
+    assert packet.covers_run(ladder="R0", arch="softmax", condition="positive_control")
+    assert packet.covers_run(ladder="R1", arch="softmax", condition="positive_control")
+    assert packet.covers_run(ladder="R2", arch="softmax", condition="capacity_stressed")
+    assert not packet.covers_run(ladder="R3", arch="softmax", condition="positive_control")
 
 
 # --------------------------------------------------------------------------- #

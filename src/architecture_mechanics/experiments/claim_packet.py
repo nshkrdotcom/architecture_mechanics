@@ -18,6 +18,13 @@ does not quietly survive, it fails on the next read.
 
 The asymmetry is deliberate. A researcher may write any claim they like; what
 they may not do is mark it supported.
+
+A packet may also declare, in its ``covers:`` block, which runs it governs —
+rung, architecture, and condition. That is how a run finds its parent claim when
+the command line does not name one, and it is deliberately the *packet's*
+statement rather than the runner's: a scope committed in advance cannot adopt a
+run it did not predict, whereas a rule living in the runner could be widened
+after the fact by whoever did not like the result.
 """
 
 from __future__ import annotations
@@ -32,6 +39,7 @@ from typing import Any
 import yaml
 
 __all__ = [
+    "COVERAGE_AXES",
     "GATES_SCHEMA",
     "PACKET_SCHEMA",
     "REQUIRED_FIELDS",
@@ -43,6 +51,7 @@ __all__ = [
     "evaluate_rungs",
     "load_gates",
     "load_packet",
+    "packets_covering",
     "update_gates_from_run",
 ]
 
@@ -64,6 +73,15 @@ REQUIRED_FIELDS: tuple[str, ...] = (
     "REPLICATION_REQUIREMENT",
 )
 """§7.1's twelve, in §7.1's order."""
+
+COVERAGE_AXES: tuple[str, ...] = ("ladder", "arch", "condition")
+"""The axes a packet's ``covers:`` block must name to claim a run.
+
+A pre-registration declares, in advance and in git, which runs it governs. All
+three axes are required: a packet saying only ``arch: [softmax]`` would silently
+adopt every softmax run this laboratory ever produces, including rungs it never
+predicted anything about. Widening a scope therefore costs a commit — which is
+the same discipline the packet itself is under, applied to its own reach."""
 
 RUNGS: tuple[str, ...] = (
     "implementation_survives",
@@ -148,12 +166,43 @@ class ClaimPacket:
         if self.primary_metric_key is not None and not str(self.primary_metric_key).strip():
             problems.append("primary_metric_key is present but empty")
 
+        problems.extend(_coverage_problems(self.extra.get("covers")))
+
         if problems:
             where = f" in {self.path}" if self.path else ""
             raise ClaimPacketError(
                 f"claim packet {self.claim_id!r}{where} is not a pre-registration:\n  "
                 + "\n  ".join(problems)
             )
+
+    # -- declared scope ------------------------------------------------------ #
+
+    @property
+    def coverage(self) -> dict[str, tuple[str, ...]] | None:
+        """The ``covers:`` block, or ``None`` if this packet claims no run.
+
+        A packet with no ``covers:`` is still a valid pre-registration — it is
+        simply one that must be named explicitly, by ``--claim``, to be attached
+        to anything.
+        """
+        raw = self.extra.get("covers")
+        if not isinstance(raw, dict):
+            return None
+        return {axis: tuple(raw.get(axis) or ()) for axis in COVERAGE_AXES}
+
+    def covers_run(self, *, ladder: str, arch: str, condition: str) -> bool:
+        """Does this packet's declared scope contain this run?
+
+        Exact membership on all three axes. No wildcards and no prefixes: a
+        scope that can be read two ways is not a scope, and the cost of being
+        wrong here is a run attributed to a prediction that was never made
+        about it.
+        """
+        covers = self.coverage
+        if covers is None:
+            return False
+        run = {"ladder": ladder, "arch": arch, "condition": condition}
+        return all(run[axis] in covers[axis] for axis in COVERAGE_AXES)
 
     # -- serialisation ----------------------------------------------------- #
 
@@ -193,6 +242,36 @@ def _field_problems(name: str, value: Any) -> list[str]:
     return [f"§7.1 field {name} must be text or a list of text, got {type(value).__name__}"]
 
 
+def _coverage_problems(raw: Any) -> list[str]:
+    """Validate an optional ``covers:`` block. Absent is fine; malformed is not."""
+    if raw is None:
+        return []
+    if not isinstance(raw, dict):
+        return [f"covers must be a mapping of {list(COVERAGE_AXES)} to lists, got {type(raw).__name__}"]
+
+    problems: list[str] = []
+    unknown = sorted(set(raw) - set(COVERAGE_AXES))
+    if unknown:
+        problems.append(f"covers has unrecognised axes {unknown}; expected {list(COVERAGE_AXES)}")
+    for axis in COVERAGE_AXES:
+        if axis not in raw:
+            problems.append(
+                f"covers is missing axis {axis}: a scope that leaves an axis open adopts "
+                "every future run on it"
+            )
+            continue
+        values = raw[axis]
+        if not isinstance(values, (list, tuple)) or not values:
+            problems.append(f"covers.{axis} must be a non-empty list, got {values!r}")
+            continue
+        problems.extend(
+            f"covers.{axis} entry {index} is empty or not text"
+            for index, value in enumerate(values)
+            if not isinstance(value, str) or not value.strip()
+        )
+    return problems
+
+
 def load_packet(path: Path | str) -> ClaimPacket:
     """Read and validate a packet. Raises rather than returning a broken one."""
     path = Path(path)
@@ -220,6 +299,38 @@ def load_packet(path: Path | str) -> ClaimPacket:
     )
     packet.validate()
     return packet
+
+
+def packets_covering(
+    claims_dir: Path | str, *, ladder: str, arch: str, condition: str
+) -> tuple[list[ClaimPacket], list[tuple[Path, str]]]:
+    """Every packet in ``claims_dir`` whose declared scope contains this run.
+
+    Returns the matches together with the files that could not be read at all,
+    because a packet too broken to parse must not be able to make itself
+    invisible: if nothing matches, the caller reports the unreadable ones as
+    part of saying so.
+
+    Nothing here decides anything. The caller refuses on zero matches and on
+    more than one — a run that two pre-registrations both claim is a run whose
+    prediction is ambiguous, and picking one would be picking for the
+    researcher.
+    """
+    claims_dir = Path(claims_dir)
+    matches: list[ClaimPacket] = []
+    unreadable: list[tuple[Path, str]] = []
+    if not claims_dir.is_dir():
+        return matches, unreadable
+
+    for path in sorted([*claims_dir.glob("*.yml"), *claims_dir.glob("*.yaml")]):
+        try:
+            packet = load_packet(path)
+        except (ClaimPacketError, OSError) as error:
+            unreadable.append((path, str(error).splitlines()[0]))
+            continue
+        if packet.covers_run(ladder=ladder, arch=arch, condition=condition):
+            matches.append(packet)
+    return matches, unreadable
 
 
 # --------------------------------------------------------------------------- #

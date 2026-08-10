@@ -5,6 +5,16 @@ scope: 'The A0 softmax baseline as an instrument, on this generator, at one seed
   are the R0 invariant gate, the R1 known-easy positive control, and the R2 capacity-stressed
   kill screen. It claims rung 1 and no higher: there is exactly one architecture in this laboratory,
   so there is no difference for a rung-2 claim to be about.'
+covers:
+  ladder:
+  - R0
+  - R1
+  - R2
+  arch:
+  - softmax
+  condition:
+  - positive_control
+  - capacity_stressed
 CLAIM: A0 — multi-head causal softmax attention in the shared trunk — solves the known-easy
   positive control (T1 associative recall, ample width, distance one to two, no distractors,
   one association) at or above prompt 03's frozen exact answer-set recall threshold of 0.80

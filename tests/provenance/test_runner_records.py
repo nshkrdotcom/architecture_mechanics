@@ -16,7 +16,11 @@ from pathlib import Path
 
 import pytest
 
-from architecture_mechanics.experiments.claim_packet import ClaimPacket, load_gates
+from architecture_mechanics.experiments.claim_packet import (
+    ClaimPacket,
+    load_gates,
+    load_packet,
+)
 from architecture_mechanics.experiments.config import RunConfigError, ladder_config
 from architecture_mechanics.experiments.index import index_runs
 from architecture_mechanics.experiments.runner import run
@@ -108,9 +112,88 @@ def test_recording_a_run_updates_the_claim_gates_from_measurement(tmp_path: Path
 
 
 def test_a_recorded_run_without_a_claim_is_refused(tmp_path: Path):
+    """No packet named, and no packet declaring it covers this run."""
+    empty = tmp_path / "claims"
+    empty.mkdir()
     with pytest.raises(RunConfigError, match="pre-registration"):
-        run(ladder_config("R0", device="cpu"), out_dir=tmp_path / "runs", verbose=False)
+        run(
+            ladder_config("R0", device="cpu"),
+            out_dir=tmp_path / "runs",
+            verbose=False,
+            claims_dir=empty,
+        )
     assert not (tmp_path / "runs").exists()
+
+
+def _covering(claim: Path, covers: dict) -> Path:
+    """Rewrite the fixture packet with a declared scope."""
+    packet = load_packet(claim)
+    packet.extra["covers"] = covers
+    return packet.write(claim)
+
+
+R0_SCOPE = {"ladder": ["R0"], "arch": ["softmax"], "condition": ["positive_control"]}
+
+
+def test_a_run_finds_the_packet_that_declared_it(tmp_path: Path, claim: Path):
+    """The whole point: the parent is resolved from the packet's own committed scope."""
+    _covering(claim, R0_SCOPE)
+    result = run(
+        ladder_config("R0", device="cpu"),
+        out_dir=tmp_path / "runs",
+        verbose=False,
+        claims_dir=claim.parent,
+    )
+    manifest = json.loads((tmp_path / "runs" / result.run_id / "manifest.json").read_text())
+    assert manifest["parent_claim_packet"].endswith("t-fixture.yml")
+    assert manifest["claimed_rung"] == 1
+
+
+def test_a_packet_covering_another_rung_does_not_adopt_this_run(tmp_path: Path, claim: Path):
+    _covering(claim, {**R0_SCOPE, "ladder": ["R2"]})
+    with pytest.raises(RunConfigError, match="no packet in .* declares covers"):
+        run(
+            ladder_config("R0", device="cpu"),
+            out_dir=tmp_path / "runs",
+            verbose=False,
+            claims_dir=claim.parent,
+        )
+
+
+def test_two_packets_claiming_one_run_are_refused_rather_than_chosen_between(
+    tmp_path: Path, claim: Path
+):
+    """An ambiguous parent is the researcher's problem to resolve, not the runner's."""
+    _covering(claim, R0_SCOPE)
+    twin = load_packet(claim)
+    twin.claim_id = "t-fixture-twin"
+    twin.write(claim.parent / "t-fixture-twin.yml")
+    with pytest.raises(RunConfigError, match="2 pre-registrations claim"):
+        run(
+            ladder_config("R0", device="cpu"),
+            out_dir=tmp_path / "runs",
+            verbose=False,
+            claims_dir=claim.parent,
+        )
+
+
+def test_an_unreadable_packet_is_named_rather_than_skipped_silently(tmp_path: Path, claim: Path):
+    (claim.parent / "broken.yml").write_text("claim_id: broken\nCLAIM: ''\n")
+    with pytest.raises(RunConfigError, match="unreadable packets: broken.yml"):
+        run(
+            ladder_config("R0", device="cpu"),
+            out_dir=tmp_path / "runs",
+            verbose=False,
+            claims_dir=claim.parent,
+        )
+
+
+def test_an_explicit_claim_overrides_a_declared_scope(tmp_path: Path, claim: Path):
+    """--claim still wins, and does not consult covers: at all."""
+    _covering(claim, {**R0_SCOPE, "ladder": ["R2"]})
+    result = _r0(tmp_path, claim)
+    manifest = json.loads((tmp_path / "runs" / result.run_id / "manifest.json").read_text())
+    assert manifest["parent_claim_packet"].endswith("t-fixture.yml")
 
 
 def test_a_scratch_run_needs_no_claim_and_leaves_nothing(tmp_path: Path):
