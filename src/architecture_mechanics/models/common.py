@@ -52,6 +52,7 @@ __all__ = [
     "ModelConfig",
     "ModelConfigError",
     "ModelOutput",
+    "attention_distribution_statistics",
     "build_primitive",
     "count_parameters",
     "gelu_reference",
@@ -196,6 +197,22 @@ class MixingPrimitive(nn.Module, ABC):
     shared across architectures wherever the tensors mean the same thing, so
     that prompt 19 can hook ``q``, ``k``, ``v``, ``weights``, and ``readout`` on
     A0, A1, and A2 through the same call.
+
+    A site is declared only if the forward pass *consumes* it. A tensor that is
+    computed for display and then ignored would accept a transform and discard
+    it silently, which is §13.2's semantic naming without enforcement applied to
+    the intervention surface. Quantities worth measuring but not on the critical
+    path are derived in :meth:`attention_matrix` or :meth:`mechanism_activity`
+    instead, where nothing suggests they can be intervened on.
+    """
+
+    ACTIVITY_SITES: tuple[str, ...] = ()
+    """Local sites a run must capture for :meth:`mechanism_activity` to work.
+
+    A subset of :attr:`SITES`, and usually a small one: the §6.3 pass captures
+    these on every evaluation, so a mechanism that named all of its sites here
+    would pay for tensors nothing reads. A0 needs its weight matrix; A1 needs
+    the two feature-mapped projections and its state.
     """
 
     def __init__(self, config: ModelConfig, layer_index: int) -> None:
@@ -252,6 +269,28 @@ class MixingPrimitive(nn.Module, ABC):
         """
 
     # -- provided ---------------------------------------------------------- #
+
+    def attention_matrix(self, captures: Mapping[str, torch.Tensor]) -> torch.Tensor | None:
+        """The ``(B, H, T, T)`` row-stochastic matrix this mechanism induces.
+
+        ``None`` when the mechanism induces no such object, or when the sites it
+        would be built from were not captured.
+
+        §6.3's program-grounded measure —
+        :func:`~architecture_mechanics.metrics.mechanism.attention_retrieval` —
+        asks whether the weight a destination places on its true source beats a
+        flat prefix. That question is meaningful for *any* mixer whose read is a
+        convex combination of earlier positions, and it is the one activity
+        measure that distinguishes doing the task from merely being busy. So it
+        is asked of every architecture through this one method rather than being
+        available only to the one that happens to materialise the matrix.
+
+        The default reads a ``weights`` site, which is A0. A1 has no such tensor
+        on its critical path and *derives* the matrix from its captured feature
+        maps: exact, and clearly a measurement rather than a hook, so nothing
+        invites an intervention that would be discarded.
+        """
+        return captures.get("weights")
 
     def hook_sites(self) -> tuple[str, ...]:
         return self.SITES
@@ -430,6 +469,49 @@ class FeatureModel(nn.Module):
             names.extend(block.mix.hook_sites())
         return tuple(names)
 
+    def activity_sites(self) -> tuple[str, ...]:
+        """Local site names the §6.3 pass must capture, in declaration order.
+
+        The union over the mixing layers, which for a homogeneous model is just
+        the primitive's own list. Asked of the model rather than hard-coded at
+        the call site because "which tensors is this mechanism's activity made
+        of" is a property of the mechanism: A0's is one attention matrix, A1's is
+        a feature map and a state, and a runner that knew that would have to be
+        edited for every architecture.
+        """
+        names: list[str] = []
+        for block in self.blocks:
+            for name in block.mix.ACTIVITY_SITES:
+                if name not in names:
+                    names.append(name)
+        return tuple(names)
+
+    def _local_captures(self, index: int, captures: Mapping[str, torch.Tensor]) -> dict:
+        prefix = f"layers.{index}.mix."
+        return {
+            key[len(prefix):]: value
+            for key, value in captures.items()
+            if key.startswith(prefix)
+        }
+
+    def attention_matrices(
+        self, captures: Mapping[str, torch.Tensor]
+    ) -> dict[str, torch.Tensor]:
+        """Each mixing layer's induced ``(B, H, T, T)`` matrix, where it has one.
+
+        Keyed by the layer's qualified mixing scope (``layers.0.mix``), which is
+        the label §6.3's retrieval report carries.
+        """
+        matrices: dict[str, torch.Tensor] = {}
+        for index, block in enumerate(self.blocks):
+            local = self._local_captures(index, captures)
+            if not local:
+                continue
+            matrix = block.mix.attention_matrix(local)
+            if matrix is not None:
+                matrices[f"layers.{index}.mix"] = matrix
+        return matrices
+
     def mechanism_activity(self, captures: Mapping[str, torch.Tensor]) -> dict[str, float]:
         """Per-layer §6.3 activity, delegated to each primitive.
 
@@ -438,12 +520,7 @@ class FeatureModel(nn.Module):
         """
         report: dict[str, float] = {}
         for index, block in enumerate(self.blocks):
-            prefix = f"layers.{index}.mix."
-            local = {
-                key[len(prefix):]: value
-                for key, value in captures.items()
-                if key.startswith(prefix)
-            }
+            local = self._local_captures(index, captures)
             if not local:
                 continue
             for name, value in block.mix.mechanism_activity(local).items():
@@ -488,6 +565,58 @@ class FeatureModel(nn.Module):
             ),
             "mixing": mixing,
         }
+
+
+def attention_distribution_statistics(weights: torch.Tensor) -> dict[str, float]:
+    """§6.3 statistics of a row-stochastic mixing matrix. Shared by A0 and A1.
+
+    ``weights`` is ``(B, H, T, T)`` with each row a distribution over the causal
+    prefix. Five numbers, each with a named degenerate value:
+
+    ``entropy_nats``       mean row entropy.
+    ``entropy_ratio``      that entropy divided by the entropy of a uniform
+                           distribution over the same causal window. ``1.0``
+                           means the mechanism selects nothing — it is a running
+                           average, and the model is effectively a position-wise
+                           MLP over a prefix mean.
+    ``self_mass``          mean weight on the query's own position. ``1.0`` means
+                           no transport happens at all.
+    ``off_diagonal_mass``  ``1 - self_mass``: the fraction of the read that comes
+                           from somewhere else. This is the one that answers
+                           "did the sequence mixer mix".
+    ``max_weight``         mean largest single weight; a sharp retrieval is near
+                           ``1.0`` and a diffuse one near ``1/(t+1)``.
+
+    Row ``t = 0`` is excluded from the entropy statistics because its causal
+    window holds one key, so its entropy is zero by arithmetic rather than by
+    anything the mechanism learned.
+
+    Lives here, not in A0, because A1 induces the same object by different
+    arithmetic and the two are only comparable if they are measured by the same
+    code. Two copies of this that agreed today would be one copy each of two
+    measures tomorrow, and prompt 13's mechanism comparison would be reading a
+    difference between rulers as a difference between architectures.
+    """
+    weights = weights.detach().to(torch.float64)
+    batch, heads, seq_len, _ = weights.shape
+    positions = torch.arange(seq_len, device=weights.device)
+
+    safe = weights.clamp_min(1e-30)
+    entropy = -(weights * safe.log()).sum(dim=-1)  # (B, H, T)
+    uniform = torch.log((positions + 1).to(torch.float64))  # entropy of a flat causal window
+    diagonal = weights[..., positions, positions]
+    maximum = weights.max(dim=-1).values
+
+    informative = positions >= 1
+    ratio = entropy[..., informative] / uniform[informative]
+    return {
+        "entropy_nats": float(entropy[..., informative].mean()),
+        "entropy_ratio": float(ratio.mean()),
+        "self_mass": float(diagonal.mean()),
+        "off_diagonal_mass": float(1.0 - diagonal.mean()),
+        "max_weight": float(maximum.mean()),
+        "n_rows": float(batch * heads * seq_len),
+    }
 
 
 def count_parameters(model: nn.Module) -> int:

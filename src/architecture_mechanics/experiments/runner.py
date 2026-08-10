@@ -361,23 +361,27 @@ def capture_mechanism(
 ) -> dict:
     """One instrumented forward pass, then the §6.3 activity report.
 
-    Bounded to ``limit`` examples because the attention weight tensor is the one
-    object here whose size is quadratic in sequence length.
+    Bounded to ``limit`` examples because the tensors this pass captures are the
+    largest in the laboratory: A0's attention weights are quadratic in sequence
+    length, and A1's state trajectory is ``T`` copies of a ``d_head`` square.
+
+    Which sites to capture and which of them form a row-stochastic mixing matrix
+    are both asked of the model. A0 answers with the weight matrix it
+    materialises and A1 with the feature maps its matrix is derived from; a
+    runner that knew either answer would need editing for every architecture,
+    and §6.3's measures would drift apart between them.
     """
     model.eval()
     rows = min(limit, batch.n_examples)
-    hooks = CaptureContext(capture=("weights",))
+    hooks = CaptureContext(capture=model.activity_sites())
     model(batch.inputs[:rows], hooks=hooks)
     captures = dict(hooks.captures)
 
     distribution = model.mechanism_activity(captures)
-    retrieval: dict = {}
-    for key, weights in captures.items():
-        if not key.endswith(".weights"):
-            continue
-        layer = key[: -len(".weights")]
-        report = attention_retrieval(weights, dataset.programs[:rows], layer=layer)
-        retrieval[layer] = report
+    retrieval: dict = {
+        layer: attention_retrieval(matrix, dataset.programs[:rows], layer=layer)
+        for layer, matrix in model.attention_matrices(captures).items()
+    }
 
     verdict = mechanism_is_active(distribution, retrieval)
     return {

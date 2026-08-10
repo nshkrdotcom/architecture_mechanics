@@ -36,6 +36,7 @@ from architecture_mechanics.models.common import (
     FeatureModel,
     MixingPrimitive,
     ModelConfig,
+    attention_distribution_statistics,
     parameter_matched_config,
     register_primitive,
 )
@@ -80,6 +81,7 @@ class SoftmaxAttention(MixingPrimitive):
 
     kind = "softmax"
     SITES = ("input", "q", "k", "v", "scores", "weights", "readout", "output")
+    ACTIVITY_SITES = ("weights",)
 
     def __init__(self, config: ModelConfig, layer_index: int) -> None:
         super().__init__(config, layer_index)
@@ -224,49 +226,16 @@ class SoftmaxAttention(MixingPrimitive):
     def mechanism_activity(self, captures: Mapping[str, torch.Tensor]) -> dict[str, float]:
         """Was the attention actually used, and for what?
 
-        Four numbers, each with a named degenerate value:
-
-        ``entropy_nats``       mean row entropy of the attention distribution.
-        ``entropy_ratio``      that entropy divided by the entropy of a uniform
-                               distribution over the same causal window. ``1.0``
-                               means the mechanism selects nothing — it is a
-                               running average, and the model is effectively a
-                               position-wise MLP over a prefix mean.
-        ``self_mass``          mean weight on the query's own position. ``1.0``
-                               means no transport happens at all.
-        ``off_diagonal_mass``  ``1 - self_mass``: the fraction of the read that
-                               comes from somewhere else. This is the one that
-                               answers "did the sequence mixer mix".
-        ``max_weight``         mean largest single weight; a sharp retrieval is
-                               near ``1.0`` and a diffuse one near ``1/(t+1)``.
-
-        Row ``t = 0`` is excluded from the entropy statistics because its causal
-        window holds one key, so its entropy is zero by arithmetic rather than
-        by anything the mechanism learned.
+        The five statistics of a row-stochastic mixing matrix, computed by
+        :func:`~architecture_mechanics.models.common.attention_distribution_statistics`
+        — shared with A1, whose induced matrix is a different arithmetic route to
+        the same object, so that a difference between the two architectures
+        cannot be a difference between two copies of the measurement.
         """
         weights = captures.get("weights")
         if weights is None:
             return {}
-        weights = weights.detach().to(torch.float64)
-        batch, heads, seq_len, _ = weights.shape
-        positions = torch.arange(seq_len, device=weights.device)
-
-        safe = weights.clamp_min(1e-30)
-        entropy = -(weights * safe.log()).sum(dim=-1)  # (B, H, T)
-        uniform = torch.log((positions + 1).to(torch.float64))  # entropy of a flat causal window
-        diagonal = weights[..., positions, positions]
-        maximum = weights.max(dim=-1).values
-
-        informative = positions >= 1
-        ratio = entropy[..., informative] / uniform[informative]
-        return {
-            "entropy_nats": float(entropy[..., informative].mean()),
-            "entropy_ratio": float(ratio.mean()),
-            "self_mass": float(diagonal.mean()),
-            "off_diagonal_mass": float(1.0 - diagonal.mean()),
-            "max_weight": float(maximum.mean()),
-            "n_rows": float(batch * heads * seq_len),
-        }
+        return attention_distribution_statistics(weights)
 
 
 # --------------------------------------------------------------------------- #
