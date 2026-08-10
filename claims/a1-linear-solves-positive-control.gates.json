@@ -1,0 +1,155 @@
+{
+  "schema": "am.claim_gates.v1",
+  "claim_id": "a1-linear-solves-positive-control",
+  "rungs": {
+    "0_implementation_survives": {
+      "passed": true,
+      "evidence": [
+        "runs/R0-linear-positive_control-s20260809-68499663fe1b",
+        "runs/R1-linear-positive_control-s20260809-31b24fc8b45b",
+        "runs/R2-linear-capacity_stressed-s20260809-298a886bf017",
+        "runs/R2-linear-capacity_stressed-s20260809-45ff18090e05",
+        "runs/R2-linear-capacity_stressed-s20260809-ab717ec883ef"
+      ],
+      "evaluations": [
+        {
+          "source": "runs/R0-linear-positive_control-s20260809-68499663fe1b",
+          "passed": true,
+          "measured": {
+            "invariant_checks": 7,
+            "invariant_failures": [],
+            "numerical_failure": false,
+            "reached_final_evaluation": true,
+            "run_id": "R0-linear-positive_control-s20260809-68499663fe1b"
+          },
+          "evaluated_by": "evaluate_rungs/r0_invariants",
+          "evaluated_utc": "2026-08-10T17:26:19+00:00"
+        },
+        {
+          "source": "runs/R1-linear-positive_control-s20260809-31b24fc8b45b",
+          "passed": true,
+          "measured": {
+            "invariant_checks": 7,
+            "invariant_failures": [],
+            "numerical_failure": false,
+            "reached_final_evaluation": true,
+            "run_id": "R1-linear-positive_control-s20260809-31b24fc8b45b"
+          },
+          "evaluated_by": "evaluate_rungs/r0_invariants",
+          "evaluated_utc": "2026-08-10T17:28:03+00:00"
+        },
+        {
+          "source": "runs/R2-linear-capacity_stressed-s20260809-298a886bf017",
+          "passed": true,
+          "measured": {
+            "invariant_checks": 7,
+            "invariant_failures": [],
+            "numerical_failure": false,
+            "reached_final_evaluation": true,
+            "run_id": "R2-linear-capacity_stressed-s20260809-298a886bf017"
+          },
+          "evaluated_by": "evaluate_rungs/r0_invariants",
+          "evaluated_utc": "2026-08-10T17:34:36+00:00"
+        },
+        {
+          "source": "runs/R2-linear-capacity_stressed-s20260809-45ff18090e05",
+          "passed": true,
+          "measured": {
+            "invariant_checks": 7,
+            "invariant_failures": [],
+            "numerical_failure": false,
+            "reached_final_evaluation": true,
+            "run_id": "R2-linear-capacity_stressed-s20260809-45ff18090e05"
+          },
+          "evaluated_by": "evaluate_rungs/r0_invariants",
+          "evaluated_utc": "2026-08-10T17:35:49+00:00"
+        },
+        {
+          "source": "runs/R2-linear-capacity_stressed-s20260809-ab717ec883ef",
+          "passed": true,
+          "measured": {
+            "invariant_checks": 7,
+            "invariant_failures": [],
+            "numerical_failure": false,
+            "reached_final_evaluation": true,
+            "run_id": "R2-linear-capacity_stressed-s20260809-ab717ec883ef"
+          },
+          "evaluated_by": "evaluate_rungs/r0_invariants",
+          "evaluated_utc": "2026-08-10T17:33:09+00:00"
+        }
+      ]
+    },
+    "1_mechanism_is_active": {
+      "passed": true,
+      "evidence": [
+        "runs/R1-linear-positive_control-s20260809-31b24fc8b45b",
+        "runs/R2-linear-capacity_stressed-s20260809-298a886bf017",
+        "runs/R2-linear-capacity_stressed-s20260809-45ff18090e05",
+        "runs/R2-linear-capacity_stressed-s20260809-ab717ec883ef"
+      ],
+      "evaluations": [
+        {
+          "source": "runs/R1-linear-positive_control-s20260809-31b24fc8b45b",
+          "passed": true,
+          "measured": {
+            "active": true,
+            "best_off_diagonal_mass": 0.7312927391346488,
+            "best_entropy_ratio": 0.7203016741449201,
+            "best_retrieval_lift": 11.921152355859846,
+            "reasons": [],
+            "mechanism_version": "mech-1.0.0",
+            "run_id": "R1-linear-positive_control-s20260809-31b24fc8b45b"
+          },
+          "evaluated_by": "evaluate_rungs/mechanism_is_active",
+          "evaluated_utc": "2026-08-10T17:28:03+00:00"
+        },
+        {
+          "source": "runs/R2-linear-capacity_stressed-s20260809-298a886bf017",
+          "passed": true,
+          "measured": {
+            "active": true,
+            "best_off_diagonal_mass": 0.8925101611412412,
+            "best_entropy_ratio": 0.8414074546537617,
+            "best_retrieval_lift": 32.98144632581108,
+            "reasons": [],
+            "mechanism_version": "mech-1.0.0",
+            "run_id": "R2-linear-capacity_stressed-s20260809-298a886bf017"
+          },
+          "evaluated_by": "evaluate_rungs/mechanism_is_active",
+          "evaluated_utc": "2026-08-10T17:34:36+00:00"
+        },
+        {
+          "source": "runs/R2-linear-capacity_stressed-s20260809-45ff18090e05",
+          "passed": true,
+          "measured": {
+            "active": true,
+            "best_off_diagonal_mass": 0.8994057439917144,
+            "best_entropy_ratio": 0.6925961378043186,
+            "best_retrieval_lift": 33.47893629307447,
+            "reasons": [],
+            "mechanism_version": "mech-1.0.0",
+            "run_id": "R2-linear-capacity_stressed-s20260809-45ff18090e05"
+          },
+          "evaluated_by": "evaluate_rungs/mechanism_is_active",
+          "evaluated_utc": "2026-08-10T17:35:49+00:00"
+        },
+        {
+          "source": "runs/R2-linear-capacity_stressed-s20260809-ab717ec883ef",
+          "passed": true,
+          "measured": {
+            "active": true,
+            "best_off_diagonal_mass": 0.9015073141317966,
+            "best_entropy_ratio": 0.8855006803448083,
+            "best_retrieval_lift": 39.58038379391737,
+            "reasons": [],
+            "mechanism_version": "mech-1.0.0",
+            "run_id": "R2-linear-capacity_stressed-s20260809-ab717ec883ef"
+          },
+          "evaluated_by": "evaluate_rungs/mechanism_is_active",
+          "evaluated_utc": "2026-08-10T17:33:09+00:00"
+        }
+      ]
+    }
+  },
+  "highest_supported_rung": 1
+}
