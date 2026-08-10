@@ -7,6 +7,7 @@
       "evidence": [
         "runs/R0-softmax-positive_control-s20260809-c8f7b522f5e8",
         "runs/R1-softmax-positive_control-s20260809-5d8d0889d7f2",
+        "runs/R1-softmax-positive_control-s20260809-c921445d74b8",
         "runs/R1-softmax-positive_control-s20260810-6c99847fe291",
         "runs/R1-softmax-positive_control-s20260811-526e0e7131bf",
         "runs/R2-softmax-capacity_stressed-s20260809-0b166c31b0be",
@@ -39,6 +40,19 @@
           },
           "evaluated_by": "evaluate_rungs/r0_invariants",
           "evaluated_utc": "2026-08-10T11:10:14+00:00"
+        },
+        {
+          "source": "runs/R1-softmax-positive_control-s20260809-c921445d74b8",
+          "passed": true,
+          "measured": {
+            "invariant_checks": 7,
+            "invariant_failures": [],
+            "numerical_failure": false,
+            "reached_final_evaluation": true,
+            "run_id": "R1-softmax-positive_control-s20260809-c921445d74b8"
+          },
+          "evaluated_by": "evaluate_rungs/r0_invariants",
+          "evaluated_utc": "2026-08-10T16:32:41+00:00"
         },
         {
           "source": "runs/R1-softmax-positive_control-s20260810-6c99847fe291",
@@ -111,6 +125,7 @@
       "passed": true,
       "evidence": [
         "runs/R1-softmax-positive_control-s20260809-5d8d0889d7f2",
+        "runs/R1-softmax-positive_control-s20260809-c921445d74b8",
         "runs/R1-softmax-positive_control-s20260810-6c99847fe291",
         "runs/R1-softmax-positive_control-s20260811-526e0e7131bf",
         "runs/R2-softmax-capacity_stressed-s20260809-0b166c31b0be",
@@ -132,6 +147,21 @@
           },
           "evaluated_by": "evaluate_rungs/mechanism_is_active",
           "evaluated_utc": "2026-08-10T11:10:14+00:00"
+        },
+        {
+          "source": "runs/R1-softmax-positive_control-s20260809-c921445d74b8",
+          "passed": true,
+          "measured": {
+            "active": true,
+            "best_off_diagonal_mass": 0.7208686180110702,
+            "best_entropy_ratio": 0.6943757291704968,
+            "best_retrieval_lift": 11.984319226350637,
+            "reasons": [],
+            "mechanism_version": "mech-1.0.0",
+            "run_id": "R1-softmax-positive_control-s20260809-c921445d74b8"
+          },
+          "evaluated_by": "evaluate_rungs/mechanism_is_active",
+          "evaluated_utc": "2026-08-10T16:32:41+00:00"
         },
         {
           "source": "runs/R1-softmax-positive_control-s20260810-6c99847fe291",
