@@ -81,7 +81,11 @@ from architecture_mechanics.metrics.mechanism import (
     mechanism_is_active,
 )
 from architecture_mechanics.models.common import FeatureModel, ModelOutput, parameter_report
-from architecture_mechanics.reporting.evidence_bundle import FINAL_RUNGS, write_bundle
+from architecture_mechanics.reporting.evidence_bundle import (
+    FINAL_RUNGS,
+    verify_bundle,
+    write_bundle,
+)
 from architecture_mechanics.seeding import SeedRecord, seed_everything
 
 __all__ = ["RunResult", "evaluate", "main", "run", "run_r0_checks"]
@@ -452,6 +456,7 @@ def run(
     claim: str | Path | None = None,
     emit_bundle: bool = False,
     claims_dir: Path | None = None,
+    overwrite: bool = False,
 ) -> RunResult:
     """Train, evaluate, and report. The whole entry point.
 
@@ -468,6 +473,12 @@ def run(
     ``emit_bundle`` makes §8.4 completeness fatal. The bundle for the rung is
     written either way — provenance is not an opt-in — but with this flag the
     run refuses to finish having produced an incomplete one.
+
+    ``overwrite`` replaces an already-recorded run of the same ID. Without it, a
+    repeat that agrees with what is on disk leaves it alone and one that
+    disagrees is refused: the ID is a digest of the config, the source tree and
+    the seed, so a disagreement means something outside all three moved and is
+    worth finding out about before evidence is replaced.
     """
     started = time.perf_counter()
     started_utc = utc_now()
@@ -547,7 +558,10 @@ def run(
             "R0 invariants hold" if result.passed else f"R0 failures: {failed_checks}"
         )
         result.cost = _cost(started, device)
-        _record(result, out_dir, manifest, model, packet, emit_bundle, verbose, claims_dir)
+        _record(
+            result, out_dir, manifest, model, packet, emit_bundle, verbose, claims_dir,
+            overwrite,
+        )
         if verbose:
             _print_checks(result.checks)
         return result
@@ -556,7 +570,10 @@ def run(
         result.passed = False
         result.verdict = f"refusing to train: R0 failures {failed_checks}"
         result.cost = _cost(started, device)
-        _record(result, out_dir, manifest, model, packet, emit_bundle, verbose, claims_dir)
+        _record(
+            result, out_dir, manifest, model, packet, emit_bundle, verbose, claims_dir,
+            overwrite,
+        )
         return result
 
     train_started = time.perf_counter()
@@ -611,7 +628,9 @@ def run(
 
     result.cost = _cost(started, device) | {"train_seconds": round(train_seconds, 3)}
     result.cost["r4_five_seed_estimate_seconds"] = round(5 * (time.perf_counter() - started), 1)
-    _record(result, out_dir, manifest, model, packet, emit_bundle, verbose, claims_dir)
+    _record(
+        result, out_dir, manifest, model, packet, emit_bundle, verbose, claims_dir, overwrite
+    )
     if verbose:
         _print_result(result)
     return result
@@ -847,6 +866,7 @@ def _record(
     emit_bundle: bool,
     verbose: bool,
     claims_dir: Path | None = None,
+    overwrite: bool = False,
 ) -> None:
     """Write the run directory: results, claim gates, then the §8.4 bundle.
 
@@ -857,7 +877,17 @@ def _record(
     if out_dir is None:
         return
     run_dir = Path(out_dir) / result.run_id
-    _write(result, run_dir)
+    repeat = None if overwrite else _differences_from_recorded(result, run_dir)
+    if repeat:
+        raise RunConfigError(
+            f"{result.run_id} is already recorded in {run_dir} and this run disagrees with "
+            f"it on {repeat}. The run ID is a digest of the config, the source tree and the "
+            "seed, so two runs sharing one should agree — investigate the disagreement "
+            "before overwriting evidence, or pass overwrite=True (--overwrite) if you mean to."
+        )
+    # An agreeing repeat keeps the recorded copy: it says the same thing, and the
+    # copy on disk is the one the manifest's evidence index hashed.
+    _write(result, run_dir, science=repeat != [])
     claims_dir = Path(claims_dir) if claims_dir is not None else lab_root() / "claims"
 
     gates_dict = None
@@ -882,6 +912,16 @@ def _record(
                 f"{gates.highest_supported_rung}"
             )
 
+    # A re-run that agrees with a complete recorded bundle leaves it alone. The
+    # science it would rewrite is byte-identical; what is *not* identical is the
+    # clock and the commit the manifest was written at, so rewriting would churn
+    # the provenance record to say the same thing about a later moment. §8.3
+    # wants a re-run to be *noticed*, not to quietly replace its predecessor.
+    if repeat == [] and not verify_bundle(run_dir):
+        if verbose:
+            print(f"  repeat   identical to the run already recorded in {run_dir.name}; kept")
+        return
+
     manifest.finished_utc = utc_now()
     report = write_bundle(
         result=result,
@@ -899,7 +939,62 @@ def _record(
         print(f"  bundle   {len(report.files)} files, {manifest.ladder_rung} complete")
 
 
-def _write(result: RunResult, directory: Path) -> None:
+def _differences_from_recorded(result: RunResult, run_dir: Path) -> list[str] | None:
+    """Which of the science files a recorded run of this ID disagrees with.
+
+    ``None`` when there is no recorded run to compare against, ``[]`` when the
+    two agree. Only ``summary.json`` and ``metrics.jsonl`` are compared: they are
+    the result. ``manifest.json`` legitimately differs on the clock and the
+    commit, and ``cost.json`` measures the machine.
+
+    ``seeding.call_index`` is excluded. It counts seedings *in this process*, so
+    a second run in one interpreter reports 1 where the recorded run reported 0
+    — a true statement about the process and none at all about the experiment.
+    Everything else in the seeding block is compared.
+    """
+    run_dir = Path(run_dir)
+    recorded = {name: run_dir / name for name in ("summary.json", "metrics.jsonl")}
+    if not all(path.is_file() for path in recorded.values()):
+        return None
+
+    fresh = _run_payloads(result)
+    differing = []
+    on_disk = _without_process_facts(json.loads(recorded["summary.json"].read_text()))
+    if on_disk != _without_process_facts(json.loads(fresh["summary.json"])):
+        differing.append("summary.json")
+    if recorded["metrics.jsonl"].read_text() != fresh["metrics.jsonl"]:
+        differing.append("metrics.jsonl")
+    return differing
+
+
+def _without_process_facts(summary: dict) -> dict:
+    seeding = {k: v for k, v in summary.get("seeding", {}).items() if k != "call_index"}
+    return summary | {"seeding": seeding}
+
+
+def _run_payloads(result: RunResult) -> dict[str, str]:
+    """The three files a run writes, as text, without touching the disk."""
+    payload = result.as_dict()
+    cost = payload.pop("cost", {})
+    # Free VRAM at start is a fact about the machine at that instant, not about
+    # the run; it travels with the timings so that what remains is reproducible.
+    free_memory = payload.get("device", {}).pop("free_memory_bytes", None)
+    cost = {"run_id": result.run_id, "device_free_memory_bytes": free_memory} | cost
+    return {
+        "summary.json": json.dumps(payload, indent=2, default=_json_default) + "\n",
+        "cost.json": json.dumps(cost, indent=2, default=_json_default) + "\n",
+        "metrics.jsonl": "".join(
+            json.dumps(entry, default=_json_default) + "\n" for entry in result.history
+        ),
+    }
+
+
+def _write(result: RunResult, directory: Path, *, science: bool = True) -> None:
+    """Write the run's own files. ``science=False`` writes only ``cost.json``.
+
+    Timings and peak memory are a fact about *this* execution and are rewritten
+    even on a repeat; the result files belong to the run that was recorded.
+    """
     directory = Path(directory)
     if directory.name != result.run_id:
         # Called once with the run *root* instead of the run directory, which
@@ -910,19 +1005,9 @@ def _write(result: RunResult, directory: Path) -> None:
             f"is not .../{result.run_id}"
         )
     directory.mkdir(parents=True, exist_ok=True)
-
-    payload = result.as_dict()
-    cost = payload.pop("cost", {})
-    # Free VRAM at start is a fact about the machine at that instant, not about
-    # the run; it travels with the timings so that what remains is reproducible.
-    free_memory = payload.get("device", {}).pop("free_memory_bytes", None)
-    cost = {"run_id": result.run_id, "device_free_memory_bytes": free_memory} | cost
-
-    (directory / "summary.json").write_text(json.dumps(payload, indent=2, default=_json_default) + "\n")
-    (directory / "cost.json").write_text(json.dumps(cost, indent=2, default=_json_default) + "\n")
-    with (directory / "metrics.jsonl").open("w") as handle:
-        for entry in result.history:
-            handle.write(json.dumps(entry, default=_json_default) + "\n")
+    for name, text in _run_payloads(result).items():
+        if science or name == "cost.json":
+            (directory / name).write_text(text)
 
 
 def _json_default(value: object) -> object:
@@ -977,6 +1062,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--out", default="runs", help="run directory root, or 'none'")
     parser.add_argument("--emit-bundle", action="store_true",
                         help="refuse to finish having written an incomplete §8.4 evidence bundle")
+    parser.add_argument("--overwrite", action="store_true",
+                        help="replace an already-recorded run of the same ID; without it a "
+                             "repeat that agrees is kept and one that disagrees is refused")
     parser.add_argument("--assert-pass", action="store_true",
                         help="exit non-zero unless the rung's verdict passes")
     parser.add_argument("--quiet", action="store_true")
@@ -998,6 +1086,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         verbose=not args.quiet,
         claim=args.claim,
         emit_bundle=args.emit_bundle,
+        overwrite=args.overwrite,
     )
 
     if args.assert_pass and not result.passed:

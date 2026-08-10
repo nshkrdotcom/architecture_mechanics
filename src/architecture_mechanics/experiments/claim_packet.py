@@ -474,16 +474,34 @@ class ClaimGates:
                 f"rung {evaluation.rung} ({evaluation.name}) passed with no evidence"
             )
         entry = self.rungs.setdefault(evaluation.key, {})
-        history = [record for record in entry.get("evaluations", []) if record.get("source") != source]
-        history.append(
-            {
-                "source": source,
-                "passed": bool(evaluation.passed),
-                "measured": evaluation.measured,
-                "evaluated_by": evaluation.evaluated_by,
-                "evaluated_utc": datetime.now(UTC).replace(microsecond=0).isoformat(),
-            }
+        earlier = next(
+            (
+                record
+                for record in entry.get("evaluations", [])
+                if record.get("source") == source
+            ),
+            None,
         )
+        history = [record for record in entry.get("evaluations", []) if record.get("source") != source]
+        record = {
+            "source": source,
+            "passed": bool(evaluation.passed),
+            "measured": evaluation.measured,
+            "evaluated_by": evaluation.evaluated_by,
+        }
+        # An identical re-measurement of the same run is not a new evaluation.
+        # Stamping it with the current clock would make the gates file change on
+        # every re-run while saying exactly the same thing, and "when was this
+        # measured" honestly means the first time, not the last.
+        unchanged = earlier is not None and all(
+            earlier.get(key) == value for key, value in record.items()
+        )
+        record["evaluated_utc"] = (
+            earlier["evaluated_utc"]
+            if unchanged
+            else datetime.now(UTC).replace(microsecond=0).isoformat()
+        )
+        history.append(record)
         history.sort(key=lambda record: record["source"])
         evidence = sorted({record["source"] for record in history if record["passed"]})
         self.rungs[evaluation.key] = {

@@ -97,6 +97,53 @@ def test_the_run_id_is_the_same_on_a_second_identical_run(tmp_path: Path, claim:
     assert len(list((tmp_path / "runs").iterdir())) == 1
 
 
+def test_an_agreeing_repeat_leaves_the_recorded_run_untouched(tmp_path: Path, claim: Path):
+    """Re-running the same thing must not churn the provenance record.
+
+    The science is byte-identical; the manifest's clock and commit are not. A
+    rewrite would restate the same result as of a later moment, and the gates
+    file would gain a new evaluation timestamp for a measurement nobody remade.
+    """
+    result = _r0(tmp_path, claim, emit_bundle=True)
+    run_dir = tmp_path / "runs" / result.run_id
+    before = {
+        path.name: path.read_bytes()
+        for path in [*run_dir.iterdir(), claim.parent / "t-fixture.gates.json"]
+        if path.is_file() and path.name != "cost.json"
+    }
+
+    _r0(tmp_path, claim, emit_bundle=True)
+
+    after = {
+        path.name: path.read_bytes()
+        for path in [*run_dir.iterdir(), claim.parent / "t-fixture.gates.json"]
+        if path.is_file() and path.name != "cost.json"
+    }
+    assert after == before
+
+
+def test_a_repeat_that_disagrees_is_refused_rather_than_overwriting(tmp_path: Path, claim: Path):
+    """Same identity, different result: something outside config+source+seed moved."""
+    result = _r0(tmp_path, claim)
+    summary = tmp_path / "runs" / result.run_id / "summary.json"
+    tampered = json.loads(summary.read_text())
+    tampered["passed"] = False
+    summary.write_text(json.dumps(tampered, indent=2) + "\n")
+
+    with pytest.raises(RunConfigError, match="already recorded"):
+        _r0(tmp_path, claim)
+    assert json.loads(summary.read_text())["passed"] is False, "evidence must survive the refusal"
+
+
+def test_overwrite_replaces_a_disagreeing_recorded_run(tmp_path: Path, claim: Path):
+    result = _r0(tmp_path, claim)
+    summary = tmp_path / "runs" / result.run_id / "summary.json"
+    summary.write_text(json.dumps({"passed": False}, indent=2) + "\n")
+
+    _r0(tmp_path, claim, overwrite=True)
+    assert json.loads(summary.read_text())["passed"] is True
+
+
 def test_recording_a_run_updates_the_claim_gates_from_measurement(tmp_path: Path, claim: Path):
     result = _r0(tmp_path, claim)
     gates = load_gates(claim.parent / "t-fixture.gates.json")
