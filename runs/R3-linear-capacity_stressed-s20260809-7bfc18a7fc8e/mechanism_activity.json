@@ -1,0 +1,68 @@
+{
+  "schema": "am.mechanism_activity.v1",
+  "run_id": "R3-linear-capacity_stressed-s20260809-7bfc18a7fc8e",
+  "empty": false,
+  "mechanism_activity_metric": "off_diagonal_mass, entropy_ratio, retrieval_lift",
+  "n_examples": 256,
+  "distribution": {
+    "layers.0.entropy_nats": 2.1730367730593665,
+    "layers.0.entropy_ratio": 0.7583835079651853,
+    "layers.0.self_mass": 0.13726287087676842,
+    "layers.0.off_diagonal_mass": 0.8627371291232315,
+    "layers.0.max_weight": 0.36634618274982717,
+    "layers.0.n_rows": 24576.0,
+    "layers.0.normalizer_mean": 2.412386397429817,
+    "layers.0.state_norm": 38.71969542466702,
+    "layers.0.state_growth_ratio": 1644.1033071452202,
+    "layers.0.write_norm": 2.6503563346851804,
+    "layers.0.write_to_state_ratio": 0.10839983100007637,
+    "layers.0.readout_magnitude": 5.47777210513348,
+    "layers.1.entropy_nats": 2.915282800252618,
+    "layers.1.entropy_ratio": 0.9771032151049208,
+    "layers.1.self_mass": 0.10345594867738206,
+    "layers.1.off_diagonal_mass": 0.8965440513226179,
+    "layers.1.max_weight": 0.12881583576338373,
+    "layers.1.n_rows": 24576.0,
+    "layers.1.normalizer_mean": 1067.2334843146994,
+    "layers.1.state_norm": 200.63000708073315,
+    "layers.1.state_growth_ratio": 49.32548107929956,
+    "layers.1.write_norm": 12.482313220016886,
+    "layers.1.write_to_state_ratio": 0.09728476919011812,
+    "layers.1.readout_magnitude": 1.2385808917160839
+  },
+  "retrieval": {
+    "layers.0.mix": {
+      "layer": "layers.0.mix",
+      "n_steps": 256,
+      "source_mass": 0.7577051459303838,
+      "best_head_source_mass": 0.8009479562166458,
+      "chance_mass": 0.02083333333333333,
+      "lift": 36.36984700465843,
+      "argmax_hit_rate": 0.84375
+    },
+    "layers.1.mix": {
+      "layer": "layers.1.mix",
+      "n_steps": 256,
+      "source_mass": 0.05796120138483812,
+      "best_head_source_mass": 0.07981293152258592,
+      "chance_mass": 0.02083333333333333,
+      "lift": 2.7821376664722304,
+      "argmax_hit_rate": 0.28125
+    }
+  },
+  "verdict": {
+    "active": true,
+    "reasons": [],
+    "best_off_diagonal_mass": 0.8965440513226179,
+    "best_entropy_ratio": 0.7583835079651853,
+    "best_retrieval_lift": 36.36984700465843,
+    "retrieval_measurable": true,
+    "gates": {
+      "min_off_diagonal_mass": 0.05,
+      "max_entropy_ratio": 0.95,
+      "min_retrieval_lift": 2.0
+    },
+    "mechanism_version": "mech-1.0.0"
+  },
+  "mechanism_version": "mech-1.0.0"
+}

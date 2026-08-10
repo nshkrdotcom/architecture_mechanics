@@ -1,0 +1,93 @@
+{
+  "schema": "am.comparison_declaration.v1",
+  "name": "a0_vs_a1_pilot-R3-parameter_matched-associations-a2-s20260809",
+  "comparison": "a0_vs_a1_pilot",
+  "claim": "a1-vs-a0-t1-capability-gap",
+  "primary_metric": "associative_recall_accuracy",
+  "primary_metric_source": "claims/a1-vs-a0-t1-capability-gap.yml#primary_metric_key",
+  "control_run": "R3-softmax-capacity_stressed-s20260809-0a9ecac858d0",
+  "candidate_runs": [
+    "R3-linear-capacity_stressed-s20260809-599478229141"
+  ],
+  "matching_strategy": "parameter_matched",
+  "permitted_differences": {},
+  "ladder": "R3",
+  "task": "T1",
+  "cell": "associations-a2",
+  "seed": 20260809,
+  "seed_set": [
+    20260809
+  ],
+  "control_arch": "softmax",
+  "candidate_arch": "linear",
+  "plan": "reports/comparisons/planned/a0_vs_a1_pilot-R3-parameter_matched.json",
+  "parameter_accounting": {
+    "strategy": "parameter_matched",
+    "control": {
+      "arch": "softmax",
+      "d_model": 64,
+      "n_layers": 2,
+      "parameters": 127288
+    },
+    "candidate": {
+      "arch": "linear",
+      "d_model": 64,
+      "n_layers": 2,
+      "parameters": 127288
+    },
+    "parameter_difference": 0,
+    "relative_difference": 0.0,
+    "adjustment": {
+      "adjusted": false,
+      "reason": "the control already has exactly the candidate's parameter count at this width, so the width-matched and parameter-matched comparisons are the same comparison",
+      "coincides_with_width_matched": true
+    }
+  },
+  "config_differences": {},
+  "compute_ledger": {
+    "control": {
+      "run_id": "R3-softmax-capacity_stressed-s20260809-0a9ecac858d0",
+      "declared_steps": 3000,
+      "measured_steps": 3000,
+      "stopped_early": false,
+      "batch_size": 128,
+      "examples_processed": 384000,
+      "train_examples": null,
+      "evaluations": 6,
+      "wall_clock_seconds": 79.298,
+      "train_seconds": 29.421,
+      "peak_allocated_mib": 1344.92,
+      "cost_source": "cost.json"
+    },
+    "candidate": {
+      "run_id": "R3-linear-capacity_stressed-s20260809-599478229141",
+      "declared_steps": 3000,
+      "measured_steps": 3000,
+      "stopped_early": false,
+      "batch_size": 128,
+      "examples_processed": 384000,
+      "train_examples": null,
+      "evaluations": 6,
+      "wall_clock_seconds": 98.634,
+      "train_seconds": 49.252,
+      "peak_allocated_mib": 2904.92,
+      "cost_source": "cost.json"
+    },
+    "parity": {
+      "measured_steps_equal": true,
+      "examples_processed_equal": true,
+      "candidate_did_more_work": false,
+      "wall_clock_ratio_candidate_over_control": 1.674,
+      "wall_clock_is_declared_as_the_claim": false,
+      "verdict": "matched"
+    }
+  },
+  "checks": {
+    "runs_match_the_declared_configs": true,
+    "config_diff_within_permitted_differences": true,
+    "split_hashes_identical": true,
+    "seed_is_shared_by_both_arms": true,
+    "measured_work_matched": true
+  },
+  "resolved_utc": "2026-08-10T20:54:44+00:00"
+}

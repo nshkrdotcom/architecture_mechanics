@@ -1,0 +1,217 @@
+{
+  "schema": "am.manifest.v1",
+  "run_id": "R3-linear-capacity_stressed-s20260809-2c7c5ccfb3d8",
+  "ladder_rung": "R3",
+  "git_commit": "37b1bf3c0e0f14a496cbfd0839d8fba94a567589",
+  "git_branch": "main",
+  "git_source": "work_tree",
+  "dirty_tree": false,
+  "dirty_paths": [],
+  "config": {
+    "ladder": "R3",
+    "seed": 20260809,
+    "device": "cuda",
+    "capture_examples": 256,
+    "geometry_examples": 1024,
+    "arch": {
+      "arch": "linear",
+      "d_model": 64,
+      "n_layers": 2,
+      "n_heads": 2,
+      "mlp_ratio": 4,
+      "bias": true,
+      "init_std": 0.02,
+      "residual_write": "ordinary",
+      "positional": "learned",
+      "scale_residual_projections": true
+    },
+    "data": {
+      "condition": "capacity_stressed",
+      "n_train": 16384,
+      "n_eval": 4096,
+      "data_seed": null,
+      "generator_overrides": {
+        "activation_prob": 0.06
+      }
+    },
+    "optim": {
+      "optimizer": "adamw",
+      "learning_rate": 0.003,
+      "beta1": 0.9,
+      "beta2": 0.95,
+      "eps": 1e-08,
+      "weight_decay": 0.01,
+      "decay_matrices_only": true,
+      "grad_clip": 1.0,
+      "schedule": "cosine",
+      "warmup_fraction": 0.1,
+      "min_lr_fraction": 0.1,
+      "batch_size": 128,
+      "max_steps": 3000,
+      "eval_every": 500,
+      "stopping_rule": "fixed_steps",
+      "precision": "fp32",
+      "float32_matmul_precision": "highest",
+      "loss": "importance_weighted_mse + activity_bce",
+      "value_loss_weight": 1.0,
+      "activity_loss_weight": 1.0
+    },
+    "generator_version": "fpg-1.0.0",
+    "metric_version": "cap-1.0.0",
+    "model_version": "am-model-1.0.0"
+  },
+  "architecture_id": "linear-L2H2d64-ordinary-learned@am-model-1.0.0",
+  "parameter_count": 127288,
+  "parameter_report": {
+    "encoder": 8000,
+    "position": 3072,
+    "norm_out": 128,
+    "value_head": 8060,
+    "active_head": 8060,
+    "mixing": 33280,
+    "mlp": 66176,
+    "block_norms": 512,
+    "total": 127288,
+    "trainable": 127288
+  },
+  "operation_state_summary": {
+    "seq_len": 48,
+    "d_model": 64,
+    "n_features": 124,
+    "n_layers": 2,
+    "trunk_multiply_accumulates_per_sequence": 4288512,
+    "mixing_multiply_accumulates_per_sequence": 1978368,
+    "total_multiply_accumulates_per_sequence": 6266880,
+    "recurrent_state_scalars": 4224,
+    "mixing": [
+      {
+        "mechanism": "linear_attention",
+        "feature_map": "elu_plus_one",
+        "ops_per_sequence": "O(T d d_head + T d^2) \u2014 linear in T",
+        "state_growth": "O(d d_head) \u2014 constant in context; one d_head x (d_head + 1) matrix per head, carrying its own normalizer",
+        "multiply_accumulates_per_sequence": 989184,
+        "recurrent_state_scalars": 2112,
+        "materialises_pairwise_matrix": false,
+        "breakdown": {
+          "qkv_projection": 589824,
+          "state_update": 101376,
+          "state_read": 101376,
+          "output_projection": 196608
+        }
+      },
+      {
+        "mechanism": "linear_attention",
+        "feature_map": "elu_plus_one",
+        "ops_per_sequence": "O(T d d_head + T d^2) \u2014 linear in T",
+        "state_growth": "O(d d_head) \u2014 constant in context; one d_head x (d_head + 1) matrix per head, carrying its own normalizer",
+        "multiply_accumulates_per_sequence": 989184,
+        "recurrent_state_scalars": 2112,
+        "materialises_pairwise_matrix": false,
+        "breakdown": {
+          "qkv_projection": 589824,
+          "state_update": 101376,
+          "state_read": 101376,
+          "output_projection": 196608
+        }
+      }
+    ]
+  },
+  "dataset_generator_version": "fpg-1.0.0",
+  "split_hashes": {
+    "train": "835ca7a5ee37c36ed32d6f7314fd054efa1a3689b1745de92cdb84cdd80d5d3c",
+    "eval": "046b8dec425676fde3a7dc8a54948793addc7eaa95bf02bed06b373b9ec64a72",
+    "train_n_examples": 16384,
+    "eval_n_examples": 4096
+  },
+  "seed": 20260809,
+  "device": {
+    "requested": "cuda",
+    "resolved": "cuda:0",
+    "fell_back": false,
+    "device_name": "NVIDIA GeForce RTX 5060 Ti",
+    "compute_capability": "12.0",
+    "total_memory_bytes": 17102864384,
+    "multi_processor_count": 36,
+    "torch_version": "2.11.0+cu128",
+    "cuda_version": "12.8",
+    "cudnn_version": 91900,
+    "float32_matmul_precision": "highest"
+  },
+  "precision": "fp32",
+  "numerics": {
+    "precision": "fp32",
+    "float32_matmul_precision": "highest",
+    "torch_version": "2.11.0+cu128"
+  },
+  "dependency_lock_hash": "6e018e7cf306742270ee2ff7a986657860cf18e656e14f1bcf7f28797abfb81e",
+  "source_tree_hash": "0985dbd1a50df9e453a6d642fecb03cbad4e6e6fff1388c5b30c1bbaf65c16f2",
+  "environment": {
+    "python": "3.12.13",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "executable": "/home/home/p/g/n/architecture_mechanics/.venv/bin/python3",
+    "lab_root": "/home/home/p/g/n/architecture_mechanics"
+  },
+  "parent_claim_packet": "claims/a1-vs-a0-t1-capability-gap.yml",
+  "claimed_rung": 1,
+  "primary_metric": "associative_recall_accuracy",
+  "started_utc": "2026-08-10T20:49:54+00:00",
+  "finished_utc": "2026-08-10T20:51:33+00:00",
+  "checkpoint_hashes": {
+    "model.pt": {
+      "sha256": "6f00c992c0e9210bf537aec64e86ea3ba5f342509c8381f5d1f9a73ce49d095b",
+      "bytes": 519154
+    }
+  },
+  "evidence_index": [
+    {
+      "path": "checkpoint/checkpoint.json",
+      "bytes": 451,
+      "sha256": "0fbc497619c4ecc558181aff23e1615adf9b58e2452a9da01f03ea8c44e07f12"
+    },
+    {
+      "path": "checkpoint/model.pt",
+      "bytes": 519154,
+      "sha256": "6f00c992c0e9210bf537aec64e86ea3ba5f342509c8381f5d1f9a73ce49d095b"
+    },
+    {
+      "path": "claim_gates.json",
+      "bytes": 42340,
+      "sha256": "0023c78369e937bc5b16e3bc555ac7a76233230652b028ce9a6905e6d651530d"
+    },
+    {
+      "path": "figures/INDEX.json",
+      "bytes": 138,
+      "sha256": "325ce9d6d64d0d53a647ecc72173933a450484e5a5210916c58f8b4aa249b315"
+    },
+    {
+      "path": "geometry_metrics.npz",
+      "bytes": 1649089,
+      "sha256": "bbbf018e15a36af3db6669dbef797ec2dbef3d0a554d82564d8285cd37f6647b"
+    },
+    {
+      "path": "interventions.jsonl",
+      "bytes": 222,
+      "sha256": "5a31d5e69f69337359f9d744a9646e3d7305bf73fa3f2e6cf221500a0192b3d1"
+    },
+    {
+      "path": "mechanism_activity.json",
+      "bytes": 2456,
+      "sha256": "01b4d85ccc1b533e33c8a1e8e5fbf9ab6d0e69a38939594628a3b7f4f2b0d7c3"
+    },
+    {
+      "path": "metrics.jsonl",
+      "bytes": 1839,
+      "sha256": "92af15bad5fadc4faefe6df8f80f7194f9370ac8722ac6598f9c797835e62e4d"
+    },
+    {
+      "path": "reproduce.sh",
+      "bytes": 4162,
+      "sha256": "ffbf2753e6ade1327b2e702e381a699382fec8baf799c01e84a2174d12be54ea"
+    },
+    {
+      "path": "summary.json",
+      "bytes": 46055,
+      "sha256": "5d4b87dc8d8636c4143edd7f96ef8e27745f5a0d4d82afb035f56124b055e7c8"
+    }
+  ]
+}
