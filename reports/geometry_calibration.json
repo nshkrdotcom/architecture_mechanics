@@ -1,0 +1,782 @@
+{
+  "cases": [
+    {
+      "all_scalars_finite": true,
+      "case": "orthogonal_basis",
+      "d_model": 48,
+      "description": "d=48 >= F=32, one unit axis per feature",
+      "expectations": [
+        {
+          "expected": "1 \u00b10.01",
+          "measure": "probe_macro_r2",
+          "measured": 0.9999999999995426,
+          "ok": true,
+          "reason": "an orthogonal readout inverts the encoding exactly"
+        },
+        {
+          "expected": "1 \u00b10.01",
+          "measure": "probe_macro_auc",
+          "measured": 1.0,
+          "ok": true,
+          "reason": "as above"
+        },
+        {
+          "expected": "1 \u00b10.02",
+          "measure": "mean_purity",
+          "measured": 0.9999999999999889,
+          "ok": true,
+          "reason": "each readout responds only to its own feature"
+        },
+        {
+          "expected": "0 \u00b10.02",
+          "measure": "interference_fraction",
+          "measured": 1.532488624837684e-08,
+          "ok": true,
+          "reason": "no off-diagonal response exists to measure"
+        },
+        {
+          "expected": "0 \u00b10.02",
+          "measure": "mean_abs_off_diagonal_cosine",
+          "measured": 2.596198490567218e-08,
+          "ok": true,
+          "reason": "the directions are orthogonal by construction"
+        },
+        {
+          "expected": "32 \u00b10.5",
+          "measure": "effective_rank",
+          "measured": 31.980996497345938,
+          "ok": true,
+          "reason": "F equal-variance directions, so the spectrum is flat over F"
+        },
+        {
+          "expected": "32 \u00b10.5",
+          "measure": "participation_ratio",
+          "measured": 31.84828461164007,
+          "ok": true,
+          "reason": "as above"
+        },
+        {
+          "expected": "32 \u00b10.5",
+          "measure": "capacity_total",
+          "measured": 31.999999999998977,
+          "ok": true,
+          "reason": "each feature owns a whole dimension"
+        },
+        {
+          "expected": "1 \u00b10.01",
+          "measure": "alignment_reference_mean",
+          "measured": 0.999999999999996,
+          "ok": true,
+          "reason": "the estimator must recover the basis it was built from"
+        },
+        {
+          "expected": "1 \u00b10.01",
+          "measure": "alignment_explained_mean",
+          "measured": 0.9999999999676394,
+          "ok": true,
+          "reason": "the encoding is linear and noiseless, so one direction explains all"
+        },
+        {
+          "expected": "1 \u00b10.02",
+          "measure": "alignment_marginal_mean",
+          "measured": 0.9940382501561289,
+          "ok": true,
+          "reason": "with independent features the marginal and partial estimators agree"
+        }
+      ],
+      "measured": {
+        "alignment_explained_mean": 0.9999999999676394,
+        "alignment_marginal_mean": 0.9940382501561289,
+        "alignment_reference_mean": 0.999999999999996,
+        "capacity_fraction_of_dimensions": 0.6666666666666453,
+        "capacity_total": 31.999999999998977,
+        "d_model": 48,
+        "design_condition_number": 1.44612207372889,
+        "effective_rank": 31.980996497345938,
+        "effective_rank_fraction": 0.6662707603613737,
+        "interference_fraction": 1.532488624837684e-08,
+        "max_abs_off_diagonal_cosine": 1.078607001938573e-07,
+        "mean_abs_diagonal": 0.9999983179714929,
+        "mean_abs_off_diagonal": 1.532486070633305e-08,
+        "mean_abs_off_diagonal_cosine": 2.596198490567218e-08,
+        "mean_feature_capacity": 0.999999999999968,
+        "mean_purity": 0.9999999999999889,
+        "min_purity": 0.9999999999999847,
+        "n_collinear_features": 0,
+        "n_eval_rows": 4096,
+        "n_features": 32,
+        "n_rows": 8192,
+        "n_train_rows": 4096,
+        "n_undefined_features": 0,
+        "participation_ratio": 31.84828461164007,
+        "probe_macro_auc": 1.0,
+        "probe_macro_r2": 0.9999999999995426,
+        "probe_pooled_r2": 0.9999999999995428
+      },
+      "n_features": 32,
+      "n_rows": 8192
+    },
+    {
+      "all_scalars_finite": true,
+      "case": "known_superposition",
+      "d_model": 16,
+      "description": "d=16 < F=32, antipodal pairs sharing each axis",
+      "expectations": [
+        {
+          "expected": "16 \u00b10.5",
+          "measure": "capacity_total",
+          "measured": 15.999999999999766,
+          "ok": true,
+          "reason": "two features per axis, half a dimension each, over 16 axes"
+        },
+        {
+          "expected": "16 \u00b10.5",
+          "measure": "effective_rank",
+          "measured": 15.994955573688898,
+          "ok": true,
+          "reason": "the space is d-dimensional"
+        },
+        {
+          "expected": "16 \u00b10.5",
+          "measure": "participation_ratio",
+          "measured": 15.959628604705294,
+          "ok": true,
+          "reason": "as above"
+        },
+        {
+          "expected": "0.5 \u00b10.02",
+          "measure": "mean_purity",
+          "measured": 0.49814078899004965,
+          "ok": true,
+          "reason": "a readout cannot separate a feature from its antipode"
+        },
+        {
+          "expected": "0.5 \u00b10.02",
+          "measure": "probe_macro_r2",
+          "measured": 0.4961732101985191,
+          "ok": true,
+          "reason": "predicting a from a-b recovers half its variance"
+        },
+        {
+          "expected": "0.0322581 \u00b10.01",
+          "measure": "mean_abs_off_diagonal_cosine",
+          "measured": 0.03225809353831994,
+          "ok": true,
+          "reason": "one partner at cosine -1 among F-1 off-diagonal cells"
+        },
+        {
+          "expected": "1 \u00b10.01",
+          "measure": "alignment_reference_mean",
+          "measured": 0.9999999999999963,
+          "ok": true,
+          "reason": "the estimator recovers the construction despite the sharing"
+        },
+        {
+          "expected": "1 \u00b10.01",
+          "measure": "alignment_explained_mean",
+          "measured": 0.9999999999678002,
+          "ok": true,
+          "reason": "superposition puts the interference in the readout, not the encoding: each feature is still carried by exactly one direction"
+        },
+        {
+          "expected": "[0.75, 0.95]",
+          "measure": "probe_macro_auc",
+          "measured": 0.9061711989802727,
+          "ok": true,
+          "reason": "activity is partly recoverable from a signed sum, but not fully"
+        }
+      ],
+      "measured": {
+        "alignment_explained_mean": 0.9999999999678002,
+        "alignment_marginal_mean": 0.9943688337232137,
+        "alignment_reference_mean": 0.9999999999999963,
+        "capacity_fraction_of_dimensions": 0.9999999999999853,
+        "capacity_total": 15.999999999999766,
+        "d_model": 16,
+        "design_condition_number": 1.44612207372889,
+        "effective_rank": 15.994955573688898,
+        "effective_rank_fraction": 0.9996847233555561,
+        "interference_fraction": 0.04289355092734149,
+        "max_abs_off_diagonal_cosine": 0.9999999999999956,
+        "mean_abs_diagonal": 0.4999989916020895,
+        "mean_abs_off_diagonal": 0.02240788600963182,
+        "mean_abs_off_diagonal_cosine": 0.03225809353831994,
+        "mean_feature_capacity": 0.4999999999999927,
+        "mean_purity": 0.49814078899004965,
+        "min_purity": 0.4726160935688099,
+        "n_collinear_features": 0,
+        "n_eval_rows": 4096,
+        "n_features": 32,
+        "n_rows": 8192,
+        "n_train_rows": 4096,
+        "n_undefined_features": 0,
+        "participation_ratio": 15.959628604705294,
+        "probe_macro_auc": 0.9061711989802727,
+        "probe_macro_r2": 0.4961732101985191,
+        "probe_pooled_r2": 0.4965335712314678
+      },
+      "n_features": 32,
+      "n_rows": 8192
+    },
+    {
+      "all_scalars_finite": true,
+      "case": "random_rotation",
+      "d_model": 48,
+      "description": "the orthogonal case times a random orthogonal matrix",
+      "expectations": [
+        {
+          "expected": "1 \u00b10.01",
+          "measure": "probe_macro_r2",
+          "measured": 0.9999999999995426,
+          "ok": true,
+          "reason": "a rotation is invertible"
+        },
+        {
+          "expected": "1 \u00b10.02",
+          "measure": "mean_purity",
+          "measured": 0.9999999999999889,
+          "ok": true,
+          "reason": "as above"
+        },
+        {
+          "expected": "32 \u00b10.5",
+          "measure": "effective_rank",
+          "measured": 31.980996497346162,
+          "ok": true,
+          "reason": "the spectrum is unchanged"
+        },
+        {
+          "expected": "32 \u00b10.5",
+          "measure": "participation_ratio",
+          "measured": 31.84828461164007,
+          "ok": true,
+          "reason": "as above"
+        },
+        {
+          "expected": "32 \u00b10.5",
+          "measure": "capacity_total",
+          "measured": 31.999999999998977,
+          "ok": true,
+          "reason": "angles are unchanged"
+        },
+        {
+          "expected": "0 \u00b10.02",
+          "measure": "mean_abs_off_diagonal_cosine",
+          "measured": 2.5961984902977292e-08,
+          "ok": true,
+          "reason": "angles are unchanged"
+        },
+        {
+          "expected": "1 \u00b10.01",
+          "measure": "alignment_reference_mean",
+          "measured": 0.999999999999996,
+          "ok": true,
+          "reason": "against the rotated basis, which is the true one"
+        }
+      ],
+      "measured": {
+        "alignment_explained_mean": 0.9999999999676394,
+        "alignment_marginal_mean": 0.9940382501561289,
+        "alignment_reference_mean": 0.999999999999996,
+        "capacity_fraction_of_dimensions": 0.6666666666666453,
+        "capacity_total": 31.999999999998977,
+        "d_model": 48,
+        "design_condition_number": 1.44612207372889,
+        "effective_rank": 31.980996497346162,
+        "effective_rank_fraction": 0.6662707603613783,
+        "interference_fraction": 1.5324886252012736e-08,
+        "max_abs_off_diagonal_cosine": 1.078606994378412e-07,
+        "mean_abs_diagonal": 0.9999983179714929,
+        "mean_abs_off_diagonal": 1.532486070996894e-08,
+        "mean_abs_off_diagonal_cosine": 2.5961984902977292e-08,
+        "mean_feature_capacity": 0.999999999999968,
+        "mean_purity": 0.9999999999999889,
+        "min_purity": 0.9999999999999847,
+        "n_collinear_features": 0,
+        "n_eval_rows": 4096,
+        "n_features": 32,
+        "n_rows": 8192,
+        "n_train_rows": 4096,
+        "n_undefined_features": 0,
+        "participation_ratio": 31.84828461164007,
+        "probe_macro_auc": 1.0,
+        "probe_macro_r2": 0.9999999999995426,
+        "probe_pooled_r2": 0.9999999999995428
+      },
+      "n_features": 32,
+      "n_rows": 8192
+    },
+    {
+      "all_scalars_finite": true,
+      "case": "degenerate_collapse",
+      "d_model": 48,
+      "description": "every feature written onto one axis",
+      "expectations": [
+        {
+          "expected": "1 \u00b10.02",
+          "measure": "effective_rank",
+          "measured": 1.0,
+          "ok": true,
+          "reason": "the hidden state is rank one"
+        },
+        {
+          "expected": "1 \u00b10.02",
+          "measure": "participation_ratio",
+          "measured": 1.0,
+          "ok": true,
+          "reason": "as above"
+        },
+        {
+          "expected": "1 \u00b10.02",
+          "measure": "mean_abs_off_diagonal_cosine",
+          "measured": 1.0,
+          "ok": true,
+          "reason": "every direction is the same direction"
+        },
+        {
+          "expected": "0.03125 \u00b10.02",
+          "measure": "mean_purity",
+          "measured": 0.03125000000000001,
+          "ok": true,
+          "reason": "each readout is equally responsible for every feature"
+        },
+        {
+          "expected": "0.03125 \u00b10.03",
+          "measure": "probe_macro_r2",
+          "measured": 0.03142276417708916,
+          "ok": true,
+          "reason": "only the sum of the features survives"
+        },
+        {
+          "expected": "1 \u00b10.05",
+          "measure": "capacity_total",
+          "measured": 1.0,
+          "ok": true,
+          "reason": "one dimension in use"
+        },
+        {
+          "expected": "[0.35, 0.65]",
+          "measure": "interference_fraction",
+          "measured": 0.5000000000511655,
+          "ok": true,
+          "reason": "off-diagonal response equals the diagonal"
+        },
+        {
+          "expected": "1 \u00b10.01",
+          "measure": "alignment_reference_mean",
+          "measured": 1.0,
+          "ok": true,
+          "reason": "alignment is blind to collapse; the cosine matrix is not"
+        },
+        {
+          "expected": "1 \u00b10.01",
+          "measure": "alignment_explained_mean",
+          "measured": 0.9999999999669841,
+          "ok": true,
+          "reason": "every feature is perfectly carried by one direction \u2014 the same one. This is the cell that retires all three alignments to diagnostic"
+        }
+      ],
+      "measured": {
+        "alignment_explained_mean": 0.9999999999669841,
+        "alignment_marginal_mean": 1.0,
+        "alignment_reference_mean": 1.0,
+        "capacity_fraction_of_dimensions": 0.020833333333333332,
+        "capacity_total": 1.0,
+        "d_model": 48,
+        "design_condition_number": 1.44612207372889,
+        "effective_rank": 1.0,
+        "effective_rank_fraction": 0.020833333333333332,
+        "interference_fraction": 0.5000000000511655,
+        "max_abs_off_diagonal_cosine": 1.0,
+        "mean_abs_diagonal": 0.031249968354618265,
+        "mean_abs_off_diagonal": 0.031249968361013954,
+        "mean_abs_off_diagonal_cosine": 1.0,
+        "mean_feature_capacity": 0.03125,
+        "mean_purity": 0.03125000000000001,
+        "min_purity": 0.029174736998148675,
+        "n_collinear_features": 0,
+        "n_eval_rows": 4096,
+        "n_features": 32,
+        "n_rows": 8192,
+        "n_train_rows": 4096,
+        "n_undefined_features": 0,
+        "participation_ratio": 1.0,
+        "probe_macro_auc": 0.6049374364735148,
+        "probe_macro_r2": 0.03142276417708916,
+        "probe_pooled_r2": 0.03148291330381725
+      },
+      "n_features": 32,
+      "n_rows": 8192
+    },
+    {
+      "all_scalars_finite": true,
+      "case": "pure_noise",
+      "d_model": 48,
+      "description": "hidden states drawn independently of the features",
+      "expectations": [
+        {
+          "expected": "<= 0.02",
+          "measure": "probe_macro_r2",
+          "measured": -0.011683617921459069,
+          "ok": true,
+          "reason": "nothing is decodable out of sample; the null is zero, not positive"
+        },
+        {
+          "expected": "0.5 \u00b10.03",
+          "measure": "probe_macro_auc",
+          "measured": 0.5005655596312003,
+          "ok": true,
+          "reason": "chance"
+        },
+        {
+          "expected": "0.03125 \u00b10.03",
+          "measure": "mean_purity",
+          "measured": 0.0323827390223175,
+          "ok": true,
+          "reason": "a readout is equally likely to respond to any feature"
+        },
+        {
+          "expected": "<= 0.01",
+          "measure": "alignment_explained_mean",
+          "measured": 0.0002468141190949992,
+          "ok": true,
+          "reason": "the hidden state does not move with the feature, so no direction explains it: this is the only alignment whose null is zero"
+        },
+        {
+          "expected": "[0.7, 0.95]",
+          "measure": "alignment_marginal_mean",
+          "measured": 0.8306474420281378,
+          "ok": true,
+          "reason": "NOT zero, and this is the point. The partial and the marginal estimator are computed from the same sampling noise on the same rows, so on pure noise they agree with each other about it. A measure whose null is 0.83 cannot be read as evidence of anything"
+        },
+        {
+          "expected": "[0.35, 0.65]",
+          "measure": "interference_fraction",
+          "measured": 0.4911862713118855,
+          "ok": true,
+          "reason": "diagonal and off-diagonal responses have the same magnitude"
+        },
+        {
+          "expected": "[44, 48]",
+          "measure": "effective_rank",
+          "measured": 47.96622514282042,
+          "ok": true,
+          "reason": "isotropic noise fills every direction: the null is d, not zero"
+        },
+        {
+          "expected": "[44, 48]",
+          "measure": "participation_ratio",
+          "measured": 47.731551405091075,
+          "ok": true,
+          "reason": "as above"
+        },
+        {
+          "expected": "[0.05, 0.2]",
+          "measure": "mean_abs_off_diagonal_cosine",
+          "measured": 0.12248781808169938,
+          "ok": true,
+          "reason": "the mean absolute cosine of random directions in 48 dimensions"
+        },
+        {
+          "expected": "[15, 24]",
+          "measure": "capacity_total",
+          "measured": 18.509826713342186,
+          "ok": true,
+          "reason": "F random directions in d dimensions look packed: this is why capacity is a diagnostic and never a headline"
+        }
+      ],
+      "measured": {
+        "alignment_explained_mean": 0.0002468141190949992,
+        "alignment_marginal_mean": 0.8306474420281378,
+        "capacity_fraction_of_dimensions": 0.3856213898612955,
+        "capacity_total": 18.509826713342186,
+        "d_model": 48,
+        "design_condition_number": 1.44612207372889,
+        "effective_rank": 47.96622514282042,
+        "effective_rank_fraction": 0.9992963571420921,
+        "interference_fraction": 0.4911862713118855,
+        "max_abs_off_diagonal_cosine": 0.4307807595411519,
+        "mean_abs_diagonal": 0.0013689747219480905,
+        "mean_abs_off_diagonal": 0.0013215476534558668,
+        "mean_abs_off_diagonal_cosine": 0.12248781808169938,
+        "mean_feature_capacity": 0.5784320847919433,
+        "mean_purity": 0.0323827390223175,
+        "min_purity": 0.0003342872865595762,
+        "n_collinear_features": 0,
+        "n_eval_rows": 4096,
+        "n_features": 32,
+        "n_rows": 8192,
+        "n_train_rows": 4096,
+        "n_undefined_features": 0,
+        "participation_ratio": 47.731551405091075,
+        "probe_macro_auc": 0.5005655596312003,
+        "probe_macro_r2": -0.011683617921459069,
+        "probe_pooled_r2": -0.01168866599049001
+      },
+      "n_features": 32,
+      "n_rows": 8192
+    }
+  ],
+  "geometry_version": "geo-1.0.0",
+  "invariants": {
+    "capacity_versus_sparsity": {
+      "capacity_total": {
+        "axis": "sparsity",
+        "n": [
+          4096,
+          4096,
+          4096,
+          4096
+        ],
+        "name": "capacity_total_vs_sparsity",
+        "slope": 56.347826086953425,
+        "x": [
+          0.05,
+          0.1,
+          0.2,
+          0.4
+        ],
+        "y": [
+          3.9999999999999774,
+          7.999999999999881,
+          15.999999999999499,
+          23.999999999998916
+        ]
+      },
+      "mean_purity": {
+        "axis": "sparsity",
+        "n": [
+          4096,
+          4096,
+          4096,
+          4096
+        ],
+        "name": "mean_purity_vs_sparsity",
+        "slope": 1.7608695652173543,
+        "x": [
+          0.05,
+          0.1,
+          0.2,
+          0.4
+        ],
+        "y": [
+          0.12499999999999827,
+          0.24999999999999695,
+          0.49999999999999234,
+          0.7499999999999857
+        ]
+      },
+      "probe_macro_r2": {
+        "axis": "sparsity",
+        "n": [
+          4096,
+          4096,
+          4096,
+          4096
+        ],
+        "name": "probe_macro_r2_vs_sparsity",
+        "slope": 1.7582528530150923,
+        "x": [
+          0.05,
+          0.1,
+          0.2,
+          0.4
+        ],
+        "y": [
+          0.12371324102083248,
+          0.24646574781760902,
+          0.49547454909091815,
+          0.7470932495116637
+        ]
+      }
+    },
+    "capacity_versus_sparsity_expected": {
+      "capacity_total": [
+        4.0,
+        8.0,
+        16.0,
+        24.0
+      ],
+      "sparsity": [
+        0.05,
+        0.1,
+        0.2,
+        0.4
+      ]
+    },
+    "capacity_versus_sparsity_max_error": 1.0835776720341528e-12,
+    "representation_similarity": {
+      "identical": 1.0,
+      "independent_noise": 0.005809358274224314,
+      "rotated": 1.0000000000000004
+    },
+    "rotated_alignment_to_unrotated_basis": -0.10287942123331267,
+    "rotation_invariance_drift": {
+      "capacity_total": 0.0,
+      "effective_rank": 2.2382096176443156e-13,
+      "interference_fraction": 3.635895543533985e-18,
+      "mean_abs_off_diagonal_cosine": 2.69488826124876e-18,
+      "mean_purity": 0.0,
+      "participation_ratio": 0.0,
+      "probe_macro_auc": 0.0,
+      "probe_macro_r2": 0.0
+    },
+    "rotation_invariance_max_drift": 2.2382096176443156e-13
+  },
+  "measures": [
+    {
+      "agrees": true,
+      "ceiling": 0.9999999999995426,
+      "collapse_floor": 0.03142276417708916,
+      "definition": "out-of-sample R^2 of a linear readout of each feature, macro-averaged",
+      "name": "probe_macro_r2",
+      "noise_null": -0.011683617921459069,
+      "noise_position": -0.04450484742390736,
+      "reason": "1.00 at the ceiling, -0.01 on noise, 1/F on collapse \u2014 the primary \u00a76.2 number",
+      "rule_passed": true,
+      "separates_collapse": true,
+      "separates_noise": true,
+      "status": "retained"
+    },
+    {
+      "agrees": true,
+      "ceiling": 1.0,
+      "collapse_floor": 0.6049374364735148,
+      "definition": "out-of-sample AUC for feature activity from the same readout",
+      "name": "probe_macro_auc",
+      "noise_null": 0.5005655596312003,
+      "noise_position": -0.26419075477729337,
+      "reason": "1.00 at the ceiling and 0.50 on noise: the null is chance, exactly",
+      "rule_passed": true,
+      "separates_collapse": true,
+      "separates_noise": true,
+      "status": "retained"
+    },
+    {
+      "agrees": true,
+      "ceiling": 0.9999999999999889,
+      "collapse_floor": 0.03125000000000001,
+      "definition": "share of each readout's response attributable to its own feature",
+      "name": "mean_purity",
+      "noise_null": 0.0323827390223175,
+      "noise_position": 0.0011692789907793639,
+      "reason": "1.00 at the ceiling, 1/F on both noise and collapse \u2014 an honest chance floor",
+      "rule_passed": true,
+      "separates_collapse": true,
+      "separates_noise": true,
+      "status": "retained"
+    },
+    {
+      "agrees": true,
+      "ceiling": 1.532488624837684e-08,
+      "collapse_floor": 0.5000000000511655,
+      "definition": "off-diagonal share of the out-of-sample readout response matrix",
+      "name": "interference_fraction",
+      "noise_null": 0.4911862713118855,
+      "noise_position": 0.017627458017033724,
+      "reason": "0.00 at the ceiling and 0.49 on noise; bounded, so it has no divide-by-zero",
+      "rule_passed": true,
+      "separates_collapse": true,
+      "separates_noise": true,
+      "status": "retained"
+    },
+    {
+      "agrees": true,
+      "ceiling": 2.596198490567218e-08,
+      "collapse_floor": 1.0,
+      "definition": "mean absolute cosine between estimated feature directions",
+      "name": "mean_abs_off_diagonal_cosine",
+      "noise_null": 0.12248781808169938,
+      "noise_position": 0.8775122047002593,
+      "reason": "the null is not zero. Two random directions in d dimensions have mean absolute cosine sqrt(2/(pi d)) = 0.115 at d=48, and that is what pure noise reads \u2014 88% of the way from total collapse to perfect orthogonality. A nearly-orthogonal cosine matrix is what noise produces; it must be read against the dimension-specific null and not against zero",
+      "rule_passed": false,
+      "separates_collapse": true,
+      "separates_noise": false,
+      "status": "diagnostic"
+    },
+    {
+      "agrees": true,
+      "ceiling": 31.980996497345938,
+      "collapse_floor": 1.0,
+      "definition": "entropy effective rank of the centred representation spectrum",
+      "name": "effective_rank",
+      "noise_null": 47.96622514282042,
+      "noise_position": 1.5159688342124145,
+      "reason": "isotropic noise fills every direction, so the null is d \u2014 *past* the ceiling of F rather than below it. A high effective rank is not evidence of structure, and the measure has no good direction: it is a count, and only a count",
+      "rule_passed": false,
+      "separates_collapse": true,
+      "separates_noise": true,
+      "status": "diagnostic"
+    },
+    {
+      "agrees": true,
+      "ceiling": 31.84828461164007,
+      "collapse_floor": 1.0,
+      "definition": "(sum lambda)^2 / sum lambda^2 over the covariance spectrum",
+      "name": "participation_ratio",
+      "noise_null": 47.731551405091075,
+      "noise_position": 1.5148833069135301,
+      "reason": "as effective_rank, weighting the leading directions more heavily",
+      "rule_passed": false,
+      "separates_collapse": true,
+      "separates_noise": true,
+      "status": "diagnostic"
+    },
+    {
+      "agrees": true,
+      "ceiling": 31.999999999998977,
+      "collapse_floor": 1.0,
+      "definition": "summed per-feature dimensionality of the estimated directions",
+      "name": "capacity_total",
+      "noise_null": 18.509826713342186,
+      "noise_position": 0.5648331197852504,
+      "reason": "pure noise reports 18.5 of 48 dimensions in use \u2014 57% of the way from collapse to the ceiling \u2014 because F random directions in d dimensions are about as spread out as F learned ones. Capacity measures the geometry of the estimated directions and cannot tell an encoded direction from a fitted artifact",
+      "rule_passed": false,
+      "separates_collapse": true,
+      "separates_noise": true,
+      "status": "diagnostic"
+    },
+    {
+      "agrees": true,
+      "ceiling": 0.9999999999676394,
+      "collapse_floor": 0.9999999999669841,
+      "definition": "R^2 of the rank-one model a_f w_f against feature f's residual variation",
+      "name": "alignment_explained_mean",
+      "noise_null": 0.0002468141190949992,
+      "noise_position": NaN,
+      "reason": "the best-behaved of the three alignments \u2014 its null really is zero \u2014 but it reads 1.00 on total collapse, because every feature is perfectly carried by one direction there and that direction happens to be the same one",
+      "rule_passed": false,
+      "separates_collapse": false,
+      "separates_noise": true,
+      "status": "diagnostic"
+    },
+    {
+      "agrees": true,
+      "ceiling": 0.9940382501561289,
+      "collapse_floor": 1.0,
+      "definition": "cosine between each feature's partial and marginal direction estimates",
+      "name": "alignment_marginal_mean",
+      "noise_null": 0.8306474420281378,
+      "noise_position": 28.40651862405178,
+      "reason": "its null is 0.83, not zero: on pure noise the two estimators are computed from the same sampling noise on the same rows and therefore agree about it. It is 1.0 on every constructed case with independent features, where the two estimators coincide identically, and separates only when features co-activate",
+      "rule_passed": false,
+      "separates_collapse": false,
+      "separates_noise": true,
+      "status": "diagnostic"
+    },
+    {
+      "agrees": true,
+      "ceiling": 0.999999999999996,
+      "collapse_floor": 1.0,
+      "definition": "cosine between each estimated direction and a known true direction",
+      "name": "alignment_reference_mean",
+      "noise_null": NaN,
+      "noise_position": NaN,
+      "reason": "1.0 on total collapse, and undefined on noise, which has no true basis to align to. Its real use is as an estimator check where the basis is known \u2014 the encoder weights of a linear embedding, which it recovers to 1.0000",
+      "rule_passed": false,
+      "separates_collapse": false,
+      "separates_noise": false,
+      "status": "diagnostic"
+    }
+  ]
+}

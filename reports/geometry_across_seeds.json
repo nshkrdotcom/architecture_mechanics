@@ -1,0 +1,298 @@
+{
+  "geometry_version": "geo-1.0.0",
+  "note": "the same architecture at different initialisation seeds on identical data; the seed moves initialisation and batch order, never the generator",
+  "primary_metric": {
+    "associative_recall_accuracy": [
+      0.905548095703125,
+      0.90240478515625,
+      0.898101806640625
+    ]
+  },
+  "primary_site": "final_norm",
+  "runs": [
+    "R1-softmax-positive_control-s20260809-5d8d0889d7f2",
+    "R1-softmax-positive_control-s20260810-6c99847fe291",
+    "R1-softmax-positive_control-s20260811-526e0e7131bf"
+  ],
+  "seeds": [
+    20260809,
+    20260810,
+    20260811
+  ],
+  "similarity_by_site": {
+    "embed": {
+      "mean_direction_similarity": 0.8320987378376768,
+      "pairs": [
+        {
+          "direction_similarity": 0.8173243456281892,
+          "probe_r2_correlation": 0.9960211731586104,
+          "purity_correlation": 0.9999608224673059,
+          "runs": [
+            "R1-softmax-positive_control-s20260809-5d8d0889d7f2",
+            "R1-softmax-positive_control-s20260810-6c99847fe291"
+          ]
+        },
+        {
+          "direction_similarity": 0.84730283206791,
+          "probe_r2_correlation": 0.9996691240087048,
+          "purity_correlation": 0.9999937295210857,
+          "runs": [
+            "R1-softmax-positive_control-s20260809-5d8d0889d7f2",
+            "R1-softmax-positive_control-s20260811-526e0e7131bf"
+          ]
+        },
+        {
+          "direction_similarity": 0.8316690358169313,
+          "probe_r2_correlation": 0.9949065273869033,
+          "purity_correlation": 0.9999232078200931,
+          "runs": [
+            "R1-softmax-positive_control-s20260810-6c99847fe291",
+            "R1-softmax-positive_control-s20260811-526e0e7131bf"
+          ]
+        }
+      ]
+    },
+    "final_norm": {
+      "mean_direction_similarity": 0.6234535899939359,
+      "pairs": [
+        {
+          "direction_similarity": 0.645022005835794,
+          "probe_r2_correlation": 0.7520160361200314,
+          "purity_correlation": 0.9037988166163691,
+          "runs": [
+            "R1-softmax-positive_control-s20260809-5d8d0889d7f2",
+            "R1-softmax-positive_control-s20260810-6c99847fe291"
+          ]
+        },
+        {
+          "direction_similarity": 0.6623704888489998,
+          "probe_r2_correlation": 0.8115668964542588,
+          "purity_correlation": 0.9219970830478826,
+          "runs": [
+            "R1-softmax-positive_control-s20260809-5d8d0889d7f2",
+            "R1-softmax-positive_control-s20260811-526e0e7131bf"
+          ]
+        },
+        {
+          "direction_similarity": 0.5629682752970138,
+          "probe_r2_correlation": 0.8188646595332271,
+          "purity_correlation": 0.9624307125041622,
+          "runs": [
+            "R1-softmax-positive_control-s20260810-6c99847fe291",
+            "R1-softmax-positive_control-s20260811-526e0e7131bf"
+          ]
+        }
+      ]
+    },
+    "layers.0.resid_mid": {
+      "mean_direction_similarity": 0.6150885477390305,
+      "pairs": [
+        {
+          "direction_similarity": 0.6925933335878754,
+          "probe_r2_correlation": 0.5395932288920343,
+          "purity_correlation": 0.9379176673829529,
+          "runs": [
+            "R1-softmax-positive_control-s20260809-5d8d0889d7f2",
+            "R1-softmax-positive_control-s20260810-6c99847fe291"
+          ]
+        },
+        {
+          "direction_similarity": 0.5884900848448467,
+          "probe_r2_correlation": 0.5698789775735068,
+          "purity_correlation": 0.9465018885049918,
+          "runs": [
+            "R1-softmax-positive_control-s20260809-5d8d0889d7f2",
+            "R1-softmax-positive_control-s20260811-526e0e7131bf"
+          ]
+        },
+        {
+          "direction_similarity": 0.5641822247843697,
+          "probe_r2_correlation": 0.7338024704476503,
+          "purity_correlation": 0.9618453887322265,
+          "runs": [
+            "R1-softmax-positive_control-s20260810-6c99847fe291",
+            "R1-softmax-positive_control-s20260811-526e0e7131bf"
+          ]
+        }
+      ]
+    },
+    "layers.0.resid_out": {
+      "mean_direction_similarity": 0.503987942457434,
+      "pairs": [
+        {
+          "direction_similarity": 0.5269976131419334,
+          "probe_r2_correlation": 0.5911113516921206,
+          "purity_correlation": 0.9099677850193806,
+          "runs": [
+            "R1-softmax-positive_control-s20260809-5d8d0889d7f2",
+            "R1-softmax-positive_control-s20260810-6c99847fe291"
+          ]
+        },
+        {
+          "direction_similarity": 0.49492247981059845,
+          "probe_r2_correlation": 0.6783844342482379,
+          "purity_correlation": 0.9328910544808529,
+          "runs": [
+            "R1-softmax-positive_control-s20260809-5d8d0889d7f2",
+            "R1-softmax-positive_control-s20260811-526e0e7131bf"
+          ]
+        },
+        {
+          "direction_similarity": 0.49004373441976984,
+          "probe_r2_correlation": 0.7736696723511775,
+          "purity_correlation": 0.9613158533876593,
+          "runs": [
+            "R1-softmax-positive_control-s20260810-6c99847fe291",
+            "R1-softmax-positive_control-s20260811-526e0e7131bf"
+          ]
+        }
+      ]
+    },
+    "layers.1.resid_mid": {
+      "mean_direction_similarity": 0.5071403878072189,
+      "pairs": [
+        {
+          "direction_similarity": 0.5281092766897829,
+          "probe_r2_correlation": 0.6248887487132397,
+          "purity_correlation": 0.908065128544293,
+          "runs": [
+            "R1-softmax-positive_control-s20260809-5d8d0889d7f2",
+            "R1-softmax-positive_control-s20260810-6c99847fe291"
+          ]
+        },
+        {
+          "direction_similarity": 0.4992803278818138,
+          "probe_r2_correlation": 0.736603368867711,
+          "purity_correlation": 0.9323478118857911,
+          "runs": [
+            "R1-softmax-positive_control-s20260809-5d8d0889d7f2",
+            "R1-softmax-positive_control-s20260811-526e0e7131bf"
+          ]
+        },
+        {
+          "direction_similarity": 0.4940315588500602,
+          "probe_r2_correlation": 0.7846939752546633,
+          "purity_correlation": 0.9597324576072718,
+          "runs": [
+            "R1-softmax-positive_control-s20260810-6c99847fe291",
+            "R1-softmax-positive_control-s20260811-526e0e7131bf"
+          ]
+        }
+      ]
+    },
+    "layers.1.resid_out": {
+      "mean_direction_similarity": 0.4960936671196898,
+      "pairs": [
+        {
+          "direction_similarity": 0.5094695285198024,
+          "probe_r2_correlation": 0.6438681986571396,
+          "purity_correlation": 0.9120652153966092,
+          "runs": [
+            "R1-softmax-positive_control-s20260809-5d8d0889d7f2",
+            "R1-softmax-positive_control-s20260810-6c99847fe291"
+          ]
+        },
+        {
+          "direction_similarity": 0.4937020905751766,
+          "probe_r2_correlation": 0.7312828845689134,
+          "purity_correlation": 0.9347603995407886,
+          "runs": [
+            "R1-softmax-positive_control-s20260809-5d8d0889d7f2",
+            "R1-softmax-positive_control-s20260811-526e0e7131bf"
+          ]
+        },
+        {
+          "direction_similarity": 0.4851093822640901,
+          "probe_r2_correlation": 0.7854342964526426,
+          "purity_correlation": 0.9647416605140653,
+          "runs": [
+            "R1-softmax-positive_control-s20260810-6c99847fe291",
+            "R1-softmax-positive_control-s20260811-526e0e7131bf"
+          ]
+        }
+      ]
+    }
+  },
+  "spread_at_primary_site": {
+    "capacity_total": {
+      "mean": 9.925598210393456,
+      "range": 2.5890373671814775,
+      "sd": 1.300103331447158,
+      "values": [
+        9.786601566431576,
+        8.700577848783658,
+        11.289615215965135
+      ]
+    },
+    "effective_rank": {
+      "mean": 28.384677791174123,
+      "range": 0.7712455802343285,
+      "sd": 0.4288318086735705,
+      "values": [
+        28.661992711659543,
+        28.601293530437605,
+        27.890747131425215
+      ]
+    },
+    "interference_fraction": {
+      "mean": 0.06325067986618454,
+      "range": 0.016276415876526715,
+      "sd": 0.008448426996865013,
+      "values": [
+        0.05642211440775362,
+        0.07269853028428033,
+        0.06063139490651971
+      ]
+    },
+    "mean_abs_off_diagonal_cosine": {
+      "mean": 0.1940517443060605,
+      "range": 0.035946672198520324,
+      "sd": 0.01798096679350758,
+      "values": [
+        0.19465656526276728,
+        0.21172266992696728,
+        0.17577599772844696
+      ]
+    },
+    "mean_purity": {
+      "mean": 0.6990140842826463,
+      "range": 0.051354402972597746,
+      "sd": 0.027930178928543017,
+      "values": [
+        0.7183463082588081,
+        0.6669919052862103,
+        0.7117040393029207
+      ]
+    },
+    "participation_ratio": {
+      "mean": 6.613761500564827,
+      "range": 5.532723024834203,
+      "sd": 3.0424700198069403,
+      "values": [
+        5.151403676573535,
+        10.111301924977575,
+        4.578578900143372
+      ]
+    },
+    "probe_macro_auc": {
+      "mean": 0.9383263589265897,
+      "range": 0.014560041549974478,
+      "sd": 0.007313537559277866,
+      "values": [
+        0.9452025938066927,
+        0.9306425522567182,
+        0.939133930716358
+      ]
+    },
+    "probe_macro_r2": {
+      "mean": 0.5961673726420607,
+      "range": 0.10518647282560922,
+      "sd": 0.05326329529842164,
+      "values": [
+        0.6438981642077501,
+        0.5387116913821409,
+        0.6058922623362908
+      ]
+    }
+  }
+}
