@@ -21,6 +21,36 @@ path is held to a loop-written slow reference in `tests/equations`, because ever
 later claim in this program is stated relative to A0 and a bug there is a bug in
 everything.
 
+## How much A0 differs from itself
+
+```bash
+make t1-ladder     # R1 -> R2 -> R3 -> R4 on T1, then both reports
+```
+
+Every architecture comparison in this program is a claim that two architectures
+differ by more than an architecture differs from itself, so that second number
+has to exist first. Measured on the T1 capacity-stressed operating point over
+eight seeds that differ only in initialisation and batch order:
+
+| | across-seed sd | smallest difference visible at 5 seeds |
+|---|---|---|
+| `associative_recall_accuracy` | **0.054** on a mean of 0.491 | **0.150**, which is 31% of the mean |
+| `geometry.mean_purity` | 0.021 on 0.184 | 0.056, 31% |
+| `geometry.participation_ratio` | 2.74 on 14.5 | 5.82, 41% |
+
+**Five seeds cannot see an architecture difference on T1 recall smaller than
+about 0.15 exact recall.** Ten seeds reach 0.076 and twenty reach 0.051. The
+spread is training variance and not scoring noise — the evaluation split is
+bitwise identical across seeds and its binomial noise bound is 0.0078, seven
+times smaller — and it shrinks monotonically through training, so it is mostly
+*when* the retrieval circuit forms rather than what it converges to.
+
+The same number decides what the R3 difficulty sweep can say. Of §4.3's five T1
+axes, **only feature sparsity moves A0 further than its own seed noise**; source
+distance, distractor count, key collisions and simultaneous associations all have
+ranges inside it at one seed per cell. `reports/a0_t1_difficulty_curves.json`
+records that verdict per axis rather than leaving it to whoever plots the curve.
+
 ## Reproduce a figure
 
 ```bash

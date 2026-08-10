@@ -1,0 +1,681 @@
+{
+  "schema": "am.claim_gates.v1",
+  "claim_id": "a0-t1-associative-recall",
+  "rungs": {
+    "0_implementation_survives": {
+      "passed": true,
+      "evidence": [
+        "runs/R1-softmax-positive_control-s20260809-cedfaf166267",
+        "runs/R2-softmax-capacity_stressed-s20260809-17cb3e5b3edf",
+        "runs/R2-softmax-capacity_stressed-s20260809-5a1e36e61385",
+        "runs/R2-softmax-capacity_stressed-s20260809-ace8601f7552",
+        "runs/R3-softmax-capacity_stressed-s20260809-09b10c347c1b",
+        "runs/R3-softmax-capacity_stressed-s20260809-1dbfc76e7723",
+        "runs/R3-softmax-capacity_stressed-s20260809-2001ea05ce46",
+        "runs/R3-softmax-capacity_stressed-s20260809-25c71e37a74b",
+        "runs/R3-softmax-capacity_stressed-s20260809-2a92fe7a0dfb",
+        "runs/R3-softmax-capacity_stressed-s20260809-36b61e48e8f7",
+        "runs/R3-softmax-capacity_stressed-s20260809-3dd7992d4f35",
+        "runs/R3-softmax-capacity_stressed-s20260809-54b717abd54f",
+        "runs/R3-softmax-capacity_stressed-s20260809-6b829ec65307",
+        "runs/R3-softmax-capacity_stressed-s20260809-6e7c70885853",
+        "runs/R3-softmax-capacity_stressed-s20260809-af4573c38105",
+        "runs/R3-softmax-capacity_stressed-s20260809-be0f81829e3e",
+        "runs/R3-softmax-capacity_stressed-s20260809-c2953b030012",
+        "runs/R3-softmax-capacity_stressed-s20260809-d3bf0f482190",
+        "runs/R3-softmax-capacity_stressed-s20260809-ff1608b6388b",
+        "runs/R3-softmax-negative_control-s20260809-2d76880d9ebc",
+        "runs/R4-softmax-capacity_stressed-s20260809-0b80f6466b88",
+        "runs/R4-softmax-capacity_stressed-s20260810-4a061d95bb4f"
+      ],
+      "evaluations": [
+        {
+          "source": "runs/R1-softmax-positive_control-s20260809-cedfaf166267",
+          "passed": true,
+          "measured": {
+            "invariant_checks": 7,
+            "invariant_failures": [],
+            "numerical_failure": false,
+            "reached_final_evaluation": true,
+            "run_id": "R1-softmax-positive_control-s20260809-cedfaf166267"
+          },
+          "evaluated_by": "evaluate_rungs/r0_invariants",
+          "evaluated_utc": "2026-08-10T13:03:59+00:00"
+        },
+        {
+          "source": "runs/R2-softmax-capacity_stressed-s20260809-17cb3e5b3edf",
+          "passed": true,
+          "measured": {
+            "invariant_checks": 7,
+            "invariant_failures": [],
+            "numerical_failure": false,
+            "reached_final_evaluation": true,
+            "run_id": "R2-softmax-capacity_stressed-s20260809-17cb3e5b3edf"
+          },
+          "evaluated_by": "evaluate_rungs/r0_invariants",
+          "evaluated_utc": "2026-08-10T13:06:18+00:00"
+        },
+        {
+          "source": "runs/R2-softmax-capacity_stressed-s20260809-5a1e36e61385",
+          "passed": true,
+          "measured": {
+            "invariant_checks": 7,
+            "invariant_failures": [],
+            "numerical_failure": false,
+            "reached_final_evaluation": true,
+            "run_id": "R2-softmax-capacity_stressed-s20260809-5a1e36e61385"
+          },
+          "evaluated_by": "evaluate_rungs/r0_invariants",
+          "evaluated_utc": "2026-08-10T13:07:27+00:00"
+        },
+        {
+          "source": "runs/R2-softmax-capacity_stressed-s20260809-ace8601f7552",
+          "passed": true,
+          "measured": {
+            "invariant_checks": 7,
+            "invariant_failures": [],
+            "numerical_failure": false,
+            "reached_final_evaluation": true,
+            "run_id": "R2-softmax-capacity_stressed-s20260809-ace8601f7552"
+          },
+          "evaluated_by": "evaluate_rungs/r0_invariants",
+          "evaluated_utc": "2026-08-10T13:05:11+00:00"
+        },
+        {
+          "source": "runs/R3-softmax-capacity_stressed-s20260809-09b10c347c1b",
+          "passed": true,
+          "measured": {
+            "invariant_checks": 7,
+            "invariant_failures": [],
+            "numerical_failure": false,
+            "reached_final_evaluation": true,
+            "run_id": "R3-softmax-capacity_stressed-s20260809-09b10c347c1b"
+          },
+          "evaluated_by": "evaluate_rungs/r0_invariants",
+          "evaluated_utc": "2026-08-10T13:33:35+00:00"
+        },
+        {
+          "source": "runs/R3-softmax-capacity_stressed-s20260809-1dbfc76e7723",
+          "passed": true,
+          "measured": {
+            "invariant_checks": 7,
+            "invariant_failures": [],
+            "numerical_failure": false,
+            "reached_final_evaluation": true,
+            "run_id": "R3-softmax-capacity_stressed-s20260809-1dbfc76e7723"
+          },
+          "evaluated_by": "evaluate_rungs/r0_invariants",
+          "evaluated_utc": "2026-08-10T13:19:19+00:00"
+        },
+        {
+          "source": "runs/R3-softmax-capacity_stressed-s20260809-2001ea05ce46",
+          "passed": true,
+          "measured": {
+            "invariant_checks": 7,
+            "invariant_failures": [],
+            "numerical_failure": false,
+            "reached_final_evaluation": true,
+            "run_id": "R3-softmax-capacity_stressed-s20260809-2001ea05ce46"
+          },
+          "evaluated_by": "evaluate_rungs/r0_invariants",
+          "evaluated_utc": "2026-08-10T13:21:55+00:00"
+        },
+        {
+          "source": "runs/R3-softmax-capacity_stressed-s20260809-25c71e37a74b",
+          "passed": true,
+          "measured": {
+            "invariant_checks": 7,
+            "invariant_failures": [],
+            "numerical_failure": false,
+            "reached_final_evaluation": true,
+            "run_id": "R3-softmax-capacity_stressed-s20260809-25c71e37a74b"
+          },
+          "evaluated_by": "evaluate_rungs/r0_invariants",
+          "evaluated_utc": "2026-08-10T13:24:31+00:00"
+        },
+        {
+          "source": "runs/R3-softmax-capacity_stressed-s20260809-2a92fe7a0dfb",
+          "passed": true,
+          "measured": {
+            "invariant_checks": 7,
+            "invariant_failures": [],
+            "numerical_failure": false,
+            "reached_final_evaluation": true,
+            "run_id": "R3-softmax-capacity_stressed-s20260809-2a92fe7a0dfb"
+          },
+          "evaluated_by": "evaluate_rungs/r0_invariants",
+          "evaluated_utc": "2026-08-10T13:30:59+00:00"
+        },
+        {
+          "source": "runs/R3-softmax-capacity_stressed-s20260809-36b61e48e8f7",
+          "passed": true,
+          "measured": {
+            "invariant_checks": 7,
+            "invariant_failures": [],
+            "numerical_failure": false,
+            "reached_final_evaluation": true,
+            "run_id": "R3-softmax-capacity_stressed-s20260809-36b61e48e8f7"
+          },
+          "evaluated_by": "evaluate_rungs/r0_invariants",
+          "evaluated_utc": "2026-08-10T13:28:24+00:00"
+        },
+        {
+          "source": "runs/R3-softmax-capacity_stressed-s20260809-3dd7992d4f35",
+          "passed": true,
+          "measured": {
+            "invariant_checks": 7,
+            "invariant_failures": [],
+            "numerical_failure": false,
+            "reached_final_evaluation": true,
+            "run_id": "R3-softmax-capacity_stressed-s20260809-3dd7992d4f35"
+          },
+          "evaluated_by": "evaluate_rungs/r0_invariants",
+          "evaluated_utc": "2026-08-10T13:27:05+00:00"
+        },
+        {
+          "source": "runs/R3-softmax-capacity_stressed-s20260809-54b717abd54f",
+          "passed": true,
+          "measured": {
+            "invariant_checks": 7,
+            "invariant_failures": [],
+            "numerical_failure": false,
+            "reached_final_evaluation": true,
+            "run_id": "R3-softmax-capacity_stressed-s20260809-54b717abd54f"
+          },
+          "evaluated_by": "evaluate_rungs/r0_invariants",
+          "evaluated_utc": "2026-08-10T13:20:35+00:00"
+        },
+        {
+          "source": "runs/R3-softmax-capacity_stressed-s20260809-6b829ec65307",
+          "passed": true,
+          "measured": {
+            "invariant_checks": 7,
+            "invariant_failures": [],
+            "numerical_failure": false,
+            "reached_final_evaluation": true,
+            "run_id": "R3-softmax-capacity_stressed-s20260809-6b829ec65307"
+          },
+          "evaluated_by": "evaluate_rungs/r0_invariants",
+          "evaluated_utc": "2026-08-10T13:23:13+00:00"
+        },
+        {
+          "source": "runs/R3-softmax-capacity_stressed-s20260809-6e7c70885853",
+          "passed": true,
+          "measured": {
+            "invariant_checks": 7,
+            "invariant_failures": [],
+            "numerical_failure": false,
+            "reached_final_evaluation": true,
+            "run_id": "R3-softmax-capacity_stressed-s20260809-6e7c70885853"
+          },
+          "evaluated_by": "evaluate_rungs/r0_invariants",
+          "evaluated_utc": "2026-08-10T13:34:51+00:00"
+        },
+        {
+          "source": "runs/R3-softmax-capacity_stressed-s20260809-af4573c38105",
+          "passed": true,
+          "measured": {
+            "invariant_checks": 7,
+            "invariant_failures": [],
+            "numerical_failure": false,
+            "reached_final_evaluation": true,
+            "run_id": "R3-softmax-capacity_stressed-s20260809-af4573c38105"
+          },
+          "evaluated_by": "evaluate_rungs/r0_invariants",
+          "evaluated_utc": "2026-08-10T13:25:49+00:00"
+        },
+        {
+          "source": "runs/R3-softmax-capacity_stressed-s20260809-be0f81829e3e",
+          "passed": true,
+          "measured": {
+            "invariant_checks": 7,
+            "invariant_failures": [],
+            "numerical_failure": false,
+            "reached_final_evaluation": true,
+            "run_id": "R3-softmax-capacity_stressed-s20260809-be0f81829e3e"
+          },
+          "evaluated_by": "evaluate_rungs/r0_invariants",
+          "evaluated_utc": "2026-08-10T13:18:01+00:00"
+        },
+        {
+          "source": "runs/R3-softmax-capacity_stressed-s20260809-c2953b030012",
+          "passed": true,
+          "measured": {
+            "invariant_checks": 7,
+            "invariant_failures": [],
+            "numerical_failure": false,
+            "reached_final_evaluation": true,
+            "run_id": "R3-softmax-capacity_stressed-s20260809-c2953b030012"
+          },
+          "evaluated_by": "evaluate_rungs/r0_invariants",
+          "evaluated_utc": "2026-08-10T13:29:41+00:00"
+        },
+        {
+          "source": "runs/R3-softmax-capacity_stressed-s20260809-d3bf0f482190",
+          "passed": true,
+          "measured": {
+            "invariant_checks": 7,
+            "invariant_failures": [],
+            "numerical_failure": false,
+            "reached_final_evaluation": true,
+            "run_id": "R3-softmax-capacity_stressed-s20260809-d3bf0f482190"
+          },
+          "evaluated_by": "evaluate_rungs/r0_invariants",
+          "evaluated_utc": "2026-08-10T13:36:12+00:00"
+        },
+        {
+          "source": "runs/R3-softmax-capacity_stressed-s20260809-ff1608b6388b",
+          "passed": true,
+          "measured": {
+            "invariant_checks": 7,
+            "invariant_failures": [],
+            "numerical_failure": false,
+            "reached_final_evaluation": true,
+            "run_id": "R3-softmax-capacity_stressed-s20260809-ff1608b6388b"
+          },
+          "evaluated_by": "evaluate_rungs/r0_invariants",
+          "evaluated_utc": "2026-08-10T13:32:19+00:00"
+        },
+        {
+          "source": "runs/R3-softmax-negative_control-s20260809-2d76880d9ebc",
+          "passed": true,
+          "measured": {
+            "invariant_checks": 7,
+            "invariant_failures": [],
+            "numerical_failure": false,
+            "reached_final_evaluation": true,
+            "run_id": "R3-softmax-negative_control-s20260809-2d76880d9ebc"
+          },
+          "evaluated_by": "evaluate_rungs/r0_invariants",
+          "evaluated_utc": "2026-08-10T13:37:31+00:00"
+        },
+        {
+          "source": "runs/R4-softmax-capacity_stressed-s20260809-0b80f6466b88",
+          "passed": true,
+          "measured": {
+            "invariant_checks": 7,
+            "invariant_failures": [],
+            "numerical_failure": false,
+            "reached_final_evaluation": true,
+            "run_id": "R4-softmax-capacity_stressed-s20260809-0b80f6466b88"
+          },
+          "evaluated_by": "evaluate_rungs/r0_invariants",
+          "evaluated_utc": "2026-08-10T13:39:30+00:00"
+        },
+        {
+          "source": "runs/R4-softmax-capacity_stressed-s20260810-4a061d95bb4f",
+          "passed": true,
+          "measured": {
+            "invariant_checks": 7,
+            "invariant_failures": [],
+            "numerical_failure": false,
+            "reached_final_evaluation": true,
+            "run_id": "R4-softmax-capacity_stressed-s20260810-4a061d95bb4f"
+          },
+          "evaluated_by": "evaluate_rungs/r0_invariants",
+          "evaluated_utc": "2026-08-10T13:40:46+00:00"
+        }
+      ]
+    },
+    "1_mechanism_is_active": {
+      "passed": true,
+      "evidence": [
+        "runs/R1-softmax-positive_control-s20260809-cedfaf166267",
+        "runs/R2-softmax-capacity_stressed-s20260809-17cb3e5b3edf",
+        "runs/R2-softmax-capacity_stressed-s20260809-5a1e36e61385",
+        "runs/R2-softmax-capacity_stressed-s20260809-ace8601f7552",
+        "runs/R3-softmax-capacity_stressed-s20260809-09b10c347c1b",
+        "runs/R3-softmax-capacity_stressed-s20260809-1dbfc76e7723",
+        "runs/R3-softmax-capacity_stressed-s20260809-2001ea05ce46",
+        "runs/R3-softmax-capacity_stressed-s20260809-25c71e37a74b",
+        "runs/R3-softmax-capacity_stressed-s20260809-2a92fe7a0dfb",
+        "runs/R3-softmax-capacity_stressed-s20260809-36b61e48e8f7",
+        "runs/R3-softmax-capacity_stressed-s20260809-3dd7992d4f35",
+        "runs/R3-softmax-capacity_stressed-s20260809-54b717abd54f",
+        "runs/R3-softmax-capacity_stressed-s20260809-6b829ec65307",
+        "runs/R3-softmax-capacity_stressed-s20260809-6e7c70885853",
+        "runs/R3-softmax-capacity_stressed-s20260809-af4573c38105",
+        "runs/R3-softmax-capacity_stressed-s20260809-be0f81829e3e",
+        "runs/R3-softmax-capacity_stressed-s20260809-c2953b030012",
+        "runs/R3-softmax-capacity_stressed-s20260809-d3bf0f482190",
+        "runs/R3-softmax-capacity_stressed-s20260809-ff1608b6388b",
+        "runs/R3-softmax-negative_control-s20260809-2d76880d9ebc",
+        "runs/R4-softmax-capacity_stressed-s20260809-0b80f6466b88",
+        "runs/R4-softmax-capacity_stressed-s20260810-4a061d95bb4f"
+      ],
+      "evaluations": [
+        {
+          "source": "runs/R1-softmax-positive_control-s20260809-cedfaf166267",
+          "passed": true,
+          "measured": {
+            "active": true,
+            "best_off_diagonal_mass": 0.7208686180110702,
+            "best_entropy_ratio": 0.6943757291704968,
+            "best_retrieval_lift": 11.984319226350637,
+            "reasons": [],
+            "mechanism_version": "mech-1.0.0",
+            "run_id": "R1-softmax-positive_control-s20260809-cedfaf166267"
+          },
+          "evaluated_by": "evaluate_rungs/mechanism_is_active",
+          "evaluated_utc": "2026-08-10T13:03:59+00:00"
+        },
+        {
+          "source": "runs/R2-softmax-capacity_stressed-s20260809-17cb3e5b3edf",
+          "passed": true,
+          "measured": {
+            "active": true,
+            "best_off_diagonal_mass": 0.8800859825894575,
+            "best_entropy_ratio": 0.5118171213977957,
+            "best_retrieval_lift": 46.49738828837872,
+            "reasons": [],
+            "mechanism_version": "mech-1.0.0",
+            "run_id": "R2-softmax-capacity_stressed-s20260809-17cb3e5b3edf"
+          },
+          "evaluated_by": "evaluate_rungs/mechanism_is_active",
+          "evaluated_utc": "2026-08-10T13:06:18+00:00"
+        },
+        {
+          "source": "runs/R2-softmax-capacity_stressed-s20260809-5a1e36e61385",
+          "passed": true,
+          "measured": {
+            "active": true,
+            "best_off_diagonal_mass": 0.8785384180260744,
+            "best_entropy_ratio": 0.5775544525231642,
+            "best_retrieval_lift": 47.87673003505916,
+            "reasons": [],
+            "mechanism_version": "mech-1.0.0",
+            "run_id": "R2-softmax-capacity_stressed-s20260809-5a1e36e61385"
+          },
+          "evaluated_by": "evaluate_rungs/mechanism_is_active",
+          "evaluated_utc": "2026-08-10T13:07:27+00:00"
+        },
+        {
+          "source": "runs/R2-softmax-capacity_stressed-s20260809-ace8601f7552",
+          "passed": true,
+          "measured": {
+            "active": true,
+            "best_off_diagonal_mass": 0.8716582702936376,
+            "best_entropy_ratio": 0.8460269490999359,
+            "best_retrieval_lift": 33.34999461238409,
+            "reasons": [],
+            "mechanism_version": "mech-1.0.0",
+            "run_id": "R2-softmax-capacity_stressed-s20260809-ace8601f7552"
+          },
+          "evaluated_by": "evaluate_rungs/mechanism_is_active",
+          "evaluated_utc": "2026-08-10T13:05:11+00:00"
+        },
+        {
+          "source": "runs/R3-softmax-capacity_stressed-s20260809-09b10c347c1b",
+          "passed": true,
+          "measured": {
+            "active": true,
+            "best_off_diagonal_mass": 0.9205652573328452,
+            "best_entropy_ratio": 0.6784592967109646,
+            "best_retrieval_lift": 47.65278012282216,
+            "reasons": [],
+            "mechanism_version": "mech-1.0.0",
+            "run_id": "R3-softmax-capacity_stressed-s20260809-09b10c347c1b"
+          },
+          "evaluated_by": "evaluate_rungs/mechanism_is_active",
+          "evaluated_utc": "2026-08-10T13:33:35+00:00"
+        },
+        {
+          "source": "runs/R3-softmax-capacity_stressed-s20260809-1dbfc76e7723",
+          "passed": true,
+          "measured": {
+            "active": true,
+            "best_off_diagonal_mass": 0.9158295608586072,
+            "best_entropy_ratio": 0.5986558014563226,
+            "best_retrieval_lift": 46.103194527880994,
+            "reasons": [],
+            "mechanism_version": "mech-1.0.0",
+            "run_id": "R3-softmax-capacity_stressed-s20260809-1dbfc76e7723"
+          },
+          "evaluated_by": "evaluate_rungs/mechanism_is_active",
+          "evaluated_utc": "2026-08-10T13:19:19+00:00"
+        },
+        {
+          "source": "runs/R3-softmax-capacity_stressed-s20260809-2001ea05ce46",
+          "passed": true,
+          "measured": {
+            "active": true,
+            "best_off_diagonal_mass": 0.8812525049325796,
+            "best_entropy_ratio": 0.20352735633739596,
+            "best_retrieval_lift": 46.700907325954184,
+            "reasons": [],
+            "mechanism_version": "mech-1.0.0",
+            "run_id": "R3-softmax-capacity_stressed-s20260809-2001ea05ce46"
+          },
+          "evaluated_by": "evaluate_rungs/mechanism_is_active",
+          "evaluated_utc": "2026-08-10T13:21:55+00:00"
+        },
+        {
+          "source": "runs/R3-softmax-capacity_stressed-s20260809-25c71e37a74b",
+          "passed": true,
+          "measured": {
+            "active": true,
+            "best_off_diagonal_mass": 0.8990646443930566,
+            "best_entropy_ratio": 0.3605673270743892,
+            "best_retrieval_lift": 47.749729350674905,
+            "reasons": [],
+            "mechanism_version": "mech-1.0.0",
+            "run_id": "R3-softmax-capacity_stressed-s20260809-25c71e37a74b"
+          },
+          "evaluated_by": "evaluate_rungs/mechanism_is_active",
+          "evaluated_utc": "2026-08-10T13:24:31+00:00"
+        },
+        {
+          "source": "runs/R3-softmax-capacity_stressed-s20260809-2a92fe7a0dfb",
+          "passed": true,
+          "measured": {
+            "active": true,
+            "best_off_diagonal_mass": 0.8999165688539333,
+            "best_entropy_ratio": 0.4138476777897795,
+            "best_retrieval_lift": 47.830039389431484,
+            "reasons": [],
+            "mechanism_version": "mech-1.0.0",
+            "run_id": "R3-softmax-capacity_stressed-s20260809-2a92fe7a0dfb"
+          },
+          "evaluated_by": "evaluate_rungs/mechanism_is_active",
+          "evaluated_utc": "2026-08-10T13:30:59+00:00"
+        },
+        {
+          "source": "runs/R3-softmax-capacity_stressed-s20260809-36b61e48e8f7",
+          "passed": true,
+          "measured": {
+            "active": true,
+            "best_off_diagonal_mass": 0.8890820874336489,
+            "best_entropy_ratio": 0.289149522498272,
+            "best_retrieval_lift": 47.729410761035986,
+            "reasons": [],
+            "mechanism_version": "mech-1.0.0",
+            "run_id": "R3-softmax-capacity_stressed-s20260809-36b61e48e8f7"
+          },
+          "evaluated_by": "evaluate_rungs/mechanism_is_active",
+          "evaluated_utc": "2026-08-10T13:28:24+00:00"
+        },
+        {
+          "source": "runs/R3-softmax-capacity_stressed-s20260809-3dd7992d4f35",
+          "passed": true,
+          "measured": {
+            "active": true,
+            "best_off_diagonal_mass": 0.9165955813397074,
+            "best_entropy_ratio": 0.2657932407429559,
+            "best_retrieval_lift": 47.88091681525112,
+            "reasons": [],
+            "mechanism_version": "mech-1.0.0",
+            "run_id": "R3-softmax-capacity_stressed-s20260809-3dd7992d4f35"
+          },
+          "evaluated_by": "evaluate_rungs/mechanism_is_active",
+          "evaluated_utc": "2026-08-10T13:27:05+00:00"
+        },
+        {
+          "source": "runs/R3-softmax-capacity_stressed-s20260809-54b717abd54f",
+          "passed": true,
+          "measured": {
+            "active": true,
+            "best_off_diagonal_mass": 0.8667952636684247,
+            "best_entropy_ratio": 0.42962297427671775,
+            "best_retrieval_lift": 46.96496451459826,
+            "reasons": [],
+            "mechanism_version": "mech-1.0.0",
+            "run_id": "R3-softmax-capacity_stressed-s20260809-54b717abd54f"
+          },
+          "evaluated_by": "evaluate_rungs/mechanism_is_active",
+          "evaluated_utc": "2026-08-10T13:20:35+00:00"
+        },
+        {
+          "source": "runs/R3-softmax-capacity_stressed-s20260809-6b829ec65307",
+          "passed": true,
+          "measured": {
+            "active": true,
+            "best_off_diagonal_mass": 0.8980691140218016,
+            "best_entropy_ratio": 0.2086795849895173,
+            "best_retrieval_lift": 46.725519433210145,
+            "reasons": [],
+            "mechanism_version": "mech-1.0.0",
+            "run_id": "R3-softmax-capacity_stressed-s20260809-6b829ec65307"
+          },
+          "evaluated_by": "evaluate_rungs/mechanism_is_active",
+          "evaluated_utc": "2026-08-10T13:23:13+00:00"
+        },
+        {
+          "source": "runs/R3-softmax-capacity_stressed-s20260809-6e7c70885853",
+          "passed": true,
+          "measured": {
+            "active": true,
+            "best_off_diagonal_mass": 0.9124456361754228,
+            "best_entropy_ratio": 0.4348944110154036,
+            "best_retrieval_lift": 47.92102793790401,
+            "reasons": [],
+            "mechanism_version": "mech-1.0.0",
+            "run_id": "R3-softmax-capacity_stressed-s20260809-6e7c70885853"
+          },
+          "evaluated_by": "evaluate_rungs/mechanism_is_active",
+          "evaluated_utc": "2026-08-10T13:34:51+00:00"
+        },
+        {
+          "source": "runs/R3-softmax-capacity_stressed-s20260809-af4573c38105",
+          "passed": true,
+          "measured": {
+            "active": true,
+            "best_off_diagonal_mass": 0.8893538995825216,
+            "best_entropy_ratio": 0.29914452579889195,
+            "best_retrieval_lift": 47.81739012524486,
+            "reasons": [],
+            "mechanism_version": "mech-1.0.0",
+            "run_id": "R3-softmax-capacity_stressed-s20260809-af4573c38105"
+          },
+          "evaluated_by": "evaluate_rungs/mechanism_is_active",
+          "evaluated_utc": "2026-08-10T13:25:49+00:00"
+        },
+        {
+          "source": "runs/R3-softmax-capacity_stressed-s20260809-be0f81829e3e",
+          "passed": true,
+          "measured": {
+            "active": true,
+            "best_off_diagonal_mass": 0.899748135977277,
+            "best_entropy_ratio": 0.441155936354766,
+            "best_retrieval_lift": 47.70793375151698,
+            "reasons": [],
+            "mechanism_version": "mech-1.0.0",
+            "run_id": "R3-softmax-capacity_stressed-s20260809-be0f81829e3e"
+          },
+          "evaluated_by": "evaluate_rungs/mechanism_is_active",
+          "evaluated_utc": "2026-08-10T13:18:01+00:00"
+        },
+        {
+          "source": "runs/R3-softmax-capacity_stressed-s20260809-c2953b030012",
+          "passed": true,
+          "measured": {
+            "active": true,
+            "best_off_diagonal_mass": 0.8851797148377614,
+            "best_entropy_ratio": 0.4457793741602427,
+            "best_retrieval_lift": 47.94818018004299,
+            "reasons": [],
+            "mechanism_version": "mech-1.0.0",
+            "run_id": "R3-softmax-capacity_stressed-s20260809-c2953b030012"
+          },
+          "evaluated_by": "evaluate_rungs/mechanism_is_active",
+          "evaluated_utc": "2026-08-10T13:29:41+00:00"
+        },
+        {
+          "source": "runs/R3-softmax-capacity_stressed-s20260809-d3bf0f482190",
+          "passed": true,
+          "measured": {
+            "active": true,
+            "best_off_diagonal_mass": 0.8866651465853217,
+            "best_entropy_ratio": 0.28397342434871903,
+            "best_retrieval_lift": 47.850817630067475,
+            "reasons": [],
+            "mechanism_version": "mech-1.0.0",
+            "run_id": "R3-softmax-capacity_stressed-s20260809-d3bf0f482190"
+          },
+          "evaluated_by": "evaluate_rungs/mechanism_is_active",
+          "evaluated_utc": "2026-08-10T13:36:12+00:00"
+        },
+        {
+          "source": "runs/R3-softmax-capacity_stressed-s20260809-ff1608b6388b",
+          "passed": true,
+          "measured": {
+            "active": true,
+            "best_off_diagonal_mass": 0.9189397895153586,
+            "best_entropy_ratio": 0.29435274849795773,
+            "best_retrieval_lift": 47.683073743712164,
+            "reasons": [],
+            "mechanism_version": "mech-1.0.0",
+            "run_id": "R3-softmax-capacity_stressed-s20260809-ff1608b6388b"
+          },
+          "evaluated_by": "evaluate_rungs/mechanism_is_active",
+          "evaluated_utc": "2026-08-10T13:32:19+00:00"
+        },
+        {
+          "source": "runs/R3-softmax-negative_control-s20260809-2d76880d9ebc",
+          "passed": true,
+          "measured": {
+            "active": true,
+            "best_off_diagonal_mass": 0.9105448226136684,
+            "best_entropy_ratio": 0.5451878048418735,
+            "best_retrieval_lift": null,
+            "reasons": [],
+            "mechanism_version": "mech-1.0.0",
+            "run_id": "R3-softmax-negative_control-s20260809-2d76880d9ebc"
+          },
+          "evaluated_by": "evaluate_rungs/mechanism_is_active",
+          "evaluated_utc": "2026-08-10T13:37:31+00:00"
+        },
+        {
+          "source": "runs/R4-softmax-capacity_stressed-s20260809-0b80f6466b88",
+          "passed": true,
+          "measured": {
+            "active": true,
+            "best_off_diagonal_mass": 0.899748135977277,
+            "best_entropy_ratio": 0.441155936354766,
+            "best_retrieval_lift": 47.70793375151698,
+            "reasons": [],
+            "mechanism_version": "mech-1.0.0",
+            "run_id": "R4-softmax-capacity_stressed-s20260809-0b80f6466b88"
+          },
+          "evaluated_by": "evaluate_rungs/mechanism_is_active",
+          "evaluated_utc": "2026-08-10T13:39:30+00:00"
+        },
+        {
+          "source": "runs/R4-softmax-capacity_stressed-s20260810-4a061d95bb4f",
+          "passed": true,
+          "measured": {
+            "active": true,
+            "best_off_diagonal_mass": 0.8949380114728316,
+            "best_entropy_ratio": 0.3181320553165531,
+            "best_retrieval_lift": 47.8735701777041,
+            "reasons": [],
+            "mechanism_version": "mech-1.0.0",
+            "run_id": "R4-softmax-capacity_stressed-s20260810-4a061d95bb4f"
+          },
+          "evaluated_by": "evaluate_rungs/mechanism_is_active",
+          "evaluated_utc": "2026-08-10T13:40:46+00:00"
+        }
+      ]
+    }
+  },
+  "highest_supported_rung": 1
+}

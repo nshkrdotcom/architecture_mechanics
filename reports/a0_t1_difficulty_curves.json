@@ -1,0 +1,1292 @@
+{
+  "schema": "am.t1_difficulty_curves.v1",
+  "t1_ladder_version": "t1-1.0.0",
+  "claim": "claims/a0-t1-associative-recall.yml",
+  "primary_metric": "associative_recall_accuracy",
+  "seeds_per_cell": 1,
+  "seed_sd_used": 0.05401587189873679,
+  "single_run_difference_sd": 0.07638997862260133,
+  "resolution_rule": "an axis is resolved when its range exceeds twice the standard deviation of a difference between two one-seed cells, which is sqrt(2) x the across-seed sd of the primary metric measured on the R4 arm. Below that the ordering of its points is not evidence about the axis.",
+  "base_cell": {
+    "cell": "base",
+    "level": null,
+    "run_id": "R3-softmax-capacity_stressed-s20260809-be0f81829e3e",
+    "run_dir": "runs/R3-softmax-capacity_stressed-s20260809-be0f81829e3e",
+    "overrides": {},
+    "condition": "capacity_stressed",
+    "passed": true,
+    "metrics": {
+      "associative_recall_accuracy": 0.555419921875,
+      "answer_set_accuracy": 0.555419921875,
+      "associative_recall_jaccard": 0.8400279662151,
+      "heldout_composition_accuracy": 0.555419921875,
+      "feature_f1": 0.87645034808354,
+      "feature_macro_recall": 0.8801635154448862,
+      "reconstruction_loss": 0.0030212951479543183,
+      "brier": 0.005374824880927863,
+      "geometry.probe_macro_r2": 0.09180212613790069,
+      "geometry.probe_macro_auc": 0.858578723212392,
+      "geometry.mean_purity": 0.21149943637939245,
+      "geometry.interference_fraction": 0.1198889558211732,
+      "geometry.effective_rank": 41.464163584216095,
+      "geometry.participation_ratio": 14.514249615517798,
+      "geometry.mean_abs_off_diagonal_cosine": 0.20598479377132847,
+      "geometry.capacity_total": 14.095856521708365,
+      "geometry.alignment_marginal_mean": 0.8041430962787753,
+      "mechanism.best_off_diagonal_mass": 0.899748135977277,
+      "mechanism.best_entropy_ratio": 0.441155936354766,
+      "mechanism.best_retrieval_lift": 47.70793375151698
+    },
+    "skill": {
+      "associative_recall_accuracy": 0.555419921875,
+      "answer_set_accuracy": 0.555419921875,
+      "feature_f1": 0.87645034808354,
+      "reconstruction_loss": 0.6927260500753235
+    },
+    "oracle_recall": 1.0,
+    "marginal_recall": 0.0,
+    "split": {
+      "n_templates_in_split": 18,
+      "split_fingerprint": "5743f7d761a43212",
+      "global_density": 0.0354
+    }
+  },
+  "negative_control": {
+    "cell": "negative-control",
+    "level": "source_destroyed",
+    "run_id": "R3-softmax-negative_control-s20260809-2d76880d9ebc",
+    "run_dir": "runs/R3-softmax-negative_control-s20260809-2d76880d9ebc",
+    "overrides": {},
+    "condition": "negative_control",
+    "passed": true,
+    "metrics": {
+      "associative_recall_accuracy": 0.0,
+      "answer_set_accuracy": 0.0,
+      "associative_recall_jaccard": 0.015364506226267834,
+      "heldout_composition_accuracy": 0.0,
+      "feature_f1": 0.04922733790027083,
+      "feature_macro_recall": 0.06169828256838724,
+      "reconstruction_loss": 0.009754573770685122,
+      "brier": 0.03193828527364905,
+      "geometry.probe_macro_r2": 0.2559467734742536,
+      "geometry.probe_macro_auc": 0.950113443558197,
+      "geometry.mean_purity": 0.24588682282130656,
+      "geometry.interference_fraction": 0.10609915169115319,
+      "geometry.effective_rank": 9.480816914478273,
+      "geometry.participation_ratio": 2.799993040552522,
+      "geometry.mean_abs_off_diagonal_cosine": 0.48405467551932196,
+      "geometry.capacity_total": 3.020655972075705,
+      "geometry.alignment_marginal_mean": 0.7091409313557128,
+      "mechanism.best_off_diagonal_mass": 0.9105448226136684,
+      "mechanism.best_entropy_ratio": 0.5451878048418735,
+      "mechanism.best_retrieval_lift": null
+    },
+    "skill": {
+      "associative_recall_accuracy": null,
+      "answer_set_accuracy": null,
+      "feature_f1": null,
+      "reconstruction_loss": null
+    },
+    "oracle_recall": 0.0,
+    "marginal_recall": 0.0,
+    "split": {
+      "n_templates_in_split": 18,
+      "split_fingerprint": "5743f7d761a43212",
+      "global_density": 0.0354
+    }
+  },
+  "negative_control_check": {
+    "measurable": true,
+    "run_dir": "runs/R3-softmax-negative_control-s20260809-2d76880d9ebc",
+    "run_id": "R3-softmax-negative_control-s20260809-2d76880d9ebc",
+    "eval_content_hash": "491f8692acfd735e1e3dd67fab8a7dce5b4df5b7cc059b59853cf8be8a6c540f",
+    "n_eval_examples": 4096,
+    "decisive_metrics": [
+      "associative_recall_accuracy",
+      "reconstruction_loss",
+      "brier",
+      "feature_precision",
+      "feature_recall",
+      "feature_f1"
+    ],
+    "why_these_decide": "the pre-registered primary metric, plus prompt 03's CEILING_DOMINATED_METRICS \u2014 the metrics on which the frequency ceiling provably beats every other input-blind predictor, so that being above it cannot be explained by feature frequency alone. The classification is committed source from prompt 03 and predates this mission.",
+    "oracle_bound": "prompt 02 bounded chance on this condition at exactly 0.0 with a perfect-memory 33-strategy oracle; the run's own recorded program oracle scores 0.0000 exact recall here and pays exactly the training marginal's reconstruction loss",
+    "comparisons": {
+      "associative_recall_accuracy": {
+        "a0": 0.0,
+        "frequency_ceiling": 0.0,
+        "chance": 0.000244140625,
+        "oracle": 0.0,
+        "kind": "score",
+        "ceiling_dominated": false,
+        "decides_the_verdict": true,
+        "a0_beats_the_best_input_blind_predictor": false,
+        "margin": 0.0
+      },
+      "reconstruction_loss": {
+        "a0": 0.009754573770685122,
+        "frequency_ceiling": 0.009498600316790156,
+        "chance": 0.020190175722838016,
+        "oracle": 0.00967765442987618,
+        "kind": "loss",
+        "ceiling_dominated": true,
+        "decides_the_verdict": true,
+        "a0_beats_the_best_input_blind_predictor": false,
+        "margin": -0.00025597345389496637
+      },
+      "brier": {
+        "a0": 0.03193828527364905,
+        "frequency_ceiling": 0.030357636511325836,
+        "chance": 0.030907173304715083,
+        "oracle": 0.03135515501101812,
+        "kind": "loss",
+        "ceiling_dominated": true,
+        "decides_the_verdict": true,
+        "a0_beats_the_best_input_blind_predictor": false,
+        "margin": -0.0015806487623232154
+      },
+      "feature_precision": {
+        "a0": 0.04922733790027083,
+        "frequency_ceiling": 0.068185438903935,
+        "chance": 0.03170304285486698,
+        "oracle": 0.0,
+        "kind": "score",
+        "ceiling_dominated": true,
+        "decides_the_verdict": true,
+        "a0_beats_the_best_input_blind_predictor": false,
+        "margin": -0.018958101003664164
+      },
+      "feature_recall": {
+        "a0": 0.04922733790027083,
+        "frequency_ceiling": 0.068185438903935,
+        "chance": 0.03170304285486698,
+        "oracle": 0.0,
+        "kind": "score",
+        "ceiling_dominated": true,
+        "decides_the_verdict": true,
+        "a0_beats_the_best_input_blind_predictor": false,
+        "margin": -0.018958101003664164
+      },
+      "feature_f1": {
+        "a0": 0.04922733790027083,
+        "frequency_ceiling": 0.068185438903935,
+        "chance": 0.03170304285486698,
+        "oracle": 0.0,
+        "kind": "score",
+        "ceiling_dominated": true,
+        "decides_the_verdict": true,
+        "a0_beats_the_best_input_blind_predictor": false,
+        "margin": -0.018958101003664164
+      },
+      "answer_set_accuracy": {
+        "a0": 0.0,
+        "frequency_ceiling": 0.0,
+        "chance": 0.000244140625,
+        "oracle": 0.0,
+        "kind": "score",
+        "ceiling_dominated": false,
+        "decides_the_verdict": false,
+        "a0_beats_the_best_input_blind_predictor": false,
+        "margin": 0.0
+      },
+      "associative_recall_jaccard": {
+        "a0": 0.015364506226267834,
+        "frequency_ceiling": 0.040589576710182186,
+        "chance": 0.015998616251912148,
+        "oracle": 0.0,
+        "kind": "score",
+        "ceiling_dominated": false,
+        "decides_the_verdict": false,
+        "a0_beats_the_best_input_blind_predictor": false,
+        "margin": -0.025225070483914352
+      },
+      "feature_macro_recall": {
+        "a0": 0.06169828256838724,
+        "frequency_ceiling": 0.04243259803921569,
+        "chance": 0.031240352299270396,
+        "oracle": 0.0,
+        "kind": "score",
+        "ceiling_dominated": false,
+        "decides_the_verdict": false,
+        "a0_beats_the_best_input_blind_predictor": true,
+        "margin": 0.019265684529171552
+      },
+      "feature_macro_precision": {
+        "a0": 0.05088277754518465,
+        "frequency_ceiling": 0.06542831076715225,
+        "chance": 0.03142763579851186,
+        "oracle": 0.0,
+        "kind": "score",
+        "ceiling_dominated": false,
+        "decides_the_verdict": false,
+        "a0_beats_the_best_input_blind_predictor": false,
+        "margin": -0.014545533221967596
+      }
+    },
+    "metrics_above_the_ceiling": [
+      "feature_macro_recall"
+    ],
+    "metrics_above_the_ceiling_that_decide": [],
+    "at_chance": true
+  },
+  "axes": {
+    "source_distance": {
+      "field": "distance_buckets",
+      "why": "\u00a74.3's first knob. The base condition draws from two buckets at once, so no single-bucket level coincides with it; the curve is read against the base cell rather than through it.",
+      "points": [
+        {
+          "cell": "source_distance-d4-6",
+          "level": [
+            [
+              4,
+              6
+            ]
+          ],
+          "run_id": "R3-softmax-capacity_stressed-s20260809-1dbfc76e7723",
+          "run_dir": "runs/R3-softmax-capacity_stressed-s20260809-1dbfc76e7723",
+          "overrides": {
+            "distance_buckets": [
+              [
+                4,
+                6
+              ]
+            ]
+          },
+          "condition": "capacity_stressed",
+          "passed": true,
+          "metrics": {
+            "associative_recall_accuracy": 0.562255859375,
+            "answer_set_accuracy": 0.562255859375,
+            "associative_recall_jaccard": 0.8304772227013437,
+            "heldout_composition_accuracy": 0.562255859375,
+            "feature_f1": 0.8644439036261864,
+            "feature_macro_recall": 0.8648202306098612,
+            "reconstruction_loss": 0.004018755620589376,
+            "brier": 0.006041177027937821,
+            "geometry.probe_macro_r2": 0.12616824275023586,
+            "geometry.probe_macro_auc": 0.9017460974700258,
+            "geometry.mean_purity": 0.18695339020429114,
+            "geometry.interference_fraction": 0.12409845151891614,
+            "geometry.effective_rank": 43.27200426125877,
+            "geometry.participation_ratio": 16.589542004607516,
+            "geometry.mean_abs_off_diagonal_cosine": 0.1898380323302914,
+            "geometry.capacity_total": 14.7401147041744,
+            "geometry.alignment_marginal_mean": 0.8022038145404249,
+            "mechanism.best_off_diagonal_mass": 0.9158295608586072,
+            "mechanism.best_entropy_ratio": 0.5986558014563226,
+            "mechanism.best_retrieval_lift": 46.103194527880994
+          },
+          "skill": {
+            "associative_recall_accuracy": 0.562255859375,
+            "answer_set_accuracy": 0.562255859375,
+            "feature_f1": 0.8644439036261864,
+            "reconstruction_loss": 0.6649796166417193
+          },
+          "oracle_recall": 1.0,
+          "marginal_recall": 0.0,
+          "split": {
+            "n_templates_in_split": 9,
+            "split_fingerprint": "40da9d6b2cd7e06b",
+            "global_density": 0.0354
+          }
+        },
+        {
+          "cell": "source_distance-d10-16",
+          "level": [
+            [
+              10,
+              16
+            ]
+          ],
+          "run_id": "R3-softmax-capacity_stressed-s20260809-54b717abd54f",
+          "run_dir": "runs/R3-softmax-capacity_stressed-s20260809-54b717abd54f",
+          "overrides": {
+            "distance_buckets": [
+              [
+                10,
+                16
+              ]
+            ]
+          },
+          "condition": "capacity_stressed",
+          "passed": true,
+          "metrics": {
+            "associative_recall_accuracy": 0.544921875,
+            "answer_set_accuracy": 0.544921875,
+            "associative_recall_jaccard": 0.8261430125321727,
+            "heldout_composition_accuracy": 0.544921875,
+            "feature_f1": 0.8585850492748979,
+            "feature_macro_recall": 0.8586528808347148,
+            "reconstruction_loss": 0.0036951616400948285,
+            "brier": 0.006285115569850917,
+            "geometry.probe_macro_r2": 0.1037417455009877,
+            "geometry.probe_macro_auc": 0.8849834231934106,
+            "geometry.mean_purity": 0.16495608817311933,
+            "geometry.interference_fraction": 0.13387327034311555,
+            "geometry.effective_rank": 41.6272825729113,
+            "geometry.participation_ratio": 12.401242962719007,
+            "geometry.mean_abs_off_diagonal_cosine": 0.20635218673993103,
+            "geometry.capacity_total": 12.534327275556395,
+            "geometry.alignment_marginal_mean": 0.7861616496048756,
+            "mechanism.best_off_diagonal_mass": 0.8667952636684247,
+            "mechanism.best_entropy_ratio": 0.42962297427671775,
+            "mechanism.best_retrieval_lift": 46.96496451459826
+          },
+          "skill": {
+            "associative_recall_accuracy": 0.544921875,
+            "answer_set_accuracy": 0.544921875,
+            "feature_f1": 0.8585850492748979,
+            "reconstruction_loss": 0.6892295646793796
+          },
+          "oracle_recall": 1.0,
+          "marginal_recall": 0.0,
+          "split": {
+            "n_templates_in_split": 9,
+            "split_fingerprint": "994e23dc08904086",
+            "global_density": 0.0354
+          }
+        },
+        {
+          "cell": "source_distance-d20-26",
+          "level": [
+            [
+              20,
+              26
+            ]
+          ],
+          "run_id": "R3-softmax-capacity_stressed-s20260809-2001ea05ce46",
+          "run_dir": "runs/R3-softmax-capacity_stressed-s20260809-2001ea05ce46",
+          "overrides": {
+            "distance_buckets": [
+              [
+                20,
+                26
+              ]
+            ]
+          },
+          "condition": "capacity_stressed",
+          "passed": true,
+          "metrics": {
+            "associative_recall_accuracy": 0.46240234375,
+            "answer_set_accuracy": 0.46240234375,
+            "associative_recall_jaccard": 0.7614936373847507,
+            "heldout_composition_accuracy": 0.46240234375,
+            "feature_f1": 0.801500907141679,
+            "feature_macro_recall": 0.8016835675580661,
+            "reconstruction_loss": 0.004435483249661455,
+            "brier": 0.008561821754647446,
+            "geometry.probe_macro_r2": 0.054861102695640734,
+            "geometry.probe_macro_auc": 0.8146075090676961,
+            "geometry.mean_purity": 0.1346166930735739,
+            "geometry.interference_fraction": 0.15342125451890182,
+            "geometry.effective_rank": 44.283771858239284,
+            "geometry.participation_ratio": 15.662461120035472,
+            "geometry.mean_abs_off_diagonal_cosine": 0.19972059837755607,
+            "geometry.capacity_total": 13.514278957223418,
+            "geometry.alignment_marginal_mean": 0.7815652084004838,
+            "mechanism.best_off_diagonal_mass": 0.8812525049325796,
+            "mechanism.best_entropy_ratio": 0.20352735633739596,
+            "mechanism.best_retrieval_lift": 46.700907325954184
+          },
+          "skill": {
+            "associative_recall_accuracy": 0.46240234375,
+            "answer_set_accuracy": 0.46240234375,
+            "feature_f1": 0.801500907141679,
+            "reconstruction_loss": 0.6220304045969701
+          },
+          "oracle_recall": 1.0,
+          "marginal_recall": 0.0,
+          "split": {
+            "n_templates_in_split": 9,
+            "split_fingerprint": "7da2c65365e0768f",
+            "global_density": 0.0354
+          }
+        },
+        {
+          "cell": "source_distance-d34-40",
+          "level": [
+            [
+              34,
+              40
+            ]
+          ],
+          "run_id": "R3-softmax-capacity_stressed-s20260809-6b829ec65307",
+          "run_dir": "runs/R3-softmax-capacity_stressed-s20260809-6b829ec65307",
+          "overrides": {
+            "distance_buckets": [
+              [
+                34,
+                40
+              ]
+            ]
+          },
+          "condition": "capacity_stressed",
+          "passed": true,
+          "metrics": {
+            "associative_recall_accuracy": 0.50146484375,
+            "answer_set_accuracy": 0.50146484375,
+            "associative_recall_jaccard": 0.7899216689072646,
+            "heldout_composition_accuracy": 0.50146484375,
+            "feature_f1": 0.8237035851472471,
+            "feature_macro_recall": 0.8245640012089994,
+            "reconstruction_loss": 0.004197126703571074,
+            "brier": 0.007882188924369718,
+            "geometry.probe_macro_r2": 0.0596345165672692,
+            "geometry.probe_macro_auc": 0.8220139474499883,
+            "geometry.mean_purity": 0.13318264353125783,
+            "geometry.interference_fraction": 0.14819002520785465,
+            "geometry.effective_rank": 48.797423255717945,
+            "geometry.participation_ratio": 23.092000593252074,
+            "geometry.mean_abs_off_diagonal_cosine": 0.1681643608910358,
+            "geometry.capacity_total": 17.606162574901056,
+            "geometry.alignment_marginal_mean": 0.780256192568121,
+            "mechanism.best_off_diagonal_mass": 0.8980691140218016,
+            "mechanism.best_entropy_ratio": 0.2086795849895173,
+            "mechanism.best_retrieval_lift": 46.725519433210145
+          },
+          "skill": {
+            "associative_recall_accuracy": 0.50146484375,
+            "answer_set_accuracy": 0.50146484375,
+            "feature_f1": 0.8237035851472471,
+            "reconstruction_loss": 0.648481807810189
+          },
+          "oracle_recall": 1.0,
+          "marginal_recall": 0.0,
+          "split": {
+            "n_templates_in_split": 9,
+            "split_fingerprint": "78a61b3980a1b3c2",
+            "global_density": 0.0354
+          }
+        }
+      ],
+      "n_missing": 0,
+      "resolution": {
+        "measurable": true,
+        "n_points": 4,
+        "range": 0.099853515625,
+        "single_run_difference_sd": 0.07638997862260133,
+        "range_in_sigma": 1.3071546481027103,
+        "resolved": false,
+        "adjacent_steps": [
+          {
+            "from": [
+              [
+                4,
+                6
+              ]
+            ],
+            "to": [
+              [
+                10,
+                16
+              ]
+            ],
+            "delta": -0.017333984375,
+            "in_sigma": 0.22691437656550717
+          },
+          {
+            "from": [
+              [
+                10,
+                16
+              ]
+            ],
+            "to": [
+              [
+                20,
+                26
+              ]
+            ],
+            "delta": -0.08251953125,
+            "in_sigma": 1.080240271537203
+          },
+          {
+            "from": [
+              [
+                20,
+                26
+              ]
+            ],
+            "to": [
+              [
+                34,
+                40
+              ]
+            ],
+            "delta": 0.0390625,
+            "in_sigma": 0.5113563415560725
+          }
+        ],
+        "n_adjacent_steps_resolved": 0
+      }
+    },
+    "distractors": {
+      "field": "n_distractors",
+      "why": "\u00a74.3's second knob: content-bearing positions between source and destination. Bounded above by the shortest distance in the bucket \u2014 four distractors cannot fit strictly inside a gap of five \u2014 so this axis stops at 4 and not by choice.",
+      "points": [
+        {
+          "cell": "distractors-n0",
+          "level": 0,
+          "run_id": "R3-softmax-capacity_stressed-s20260809-25c71e37a74b",
+          "run_dir": "runs/R3-softmax-capacity_stressed-s20260809-25c71e37a74b",
+          "overrides": {
+            "n_distractors": 0
+          },
+          "condition": "capacity_stressed",
+          "passed": true,
+          "metrics": {
+            "associative_recall_accuracy": 0.543701171875,
+            "answer_set_accuracy": 0.543701171875,
+            "associative_recall_jaccard": 0.8295367101702551,
+            "heldout_composition_accuracy": 0.543701171875,
+            "feature_f1": 0.8648475634152196,
+            "feature_macro_recall": 0.8696346483298582,
+            "reconstruction_loss": 0.003057661101860047,
+            "brier": 0.005917020615423328,
+            "geometry.probe_macro_r2": 0.0701949862023006,
+            "geometry.probe_macro_auc": 0.8292948209746436,
+            "geometry.mean_purity": 0.18358859035889732,
+            "geometry.interference_fraction": 0.1267371424637788,
+            "geometry.effective_rank": 45.01950073240525,
+            "geometry.participation_ratio": 18.79288755118555,
+            "geometry.mean_abs_off_diagonal_cosine": 0.2008950525327802,
+            "geometry.capacity_total": 14.702132266056976,
+            "geometry.alignment_marginal_mean": 0.7827616880576627,
+            "mechanism.best_off_diagonal_mass": 0.8990646443930566,
+            "mechanism.best_entropy_ratio": 0.3605673270743892,
+            "mechanism.best_retrieval_lift": 47.749729350674905
+          },
+          "skill": {
+            "associative_recall_accuracy": 0.543701171875,
+            "answer_set_accuracy": 0.543701171875,
+            "feature_f1": 0.8648475634152196,
+            "reconstruction_loss": 0.6890275334616924
+          },
+          "oracle_recall": 1.0,
+          "marginal_recall": 0.0,
+          "split": {
+            "n_templates_in_split": 18,
+            "split_fingerprint": "ae5dc98b2210f7f7",
+            "global_density": 0.0354
+          }
+        },
+        {
+          "cell": "distractors-n1",
+          "level": 1,
+          "run_id": "R3-softmax-capacity_stressed-s20260809-af4573c38105",
+          "run_dir": "runs/R3-softmax-capacity_stressed-s20260809-af4573c38105",
+          "overrides": {
+            "n_distractors": 1
+          },
+          "condition": "capacity_stressed",
+          "passed": true,
+          "metrics": {
+            "associative_recall_accuracy": 0.537841796875,
+            "answer_set_accuracy": 0.537841796875,
+            "associative_recall_jaccard": 0.8297178725950698,
+            "heldout_composition_accuracy": 0.537841796875,
+            "feature_f1": 0.8672481395534929,
+            "feature_macro_recall": 0.8699911692382183,
+            "reconstruction_loss": 0.003073078972172162,
+            "brier": 0.00564054621883537,
+            "geometry.probe_macro_r2": 0.062349555943944215,
+            "geometry.probe_macro_auc": 0.8112358315604219,
+            "geometry.mean_purity": 0.18776069990796854,
+            "geometry.interference_fraction": 0.12611241528027475,
+            "geometry.effective_rank": 44.09990523186986,
+            "geometry.participation_ratio": 18.389245583876683,
+            "geometry.mean_abs_off_diagonal_cosine": 0.2001464841362887,
+            "geometry.capacity_total": 13.369601541976698,
+            "geometry.alignment_marginal_mean": 0.7760294604608337,
+            "mechanism.best_off_diagonal_mass": 0.8893538995825216,
+            "mechanism.best_entropy_ratio": 0.29914452579889195,
+            "mechanism.best_retrieval_lift": 47.81739012524486
+          },
+          "skill": {
+            "associative_recall_accuracy": 0.537841796875,
+            "answer_set_accuracy": 0.537841796875,
+            "feature_f1": 0.8672481395534929,
+            "reconstruction_loss": 0.6874594940354756
+          },
+          "oracle_recall": 1.0,
+          "marginal_recall": 0.0,
+          "split": {
+            "n_templates_in_split": 18,
+            "split_fingerprint": "d774e43183318a59",
+            "global_density": 0.0354
+          }
+        },
+        {
+          "cell": "base",
+          "level": 3,
+          "run_id": "R3-softmax-capacity_stressed-s20260809-be0f81829e3e",
+          "run_dir": "runs/R3-softmax-capacity_stressed-s20260809-be0f81829e3e",
+          "overrides": {},
+          "condition": "capacity_stressed",
+          "passed": true,
+          "metrics": {
+            "associative_recall_accuracy": 0.555419921875,
+            "answer_set_accuracy": 0.555419921875,
+            "associative_recall_jaccard": 0.8400279662151,
+            "heldout_composition_accuracy": 0.555419921875,
+            "feature_f1": 0.87645034808354,
+            "feature_macro_recall": 0.8801635154448862,
+            "reconstruction_loss": 0.0030212951479543183,
+            "brier": 0.005374824880927863,
+            "geometry.probe_macro_r2": 0.09180212613790069,
+            "geometry.probe_macro_auc": 0.858578723212392,
+            "geometry.mean_purity": 0.21149943637939245,
+            "geometry.interference_fraction": 0.1198889558211732,
+            "geometry.effective_rank": 41.464163584216095,
+            "geometry.participation_ratio": 14.514249615517798,
+            "geometry.mean_abs_off_diagonal_cosine": 0.20598479377132847,
+            "geometry.capacity_total": 14.095856521708365,
+            "geometry.alignment_marginal_mean": 0.8041430962787753,
+            "mechanism.best_off_diagonal_mass": 0.899748135977277,
+            "mechanism.best_entropy_ratio": 0.441155936354766,
+            "mechanism.best_retrieval_lift": 47.70793375151698
+          },
+          "skill": {
+            "associative_recall_accuracy": 0.555419921875,
+            "answer_set_accuracy": 0.555419921875,
+            "feature_f1": 0.87645034808354,
+            "reconstruction_loss": 0.6927260500753235
+          },
+          "oracle_recall": 1.0,
+          "marginal_recall": 0.0,
+          "split": {
+            "n_templates_in_split": 18,
+            "split_fingerprint": "5743f7d761a43212",
+            "global_density": 0.0354
+          }
+        },
+        {
+          "cell": "distractors-n4",
+          "level": 4,
+          "run_id": "R3-softmax-capacity_stressed-s20260809-3dd7992d4f35",
+          "run_dir": "runs/R3-softmax-capacity_stressed-s20260809-3dd7992d4f35",
+          "overrides": {
+            "n_distractors": 4
+          },
+          "condition": "capacity_stressed",
+          "passed": true,
+          "metrics": {
+            "associative_recall_accuracy": 0.566650390625,
+            "answer_set_accuracy": 0.566650390625,
+            "associative_recall_jaccard": 0.8418544589776925,
+            "heldout_composition_accuracy": 0.566650390625,
+            "feature_f1": 0.8760502520604945,
+            "feature_macro_recall": 0.8794052999369787,
+            "reconstruction_loss": 0.0029936849327831315,
+            "brier": 0.005454194997430065,
+            "geometry.probe_macro_r2": 0.06621251105981205,
+            "geometry.probe_macro_auc": 0.8088446044907392,
+            "geometry.mean_purity": 0.1988479205591557,
+            "geometry.interference_fraction": 0.11965492707857953,
+            "geometry.effective_rank": 46.09290084158174,
+            "geometry.participation_ratio": 19.314648678623243,
+            "geometry.mean_abs_off_diagonal_cosine": 0.18613939209736938,
+            "geometry.capacity_total": 16.667234156270275,
+            "geometry.alignment_marginal_mean": 0.7688622776767539,
+            "mechanism.best_off_diagonal_mass": 0.9165955813397074,
+            "mechanism.best_entropy_ratio": 0.2657932407429559,
+            "mechanism.best_retrieval_lift": 47.88091681525112
+          },
+          "skill": {
+            "associative_recall_accuracy": 0.566650390625,
+            "answer_set_accuracy": 0.566650390625,
+            "feature_f1": 0.8760502520604945,
+            "reconstruction_loss": 0.6955340841992538
+          },
+          "oracle_recall": 1.0,
+          "marginal_recall": 0.0,
+          "split": {
+            "n_templates_in_split": 18,
+            "split_fingerprint": "05890bbefdb88ffa",
+            "global_density": 0.0354
+          }
+        }
+      ],
+      "n_missing": 0,
+      "resolution": {
+        "measurable": true,
+        "n_points": 4,
+        "range": 0.02880859375,
+        "single_run_difference_sd": 0.07638997862260133,
+        "range_in_sigma": 0.37712530189760346,
+        "resolved": false,
+        "adjacent_steps": [
+          {
+            "from": 0,
+            "to": 1,
+            "delta": -0.005859375,
+            "in_sigma": 0.07670345123341087
+          },
+          {
+            "from": 1,
+            "to": 3,
+            "delta": 0.017578125,
+            "in_sigma": 0.2301103537002326
+          },
+          {
+            "from": 3,
+            "to": 4,
+            "delta": 0.01123046875,
+            "in_sigma": 0.14701494819737085
+          }
+        ],
+        "n_adjacent_steps_resolved": 0
+      }
+    },
+    "sparsity": {
+      "field": "activation_prob",
+      "why": "\u00a74.3's third knob and the axis the superposition phase diagram is drawn against. Per-feature activation probability within the group a position draws from; the realised global density per position is far lower.",
+      "points": [
+        {
+          "cell": "sparsity-p006",
+          "level": 0.06,
+          "run_id": "R3-softmax-capacity_stressed-s20260809-36b61e48e8f7",
+          "run_dir": "runs/R3-softmax-capacity_stressed-s20260809-36b61e48e8f7",
+          "overrides": {
+            "activation_prob": 0.06
+          },
+          "condition": "capacity_stressed",
+          "passed": true,
+          "metrics": {
+            "associative_recall_accuracy": 0.752685546875,
+            "answer_set_accuracy": 0.752685546875,
+            "associative_recall_jaccard": 0.8932320453255512,
+            "heldout_composition_accuracy": 0.752685546875,
+            "feature_f1": 0.8995947182638253,
+            "feature_macro_recall": 0.9012101812787753,
+            "reconstruction_loss": 0.001849410340865771,
+            "brier": 0.002640553113962401,
+            "geometry.probe_macro_r2": 0.05004763747591189,
+            "geometry.probe_macro_auc": 0.8020346877136215,
+            "geometry.mean_purity": 0.19140235684949813,
+            "geometry.interference_fraction": 0.13276647461106683,
+            "geometry.effective_rank": 39.88311931134295,
+            "geometry.participation_ratio": 16.16210693755697,
+            "geometry.mean_abs_off_diagonal_cosine": 0.20869210270056737,
+            "geometry.capacity_total": 13.58838238928779,
+            "geometry.alignment_marginal_mean": 0.857027470547315,
+            "mechanism.best_off_diagonal_mass": 0.8890820874336489,
+            "mechanism.best_entropy_ratio": 0.289149522498272,
+            "mechanism.best_retrieval_lift": 47.729410761035986
+          },
+          "skill": {
+            "associative_recall_accuracy": 0.752685546875,
+            "answer_set_accuracy": 0.752685546875,
+            "feature_f1": 0.8995947182638253,
+            "reconstruction_loss": 0.6907064225215301
+          },
+          "oracle_recall": 1.0,
+          "marginal_recall": 0.0,
+          "split": {
+            "n_templates_in_split": 18,
+            "split_fingerprint": "5743f7d761a43212",
+            "global_density": 0.0263
+          }
+        },
+        {
+          "cell": "base",
+          "level": 0.12,
+          "run_id": "R3-softmax-capacity_stressed-s20260809-be0f81829e3e",
+          "run_dir": "runs/R3-softmax-capacity_stressed-s20260809-be0f81829e3e",
+          "overrides": {},
+          "condition": "capacity_stressed",
+          "passed": true,
+          "metrics": {
+            "associative_recall_accuracy": 0.555419921875,
+            "answer_set_accuracy": 0.555419921875,
+            "associative_recall_jaccard": 0.8400279662151,
+            "heldout_composition_accuracy": 0.555419921875,
+            "feature_f1": 0.87645034808354,
+            "feature_macro_recall": 0.8801635154448862,
+            "reconstruction_loss": 0.0030212951479543183,
+            "brier": 0.005374824880927863,
+            "geometry.probe_macro_r2": 0.09180212613790069,
+            "geometry.probe_macro_auc": 0.858578723212392,
+            "geometry.mean_purity": 0.21149943637939245,
+            "geometry.interference_fraction": 0.1198889558211732,
+            "geometry.effective_rank": 41.464163584216095,
+            "geometry.participation_ratio": 14.514249615517798,
+            "geometry.mean_abs_off_diagonal_cosine": 0.20598479377132847,
+            "geometry.capacity_total": 14.095856521708365,
+            "geometry.alignment_marginal_mean": 0.8041430962787753,
+            "mechanism.best_off_diagonal_mass": 0.899748135977277,
+            "mechanism.best_entropy_ratio": 0.441155936354766,
+            "mechanism.best_retrieval_lift": 47.70793375151698
+          },
+          "skill": {
+            "associative_recall_accuracy": 0.555419921875,
+            "answer_set_accuracy": 0.555419921875,
+            "feature_f1": 0.87645034808354,
+            "reconstruction_loss": 0.6927260500753235
+          },
+          "oracle_recall": 1.0,
+          "marginal_recall": 0.0,
+          "split": {
+            "n_templates_in_split": 18,
+            "split_fingerprint": "5743f7d761a43212",
+            "global_density": 0.0354
+          }
+        },
+        {
+          "cell": "sparsity-p024",
+          "level": 0.24,
+          "run_id": "R3-softmax-capacity_stressed-s20260809-c2953b030012",
+          "run_dir": "runs/R3-softmax-capacity_stressed-s20260809-c2953b030012",
+          "overrides": {
+            "activation_prob": 0.24
+          },
+          "condition": "capacity_stressed",
+          "passed": true,
+          "metrics": {
+            "associative_recall_accuracy": 0.36865234375,
+            "answer_set_accuracy": 0.36865234375,
+            "associative_recall_jaccard": 0.8311728807543458,
+            "heldout_composition_accuracy": 0.36865234375,
+            "feature_f1": 0.8945476079692061,
+            "feature_macro_recall": 0.9000850575327323,
+            "reconstruction_loss": 0.0052169958699304336,
+            "brier": 0.009023828463773203,
+            "geometry.probe_macro_r2": 0.15986634235894479,
+            "geometry.probe_macro_auc": 0.9018957189890708,
+            "geometry.mean_purity": 0.21719208234582754,
+            "geometry.interference_fraction": 0.10940347638172801,
+            "geometry.effective_rank": 44.32915395240867,
+            "geometry.participation_ratio": 14.883867514202919,
+            "geometry.mean_abs_off_diagonal_cosine": 0.17025277116374832,
+            "geometry.capacity_total": 19.035598762000905,
+            "geometry.alignment_marginal_mean": 0.6602270089813005,
+            "mechanism.best_off_diagonal_mass": 0.8851797148377614,
+            "mechanism.best_entropy_ratio": 0.4457793741602427,
+            "mechanism.best_retrieval_lift": 47.94818018004299
+          },
+          "skill": {
+            "associative_recall_accuracy": 0.36865234375,
+            "answer_set_accuracy": 0.36865234375,
+            "feature_f1": 0.8945476079692061,
+            "reconstruction_loss": 0.7148024563484352
+          },
+          "oracle_recall": 1.0,
+          "marginal_recall": 0.0,
+          "split": {
+            "n_templates_in_split": 18,
+            "split_fingerprint": "5743f7d761a43212",
+            "global_density": 0.0571
+          }
+        },
+        {
+          "cell": "sparsity-p040",
+          "level": 0.4,
+          "run_id": "R3-softmax-capacity_stressed-s20260809-2a92fe7a0dfb",
+          "run_dir": "runs/R3-softmax-capacity_stressed-s20260809-2a92fe7a0dfb",
+          "overrides": {
+            "activation_prob": 0.4
+          },
+          "condition": "capacity_stressed",
+          "passed": true,
+          "metrics": {
+            "associative_recall_accuracy": 0.13818359375,
+            "answer_set_accuracy": 0.13818359375,
+            "associative_recall_jaccard": 0.8092067300594386,
+            "heldout_composition_accuracy": 0.13818359375,
+            "feature_f1": 0.8905094702724602,
+            "feature_macro_recall": 0.896299502362885,
+            "reconstruction_loss": 0.007315721026462205,
+            "brier": 0.015896811480339165,
+            "geometry.probe_macro_r2": 0.21870635016104317,
+            "geometry.probe_macro_auc": 0.9144140952670209,
+            "geometry.mean_purity": 0.18675441581290722,
+            "geometry.interference_fraction": 0.11429568963355942,
+            "geometry.effective_rank": 48.246643554306964,
+            "geometry.participation_ratio": 20.302842127631163,
+            "geometry.mean_abs_off_diagonal_cosine": 0.16338716851778187,
+            "geometry.capacity_total": 20.564249434126257,
+            "geometry.alignment_marginal_mean": 0.5326040457319159,
+            "mechanism.best_off_diagonal_mass": 0.8999165688539333,
+            "mechanism.best_entropy_ratio": 0.4138476777897795,
+            "mechanism.best_retrieval_lift": 47.830039389431484
+          },
+          "skill": {
+            "associative_recall_accuracy": 0.13818359375,
+            "answer_set_accuracy": 0.13818359375,
+            "feature_f1": 0.8905094702724602,
+            "reconstruction_loss": 0.7555768749866564
+          },
+          "oracle_recall": 1.0,
+          "marginal_recall": 0.0,
+          "split": {
+            "n_templates_in_split": 18,
+            "split_fingerprint": "5743f7d761a43212",
+            "global_density": 0.0874
+          }
+        }
+      ],
+      "n_missing": 0,
+      "resolution": {
+        "measurable": true,
+        "n_points": 4,
+        "range": 0.614501953125,
+        "single_run_difference_sd": 0.07638997862260133,
+        "range_in_sigma": 8.044274448103964,
+        "resolved": true,
+        "adjacent_steps": [
+          {
+            "from": 0.06,
+            "to": 0.12,
+            "delta": -0.197265625,
+            "in_sigma": 2.582349524858166
+          },
+          {
+            "from": 0.12,
+            "to": 0.24,
+            "delta": -0.186767578125,
+            "in_sigma": 2.4449225080649715
+          },
+          {
+            "from": 0.24,
+            "to": 0.4,
+            "delta": -0.23046875,
+            "in_sigma": 3.0170024151808277
+          }
+        ],
+        "n_adjacent_steps_resolved": 3
+      }
+    },
+    "key_collisions": {
+      "field": "key_collisions",
+      "why": "\u00a74.3's fourth knob: one non-source binding carries a near-miss key sharing all but one index with the query's. Two levels, because the knob is a boolean.",
+      "points": [
+        {
+          "cell": "base",
+          "level": false,
+          "run_id": "R3-softmax-capacity_stressed-s20260809-be0f81829e3e",
+          "run_dir": "runs/R3-softmax-capacity_stressed-s20260809-be0f81829e3e",
+          "overrides": {},
+          "condition": "capacity_stressed",
+          "passed": true,
+          "metrics": {
+            "associative_recall_accuracy": 0.555419921875,
+            "answer_set_accuracy": 0.555419921875,
+            "associative_recall_jaccard": 0.8400279662151,
+            "heldout_composition_accuracy": 0.555419921875,
+            "feature_f1": 0.87645034808354,
+            "feature_macro_recall": 0.8801635154448862,
+            "reconstruction_loss": 0.0030212951479543183,
+            "brier": 0.005374824880927863,
+            "geometry.probe_macro_r2": 0.09180212613790069,
+            "geometry.probe_macro_auc": 0.858578723212392,
+            "geometry.mean_purity": 0.21149943637939245,
+            "geometry.interference_fraction": 0.1198889558211732,
+            "geometry.effective_rank": 41.464163584216095,
+            "geometry.participation_ratio": 14.514249615517798,
+            "geometry.mean_abs_off_diagonal_cosine": 0.20598479377132847,
+            "geometry.capacity_total": 14.095856521708365,
+            "geometry.alignment_marginal_mean": 0.8041430962787753,
+            "mechanism.best_off_diagonal_mass": 0.899748135977277,
+            "mechanism.best_entropy_ratio": 0.441155936354766,
+            "mechanism.best_retrieval_lift": 47.70793375151698
+          },
+          "skill": {
+            "associative_recall_accuracy": 0.555419921875,
+            "answer_set_accuracy": 0.555419921875,
+            "feature_f1": 0.87645034808354,
+            "reconstruction_loss": 0.6927260500753235
+          },
+          "oracle_recall": 1.0,
+          "marginal_recall": 0.0,
+          "split": {
+            "n_templates_in_split": 18,
+            "split_fingerprint": "5743f7d761a43212",
+            "global_density": 0.0354
+          }
+        },
+        {
+          "cell": "key_collisions-on",
+          "level": true,
+          "run_id": "R3-softmax-capacity_stressed-s20260809-ff1608b6388b",
+          "run_dir": "runs/R3-softmax-capacity_stressed-s20260809-ff1608b6388b",
+          "overrides": {
+            "key_collisions": true
+          },
+          "condition": "capacity_stressed",
+          "passed": true,
+          "metrics": {
+            "associative_recall_accuracy": 0.550048828125,
+            "answer_set_accuracy": 0.550048828125,
+            "associative_recall_jaccard": 0.8342555258326743,
+            "heldout_composition_accuracy": 0.550048828125,
+            "feature_f1": 0.8680483315995839,
+            "feature_macro_recall": 0.872953057621552,
+            "reconstruction_loss": 0.0029865792543314644,
+            "brier": 0.005770084109643578,
+            "geometry.probe_macro_r2": 0.06738729489606059,
+            "geometry.probe_macro_auc": 0.8236285599228704,
+            "geometry.mean_purity": 0.17500741607020323,
+            "geometry.interference_fraction": 0.1355938361272639,
+            "geometry.effective_rank": 46.94896690976606,
+            "geometry.participation_ratio": 19.40884537687741,
+            "geometry.mean_abs_off_diagonal_cosine": 0.18015253881385132,
+            "geometry.capacity_total": 17.574452799945817,
+            "geometry.alignment_marginal_mean": 0.7515138069625944,
+            "mechanism.best_off_diagonal_mass": 0.9189397895153586,
+            "mechanism.best_entropy_ratio": 0.29435274849795773,
+            "mechanism.best_retrieval_lift": 47.683073743712164
+          },
+          "skill": {
+            "associative_recall_accuracy": 0.550048828125,
+            "answer_set_accuracy": 0.550048828125,
+            "feature_f1": 0.8680483315995839,
+            "reconstruction_loss": 0.6962567510615817
+          },
+          "oracle_recall": 1.0,
+          "marginal_recall": 0.0,
+          "split": {
+            "n_templates_in_split": 18,
+            "split_fingerprint": "c29c789150716675",
+            "global_density": 0.0354
+          }
+        }
+      ],
+      "n_missing": 0,
+      "resolution": {
+        "measurable": true,
+        "n_points": 2,
+        "range": 0.00537109375,
+        "single_run_difference_sd": 0.07638997862260133,
+        "range_in_sigma": 0.07031149696395997,
+        "resolved": false,
+        "adjacent_steps": [
+          {
+            "from": false,
+            "to": true,
+            "delta": -0.00537109375,
+            "in_sigma": 0.07031149696395997
+          }
+        ],
+        "n_adjacent_steps_resolved": 0
+      }
+    },
+    "associations": {
+      "field": "n_associations",
+      "why": "\u00a74.3's fifth knob: how many key/value bindings are live at once. Bounded above by the key bank (12 keys, and one must stay unused so the information-destroyed control has a key nothing queries).",
+      "points": [
+        {
+          "cell": "associations-a2",
+          "level": 2,
+          "run_id": "R3-softmax-capacity_stressed-s20260809-09b10c347c1b",
+          "run_dir": "runs/R3-softmax-capacity_stressed-s20260809-09b10c347c1b",
+          "overrides": {
+            "n_associations": 2
+          },
+          "condition": "capacity_stressed",
+          "passed": true,
+          "metrics": {
+            "associative_recall_accuracy": 0.619384765625,
+            "answer_set_accuracy": 0.619384765625,
+            "associative_recall_jaccard": 0.8706572947324327,
+            "heldout_composition_accuracy": 0.619384765625,
+            "feature_f1": 0.9019764743538449,
+            "feature_macro_recall": 0.9053162089099883,
+            "reconstruction_loss": 0.003023529323614263,
+            "brier": 0.004467115979848763,
+            "geometry.probe_macro_r2": 0.12233274936154245,
+            "geometry.probe_macro_auc": 0.906013027750198,
+            "geometry.mean_purity": 0.1838274592972549,
+            "geometry.interference_fraction": 0.11741368316657218,
+            "geometry.effective_rank": 47.04907498004948,
+            "geometry.participation_ratio": 16.426472737077784,
+            "geometry.mean_abs_off_diagonal_cosine": 0.19463749634854452,
+            "geometry.capacity_total": 14.336076188061204,
+            "geometry.alignment_marginal_mean": 0.7883465405159291,
+            "mechanism.best_off_diagonal_mass": 0.9205652573328452,
+            "mechanism.best_entropy_ratio": 0.6784592967109646,
+            "mechanism.best_retrieval_lift": 47.65278012282216
+          },
+          "skill": {
+            "associative_recall_accuracy": 0.619384765625,
+            "answer_set_accuracy": 0.619384765625,
+            "feature_f1": 0.9019764743538449,
+            "reconstruction_loss": 0.6924988283223209
+          },
+          "oracle_recall": 1.0,
+          "marginal_recall": 0.0,
+          "split": {
+            "n_templates_in_split": 18,
+            "split_fingerprint": "f88e23eb24ba9998",
+            "global_density": 0.0334
+          }
+        },
+        {
+          "cell": "associations-a4",
+          "level": 4,
+          "run_id": "R3-softmax-capacity_stressed-s20260809-6e7c70885853",
+          "run_dir": "runs/R3-softmax-capacity_stressed-s20260809-6e7c70885853",
+          "overrides": {
+            "n_associations": 4
+          },
+          "condition": "capacity_stressed",
+          "passed": true,
+          "metrics": {
+            "associative_recall_accuracy": 0.559814453125,
+            "answer_set_accuracy": 0.559814453125,
+            "associative_recall_jaccard": 0.8437149412002928,
+            "heldout_composition_accuracy": 0.559814453125,
+            "feature_f1": 0.8802912699047771,
+            "feature_macro_recall": 0.8830888683599154,
+            "reconstruction_loss": 0.0030387277671052476,
+            "brier": 0.005169364742177238,
+            "geometry.probe_macro_r2": 0.08330795569537199,
+            "geometry.probe_macro_auc": 0.8532625398451281,
+            "geometry.mean_purity": 0.17600385589009812,
+            "geometry.interference_fraction": 0.12396500751653639,
+            "geometry.effective_rank": 48.15805995632729,
+            "geometry.participation_ratio": 22.315443112904553,
+            "geometry.mean_abs_off_diagonal_cosine": 0.1816511231791175,
+            "geometry.capacity_total": 17.27878722073761,
+            "geometry.alignment_marginal_mean": 0.789855020184912,
+            "mechanism.best_off_diagonal_mass": 0.9124456361754228,
+            "mechanism.best_entropy_ratio": 0.4348944110154036,
+            "mechanism.best_retrieval_lift": 47.92102793790401
+          },
+          "skill": {
+            "associative_recall_accuracy": 0.559814453125,
+            "answer_set_accuracy": 0.559814453125,
+            "feature_f1": 0.8802912699047771,
+            "reconstruction_loss": 0.6909531052017764
+          },
+          "oracle_recall": 1.0,
+          "marginal_recall": 0.0,
+          "split": {
+            "n_templates_in_split": 18,
+            "split_fingerprint": "7616a28f5dcea1ca",
+            "global_density": 0.0344
+          }
+        },
+        {
+          "cell": "base",
+          "level": 6,
+          "run_id": "R3-softmax-capacity_stressed-s20260809-be0f81829e3e",
+          "run_dir": "runs/R3-softmax-capacity_stressed-s20260809-be0f81829e3e",
+          "overrides": {},
+          "condition": "capacity_stressed",
+          "passed": true,
+          "metrics": {
+            "associative_recall_accuracy": 0.555419921875,
+            "answer_set_accuracy": 0.555419921875,
+            "associative_recall_jaccard": 0.8400279662151,
+            "heldout_composition_accuracy": 0.555419921875,
+            "feature_f1": 0.87645034808354,
+            "feature_macro_recall": 0.8801635154448862,
+            "reconstruction_loss": 0.0030212951479543183,
+            "brier": 0.005374824880927863,
+            "geometry.probe_macro_r2": 0.09180212613790069,
+            "geometry.probe_macro_auc": 0.858578723212392,
+            "geometry.mean_purity": 0.21149943637939245,
+            "geometry.interference_fraction": 0.1198889558211732,
+            "geometry.effective_rank": 41.464163584216095,
+            "geometry.participation_ratio": 14.514249615517798,
+            "geometry.mean_abs_off_diagonal_cosine": 0.20598479377132847,
+            "geometry.capacity_total": 14.095856521708365,
+            "geometry.alignment_marginal_mean": 0.8041430962787753,
+            "mechanism.best_off_diagonal_mass": 0.899748135977277,
+            "mechanism.best_entropy_ratio": 0.441155936354766,
+            "mechanism.best_retrieval_lift": 47.70793375151698
+          },
+          "skill": {
+            "associative_recall_accuracy": 0.555419921875,
+            "answer_set_accuracy": 0.555419921875,
+            "feature_f1": 0.87645034808354,
+            "reconstruction_loss": 0.6927260500753235
+          },
+          "oracle_recall": 1.0,
+          "marginal_recall": 0.0,
+          "split": {
+            "n_templates_in_split": 18,
+            "split_fingerprint": "5743f7d761a43212",
+            "global_density": 0.0354
+          }
+        },
+        {
+          "cell": "associations-a10",
+          "level": 10,
+          "run_id": "R3-softmax-capacity_stressed-s20260809-d3bf0f482190",
+          "run_dir": "runs/R3-softmax-capacity_stressed-s20260809-d3bf0f482190",
+          "overrides": {
+            "n_associations": 10
+          },
+          "condition": "capacity_stressed",
+          "passed": true,
+          "metrics": {
+            "associative_recall_accuracy": 0.536865234375,
+            "answer_set_accuracy": 0.536865234375,
+            "associative_recall_jaccard": 0.8244729290078411,
+            "heldout_composition_accuracy": 0.536865234375,
+            "feature_f1": 0.8570056813635273,
+            "feature_macro_recall": 0.8600483499821112,
+            "reconstruction_loss": 0.003093825130252608,
+            "brier": 0.006277326983545718,
+            "geometry.probe_macro_r2": 0.08026390424231704,
+            "geometry.probe_macro_auc": 0.8241959512585337,
+            "geometry.mean_purity": 0.23142466760896488,
+            "geometry.interference_fraction": 0.1218363283578678,
+            "geometry.effective_rank": 42.38628120787335,
+            "geometry.participation_ratio": 16.010898766708483,
+            "geometry.mean_abs_off_diagonal_cosine": 0.194557681369349,
+            "geometry.capacity_total": 16.08686956390159,
+            "geometry.alignment_marginal_mean": 0.8037118115713209,
+            "mechanism.best_off_diagonal_mass": 0.8866651465853217,
+            "mechanism.best_entropy_ratio": 0.28397342434871903,
+            "mechanism.best_retrieval_lift": 47.850817630067475
+          },
+          "skill": {
+            "associative_recall_accuracy": 0.536865234375,
+            "answer_set_accuracy": 0.536865234375,
+            "feature_f1": 0.8570056813635273,
+            "reconstruction_loss": 0.6853495532230208
+          },
+          "oracle_recall": 1.0,
+          "marginal_recall": 0.0,
+          "split": {
+            "n_templates_in_split": 18,
+            "split_fingerprint": "8eb372d5f72b090d",
+            "global_density": 0.0375
+          }
+        }
+      ],
+      "n_missing": 0,
+      "resolution": {
+        "measurable": true,
+        "n_points": 4,
+        "range": 0.08251953125,
+        "single_run_difference_sd": 0.07638997862260133,
+        "range_in_sigma": 1.080240271537203,
+        "resolved": false,
+        "adjacent_steps": [
+          {
+            "from": 2,
+            "to": 4,
+            "delta": -0.0595703125,
+            "in_sigma": 0.7798184208730106
+          },
+          {
+            "from": 4,
+            "to": 6,
+            "delta": -0.00439453125,
+            "in_sigma": 0.05752758842505815
+          },
+          {
+            "from": 6,
+            "to": 10,
+            "delta": -0.0185546875,
+            "in_sigma": 0.24289426223913443
+          }
+        ],
+        "n_adjacent_steps_resolved": 0
+      }
+    }
+  }
+}

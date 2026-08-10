@@ -1,0 +1,56 @@
+{
+  "schema": "am.mechanism_activity.v1",
+  "run_id": "R3-softmax-capacity_stressed-s20260809-54b717abd54f",
+  "empty": false,
+  "mechanism_activity_metric": "off_diagonal_mass, entropy_ratio, retrieval_lift",
+  "n_examples": 256,
+  "distribution": {
+    "layers.0.entropy_nats": 1.2654349789394572,
+    "layers.0.entropy_ratio": 0.42962297427671775,
+    "layers.0.self_mass": 0.25905050080875774,
+    "layers.0.off_diagonal_mass": 0.7409494991912422,
+    "layers.0.max_weight": 0.6031325829151986,
+    "layers.0.n_rows": 24576.0,
+    "layers.1.entropy_nats": 2.5565095225127847,
+    "layers.1.entropy_ratio": 0.8551558439231755,
+    "layers.1.self_mass": 0.13320473633157529,
+    "layers.1.off_diagonal_mass": 0.8667952636684247,
+    "layers.1.max_weight": 0.2523833532298643,
+    "layers.1.n_rows": 24576.0
+  },
+  "retrieval": {
+    "layers.0.mix": {
+      "layer": "layers.0.mix",
+      "n_steps": 256,
+      "source_mass": 0.9784367607207969,
+      "best_head_source_mass": 0.9850562738138251,
+      "chance_mass": 0.02083333333333333,
+      "lift": 46.96496451459826,
+      "argmax_hit_rate": 0.99609375
+    },
+    "layers.1.mix": {
+      "layer": "layers.1.mix",
+      "n_steps": 256,
+      "source_mass": 0.11116316620329145,
+      "best_head_source_mass": 0.11813090032279833,
+      "chance_mass": 0.02083333333333333,
+      "lift": 5.335831977757991,
+      "argmax_hit_rate": 0.19921875
+    }
+  },
+  "verdict": {
+    "active": true,
+    "reasons": [],
+    "best_off_diagonal_mass": 0.8667952636684247,
+    "best_entropy_ratio": 0.42962297427671775,
+    "best_retrieval_lift": 46.96496451459826,
+    "retrieval_measurable": true,
+    "gates": {
+      "min_off_diagonal_mass": 0.05,
+      "max_entropy_ratio": 0.95,
+      "min_retrieval_lift": 2.0
+    },
+    "mechanism_version": "mech-1.0.0"
+  },
+  "mechanism_version": "mech-1.0.0"
+}

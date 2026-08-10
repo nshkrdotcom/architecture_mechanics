@@ -1,0 +1,220 @@
+{
+  "schema": "am.manifest.v1",
+  "run_id": "R3-softmax-negative_control-s20260809-2d76880d9ebc",
+  "ladder_rung": "R3",
+  "git_commit": "43843969dea49b7d541f86df9d4dda5caf56760a",
+  "git_branch": "main",
+  "git_source": "work_tree",
+  "dirty_tree": false,
+  "dirty_paths": [],
+  "config": {
+    "ladder": "R3",
+    "seed": 20260809,
+    "device": "cuda",
+    "capture_examples": 256,
+    "geometry_examples": 1024,
+    "arch": {
+      "arch": "softmax",
+      "d_model": 64,
+      "n_layers": 2,
+      "n_heads": 2,
+      "mlp_ratio": 4,
+      "bias": true,
+      "init_std": 0.02,
+      "residual_write": "ordinary",
+      "positional": "learned",
+      "scale_residual_projections": true
+    },
+    "data": {
+      "condition": "negative_control",
+      "n_train": 16384,
+      "n_eval": 4096,
+      "data_seed": null,
+      "generator_overrides": {}
+    },
+    "optim": {
+      "optimizer": "adamw",
+      "learning_rate": 0.003,
+      "beta1": 0.9,
+      "beta2": 0.95,
+      "eps": 1e-08,
+      "weight_decay": 0.01,
+      "decay_matrices_only": true,
+      "grad_clip": 1.0,
+      "schedule": "cosine",
+      "warmup_fraction": 0.1,
+      "min_lr_fraction": 0.1,
+      "batch_size": 128,
+      "max_steps": 3000,
+      "eval_every": 500,
+      "stopping_rule": "fixed_steps",
+      "precision": "fp32",
+      "float32_matmul_precision": "highest",
+      "loss": "importance_weighted_mse + activity_bce",
+      "value_loss_weight": 1.0,
+      "activity_loss_weight": 1.0
+    },
+    "generator_version": "fpg-1.0.0",
+    "metric_version": "cap-1.0.0",
+    "model_version": "am-model-1.0.0"
+  },
+  "architecture_id": "softmax-L2H2d64-ordinary-learned@am-model-1.0.0",
+  "parameter_count": 127288,
+  "parameter_report": {
+    "encoder": 8000,
+    "position": 3072,
+    "norm_out": 128,
+    "value_head": 8060,
+    "active_head": 8060,
+    "mixing": 33280,
+    "mlp": 66176,
+    "block_norms": 512,
+    "total": 127288,
+    "trainable": 127288
+  },
+  "operation_state_summary": {
+    "seq_len": 48,
+    "d_model": 64,
+    "n_features": 124,
+    "n_layers": 2,
+    "trunk_multiply_accumulates_per_sequence": 4288512,
+    "mixing_multiply_accumulates_per_sequence": 2162688,
+    "total_multiply_accumulates_per_sequence": 6451200,
+    "recurrent_state_scalars": 12288,
+    "mixing": [
+      {
+        "mechanism": "softmax_attention",
+        "ops_per_sequence": "O(T^2 d + T d^2)",
+        "state_growth": "O(T d) \u2014 linear in context, nothing is discarded",
+        "multiply_accumulates_per_sequence": 1081344,
+        "recurrent_state_scalars": 6144,
+        "materialises_pairwise_matrix": true,
+        "pairwise_matrix_scalars_per_example": 4608,
+        "breakdown": {
+          "qkv_projection": 589824,
+          "scores": 147456,
+          "value_mixing": 147456,
+          "output_projection": 196608
+        }
+      },
+      {
+        "mechanism": "softmax_attention",
+        "ops_per_sequence": "O(T^2 d + T d^2)",
+        "state_growth": "O(T d) \u2014 linear in context, nothing is discarded",
+        "multiply_accumulates_per_sequence": 1081344,
+        "recurrent_state_scalars": 6144,
+        "materialises_pairwise_matrix": true,
+        "pairwise_matrix_scalars_per_example": 4608,
+        "breakdown": {
+          "qkv_projection": 589824,
+          "scores": 147456,
+          "value_mixing": 147456,
+          "output_projection": 196608
+        }
+      }
+    ]
+  },
+  "dataset_generator_version": "fpg-1.0.0",
+  "split_hashes": {
+    "train": "9c5c2a72a6674e24a27c640e3edd65837a11e112116a97f57bb050ff20b36509",
+    "eval": "491f8692acfd735e1e3dd67fab8a7dce5b4df5b7cc059b59853cf8be8a6c540f",
+    "train_n_examples": 16384,
+    "eval_n_examples": 4096
+  },
+  "seed": 20260809,
+  "device": {
+    "requested": "cuda",
+    "resolved": "cuda:0",
+    "fell_back": false,
+    "device_name": "NVIDIA GeForce RTX 5060 Ti",
+    "compute_capability": "12.0",
+    "total_memory_bytes": 17102864384,
+    "multi_processor_count": 36,
+    "torch_version": "2.11.0+cu128",
+    "cuda_version": "12.8",
+    "cudnn_version": 91900,
+    "float32_matmul_precision": "highest"
+  },
+  "precision": "fp32",
+  "numerics": {
+    "precision": "fp32",
+    "float32_matmul_precision": "highest",
+    "torch_version": "2.11.0+cu128"
+  },
+  "dependency_lock_hash": "6e018e7cf306742270ee2ff7a986657860cf18e656e14f1bcf7f28797abfb81e",
+  "source_tree_hash": "5ae6db1b9053a88017fd076c10aa0f90ad9eb3df49932d5e9da308c15aa026ff",
+  "environment": {
+    "python": "3.12.2",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "executable": "/home/home/p/g/n/architecture_mechanics/.venv/bin/python3",
+    "lab_root": "/home/home/p/g/n/architecture_mechanics"
+  },
+  "parent_claim_packet": "claims/a0-t1-associative-recall.yml",
+  "claimed_rung": 1,
+  "primary_metric": "associative_recall_accuracy",
+  "started_utc": "2026-08-10T13:36:12+00:00",
+  "finished_utc": "2026-08-10T13:37:31+00:00",
+  "checkpoint_hashes": {
+    "model.pt": {
+      "sha256": "7309d30a83065da1f69092d8286ec87d63a33888e038e34c1fde24a1ec4fcaae",
+      "bytes": 519154
+    }
+  },
+  "evidence_index": [
+    {
+      "path": "checkpoint/checkpoint.json",
+      "bytes": 452,
+      "sha256": "b1135de8f8965eb29e7d2286756211398c210893b484a670b511473113a20883"
+    },
+    {
+      "path": "checkpoint/model.pt",
+      "bytes": 519154,
+      "sha256": "7309d30a83065da1f69092d8286ec87d63a33888e038e34c1fde24a1ec4fcaae"
+    },
+    {
+      "path": "claim_gates.json",
+      "bytes": 25852,
+      "sha256": "345cb1027729c82e374d95bd1a6c07162f8aa5c5c4d93f40221939a6b0fc5261"
+    },
+    {
+      "path": "cost.json",
+      "bytes": 352,
+      "sha256": "3bfe60a15bab53cb9424019bc9029169e169e2bfd26a036516c7cd4cf1809d0f"
+    },
+    {
+      "path": "figures/INDEX.json",
+      "bytes": 138,
+      "sha256": "b06bf4284ffe6c889272d91bd4c39cb8b3e37d3a284a56da2150fcd2032f97fb"
+    },
+    {
+      "path": "geometry_metrics.npz",
+      "bytes": 1651210,
+      "sha256": "ed56d7983a25ae39fdfbadcd2d6e578d0ec18a16d7f27c48fff9b46040be6e44"
+    },
+    {
+      "path": "interventions.jsonl",
+      "bytes": 222,
+      "sha256": "02263a2a6dee9981472193d9edf20801df9071c890c6a8f64a30e2ea646b19d7"
+    },
+    {
+      "path": "mechanism_activity.json",
+      "bytes": 1307,
+      "sha256": "6234f707b9b11e728523a8abcf54cb6dc08b092fe9bd968dd58ec2db498334c3"
+    },
+    {
+      "path": "metrics.jsonl",
+      "bytes": 1787,
+      "sha256": "167cfc4d9323b694e1c71d9a29c73cd51050f082fea2d4fe7a3a0c6c371ed43b"
+    },
+    {
+      "path": "reproduce.sh",
+      "bytes": 4160,
+      "sha256": "cd3d5783d3437ef284e6dbe8d062cf8ac42093cbe4b30e58479ed2267c6beb71"
+    },
+    {
+      "path": "summary.json",
+      "bytes": 44652,
+      "sha256": "3856bd458cbbc6a8767519ce638bee933ed84ab67410b5eb84bbc82f184e62df"
+    }
+  ]
+}

@@ -339,3 +339,42 @@ def test_only_r1_asserts_its_own_pass():
     assert t1_ladder._stage_configs("r1", seeds=R4_SEEDS)[0][2] is True
     for stage in ("r2", "r3", "r4"):
         assert not any(assert_pass for _, _, assert_pass in t1_ladder._stage_configs(stage, seeds=R4_SEEDS))
+
+
+# --------------------------------------------------------------------------- #
+# The negative control's verdict rests on a classification made before it
+# --------------------------------------------------------------------------- #
+
+
+def test_only_ceiling_dominated_metrics_can_condemn_the_negative_control():
+    from architecture_mechanics.metrics.capability import CEILING_DOMINATED_METRICS
+
+    # A0 above the frequency ceiling is evidence of a leak only where the
+    # ceiling provably beats every other input-blind predictor. Prompt 03
+    # decided where that is, and excluded the unweighted per-feature averages
+    # with a recorded reason; this mission may not widen or narrow the list.
+    assert t1_ladder.PRIMARY_METRIC not in CEILING_DOMINATED_METRICS
+    assert "feature_macro_recall" not in CEILING_DOMINATED_METRICS
+    assert "feature_macro_precision" not in CEILING_DOMINATED_METRICS
+    assert set(CEILING_DOMINATED_METRICS) >= {"reconstruction_loss", "brier", "feature_f1"}
+
+
+def test_the_negative_control_check_says_so_when_there_is_nothing_to_check(tmp_path):
+    verdict = t1_ladder.negative_control_check(root=tmp_path)
+    assert verdict["measurable"] is False
+    assert "no recorded R3 run" in verdict["reason"]
+
+
+def test_an_axis_narrower_than_the_seed_noise_is_not_resolved():
+    points = [
+        {"level": 0, "metrics": {t1_ladder.PRIMARY_METRIC: 0.50}},
+        {"level": 1, "metrics": {t1_ladder.PRIMARY_METRIC: 0.52}},
+    ]
+    tight = t1_ladder._axis_resolution(points, 0.001)
+    wide = t1_ladder._axis_resolution(points, 0.05)
+    assert tight["resolved"] is True
+    assert wide["resolved"] is False
+    assert wide["range_in_sigma"] < tight["range_in_sigma"]
+    # Without an across-seed standard deviation there is no verdict to give,
+    # rather than a verdict of "resolved".
+    assert t1_ladder._axis_resolution(points, None)["resolved"] is None

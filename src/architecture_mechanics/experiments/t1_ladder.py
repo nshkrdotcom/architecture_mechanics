@@ -69,6 +69,7 @@ __all__ = [
     "cells",
     "difficulty_curves",
     "main",
+    "negative_control_check",
     "run_metrics",
     "seed_variance",
 ]
@@ -372,13 +373,23 @@ def _matching(summaries: Sequence[tuple[Path, dict]], config_predicate) -> list[
 # --------------------------------------------------------------------------- #
 
 
-def difficulty_curves(*, claim: str = CLAIM, root: Path | None = None) -> dict:
+def difficulty_curves(
+    *, claim: str = CLAIM, root: Path | None = None, seed_sd: float | None = None
+) -> dict:
     """The five §4.3 curves, assembled from the recorded R3 matrix.
 
     One point per cell, each point a run that *trained and evaluated* at that
     difficulty. Evaluating one model across difficulties would measure
     extrapolation from its training distribution, which is a different question
     and not the one prompts 13 and 20 need answered.
+
+    ``seed_sd`` is A0's across-seed standard deviation on the primary metric,
+    from the R4 arm. Given it, each axis is annotated with whether its range is
+    large enough to be visible at all through one-seed cells: two cells run at
+    one seed each differ by ``sqrt(2) * seed_sd`` from the seed alone, so an axis
+    whose whole range is smaller than that is not a curve, it is noise with a
+    slope drawn through it. Recorded in the report rather than left to whoever
+    plots it, because a plot makes every axis look like a curve.
     """
     recorded = recorded_runs(ladder="R3", claim=claim, root=root)
     by_overrides: dict[str, tuple[Path, dict]] = {}
@@ -414,9 +425,10 @@ def difficulty_curves(*, claim: str = CLAIM, root: Path | None = None) -> dict:
             "marginal_recall": (references.get("marginal") or {}).get(
                 "associative_recall_accuracy"
             ),
-            "n_train_templates": ((references.get("train") or {}).get("split") or {}).get(
-                "n_train_templates"
-            ),
+            "split": {
+                key: (references.get("train") or {}).get(key)
+                for key in ("n_templates_in_split", "split_fingerprint", "global_density")
+            },
         }
 
     base = point(cells()[0])
@@ -445,16 +457,186 @@ def difficulty_curves(*, claim: str = CLAIM, root: Path | None = None) -> dict:
                 for cell in cells(include_base=False)
                 if cell.axis == axis and point(cell) is None
             ),
+            "resolution": _axis_resolution(points, seed_sd),
         }
 
     return {
         "schema": "am.t1_difficulty_curves.v1",
         "t1_ladder_version": T1_LADDER_VERSION,
         "claim": claim,
-        "primary_metric": "associative_recall_accuracy",
+        "primary_metric": PRIMARY_METRIC,
+        "seeds_per_cell": 1,
+        "seed_sd_used": seed_sd,
+        "single_run_difference_sd": (None if seed_sd is None else math.sqrt(2.0) * seed_sd),
+        "resolution_rule": (
+            "an axis is resolved when its range exceeds twice the standard deviation of a "
+            "difference between two one-seed cells, which is sqrt(2) x the across-seed sd of "
+            "the primary metric measured on the R4 arm. Below that the ordering of its points "
+            "is not evidence about the axis."
+        ),
         "base_cell": base,
         "negative_control": point(NEGATIVE_CONTROL_CELL),
+        "negative_control_check": negative_control_check(claim=claim, root=root),
         "axes": curves,
+    }
+
+
+def _axis_resolution(points: list[dict], seed_sd: float | None) -> dict:
+    """Is this axis's range visible through one-seed cells at all?"""
+    values = [
+        point["metrics"].get(PRIMARY_METRIC)
+        for point in points
+        if point["metrics"].get(PRIMARY_METRIC) is not None
+    ]
+    if len(values) < 2:
+        return {"measurable": False, "reason": "fewer than two points on this axis"}
+    span = float(max(values) - min(values))
+    record = {"measurable": True, "n_points": len(values), "range": span}
+    if seed_sd is None:
+        return record | {"resolved": None, "reason": "no across-seed sd supplied"}
+    noise = math.sqrt(2.0) * seed_sd
+    steps = [
+        {"from": points[index]["level"], "to": points[index + 1]["level"],
+         "delta": float(values[index + 1] - values[index]),
+         "in_sigma": float(abs(values[index + 1] - values[index]) / noise)}
+        for index in range(len(values) - 1)
+    ]
+    return record | {
+        "single_run_difference_sd": noise,
+        "range_in_sigma": span / noise,
+        "resolved": span > 2.0 * noise,
+        "adjacent_steps": steps,
+        "n_adjacent_steps_resolved": sum(1 for step in steps if step["in_sigma"] > 2.0),
+    }
+
+
+def negative_control_check(*, claim: str = CLAIM, root: Path | None = None) -> dict:
+    """Is A0 at chance on the information-destroyed condition? Measured, not eyeballed.
+
+    The packet's hard stop. A0 clearing chance here would mean the task leaks and
+    every capability number in this laboratory is measuring the leak, so the
+    comparison is made against the *frequency ceiling* — the marginal fitted on
+    the evaluation split it is scored on, which is the best any input-blind
+    predictor can possibly do — and against a chance predictor at the task's own
+    base rate, rather than against the run's recorded oracle alone.
+
+    Why that is the right adversary here: on this condition the program oracle
+    reads a source that no longer carries the answer, so it scores *below* an
+    input-blind predictor on the detection metrics. Reading "A0 beats the oracle"
+    as a leak would therefore fire on a model that had learned nothing but the
+    feature frequencies. The ceiling cannot be beaten by frequency alone, so it
+    is what "at chance" has to mean.
+
+    Regenerates the evaluation split and asserts its content hash against the one
+    the run recorded, so the check is provably on the same data.
+    """
+    from architecture_mechanics.data.feature_program import generate_dataset
+    from architecture_mechanics.metrics.capability import (
+        EvaluationReference,
+        RandomBaseline,
+        evaluate_all,
+        fit_frequency_ceiling,
+    )
+
+    recorded = [
+        (path, summary)
+        for path, summary in recorded_runs(ladder="R3", claim=claim, root=root)
+        if (summary.get("config") or {}).get("data", {}).get("condition") == "negative_control"
+    ]
+    if not recorded:
+        return {"measurable": False, "reason": "no recorded R3 run on the negative control"}
+    path, summary = recorded[0]
+
+    from architecture_mechanics.experiments.config import run_config_from_dict
+
+    config = run_config_from_dict(summary["config"])
+    dataset = generate_dataset(
+        config.data.generator_config(split="test", n_examples=config.data.n_eval)
+    )
+    recorded_hash = (summary.get("references") or {}).get("eval", {}).get("content_hash")
+    if recorded_hash and dataset.content_hash != recorded_hash:
+        return {
+            "measurable": False,
+            "reason": (
+                f"regenerated evaluation split {dataset.content_hash[:12]} is not the one the "
+                f"run scored ({recorded_hash[:12]})"
+            ),
+        }
+
+    reference = EvaluationReference.from_dataset(dataset)
+    ceiling = fit_frequency_ceiling(reference)
+    chance = RandomBaseline.fit(dataset)
+    scored = {
+        "ceiling": {
+            name: value.value for name, value in evaluate_all(ceiling.predict(dataset), reference).items()
+        },
+        "chance": {
+            name: value.value for name, value in evaluate_all(chance.predict(dataset), reference).items()
+        },
+    }
+
+    from architecture_mechanics.metrics.capability import (
+        CEILING_DOMINATED_METRICS,
+        METRIC_SPEC_BY_NAME,
+    )
+
+    # Which metrics can carry the verdict, decided by prompt 03's committed
+    # classification rather than by this mission's judgement. On a
+    # CEILING_DOMINATED metric the frequency ceiling provably beats every other
+    # input-blind predictor, so "A0 is above the ceiling" is evidence of
+    # information. Elsewhere it is not: an unweighted average over features
+    # rewards a *flatter* selection than the ceiling's, and prompt 03 recorded
+    # that the ordering there is a coin flip and declined to assert it.
+    decisive = (PRIMARY_METRIC,) + CEILING_DOMINATED_METRICS
+    model = summary.get("final") or {}
+    comparisons = {}
+    for name in (*decisive, "answer_set_accuracy", "associative_recall_jaccard",
+                 "feature_macro_recall", "feature_macro_precision", "brier"):
+        measured, best_blind = model.get(name), scored["ceiling"].get(name)
+        if name in comparisons or measured is None or best_blind is None:
+            continue
+        spec = METRIC_SPEC_BY_NAME.get(name)
+        is_loss = bool(spec and spec.kind == "loss")
+        beats = (measured < best_blind) if is_loss else (measured > best_blind)
+        comparisons[name] = {
+            "a0": measured,
+            "frequency_ceiling": best_blind,
+            "chance": scored["chance"].get(name),
+            "oracle": (summary.get("references") or {}).get("oracle", {}).get(name),
+            "kind": "loss" if is_loss else "score",
+            "ceiling_dominated": name in CEILING_DOMINATED_METRICS,
+            "decides_the_verdict": name in decisive,
+            "a0_beats_the_best_input_blind_predictor": bool(beats),
+            "margin": (best_blind - measured) if is_loss else (measured - best_blind),
+        }
+
+    above = sorted(
+        name for name, entry in comparisons.items()
+        if entry["a0_beats_the_best_input_blind_predictor"]
+    )
+    leaking = [name for name in above if comparisons[name]["decides_the_verdict"]]
+    return {
+        "measurable": True,
+        "run_dir": f"runs/{path.name}",
+        "run_id": summary.get("run_id"),
+        "eval_content_hash": dataset.content_hash,
+        "n_eval_examples": dataset.n_examples,
+        "decisive_metrics": list(decisive),
+        "why_these_decide": (
+            "the pre-registered primary metric, plus prompt 03's CEILING_DOMINATED_METRICS — "
+            "the metrics on which the frequency ceiling provably beats every other input-blind "
+            "predictor, so that being above it cannot be explained by feature frequency alone. "
+            "The classification is committed source from prompt 03 and predates this mission."
+        ),
+        "oracle_bound": (
+            "prompt 02 bounded chance on this condition at exactly 0.0 with a perfect-memory "
+            "33-strategy oracle; the run's own recorded program oracle scores 0.0000 exact "
+            "recall here and pays exactly the training marginal's reconstruction loss"
+        ),
+        "comparisons": comparisons,
+        "metrics_above_the_ceiling": above,
+        "metrics_above_the_ceiling_that_decide": leaking,
+        "at_chance": not leaking,
     }
 
 
@@ -714,6 +896,14 @@ def seed_variance(
             },
         }
 
+    primary = spreads.get(PRIMARY_METRIC) or {}
+    n_queries = None
+    if by_seed:
+        _, first = next(iter(by_seed.values()))
+        n_queries = ((first.get("references") or {}).get("eval") or {}).get(
+            "n_supervised_positions"
+        )
+
     return {
         "schema": "am.t1_seed_variance.v1",
         "t1_ladder_version": T1_LADDER_VERSION,
@@ -728,6 +918,114 @@ def seed_variance(
         "runs": per_run,
         "spread": spreads,
         "detectable_effect": detectable,
+        "evaluation_noise": _evaluation_noise(primary, n_queries),
+    }
+
+
+PRIMARY_METRIC = "associative_recall_accuracy"
+
+
+def _evaluation_noise(primary: dict, n_queries: int | None) -> dict:
+    """Could the measured spread be scoring noise on a finite evaluation set?
+
+    The packet's third boring explanation, answered with arithmetic. The
+    evaluation split is bitwise identical across seeds, so nothing is resampled;
+    what remains is that exact answer-set recall is a proportion over a finite
+    number of queries, and two identical models would differ by about
+    ``sqrt(p(1-p)/n)`` if their errors fell independently. That bound is the
+    *most* scoring noise there could be, and if the measured across-seed spread
+    is not clearly above it the number is at the resolution limit of the
+    evaluation set and must be reported as such rather than as training variance.
+    """
+    if not primary.get("usable") or not n_queries:
+        return {"measurable": False, "reason": "no usable primary spread or no query count"}
+    p = float(primary["mean"])
+    bound = math.sqrt(max(p * (1.0 - p), 0.0) / float(n_queries))
+    return {
+        "measurable": True,
+        "metric": PRIMARY_METRIC,
+        "n_eval_queries": int(n_queries),
+        "mean": p,
+        "binomial_sd_bound": bound,
+        "measured_sd": primary["sd"],
+        "ratio_measured_to_bound": (primary["sd"] / bound) if bound > 0 else None,
+        "verdict": (
+            "the measured spread is training variance, not scoring noise"
+            if bound > 0 and primary["sd"] > 3.0 * bound
+            else "the measured spread is at or near the evaluation set's resolution limit"
+        ),
+    }
+
+
+def variance_report(
+    *,
+    primary_seeds: Sequence[int] = R4_SEEDS,
+    claim: str = CLAIM,
+    root: Path | None = None,
+    mde_replicates: int = 4000,
+) -> dict:
+    """The five-seed answer, the extended answer, and whether the first was honest.
+
+    §10.1 asks for five seeds and this laboratory can afford more, so both are
+    reported and the second is used to audit the first. The audit is the whole
+    reason the extra seeds are worth running: a five-seed interval that does not
+    contain the eight-seed mean is a five-seed interval nobody should quote, and
+    finding that out here costs four minutes where finding it out in prompt 15
+    costs a conclusion.
+    """
+    found = sorted(
+        int((summary.get("config") or {}).get("seed"))
+        for _, summary in recorded_runs(ladder="R4", claim=claim, root=root)
+    )
+    primary = seed_variance(
+        seeds=primary_seeds, claim=claim, root=root, mde_replicates=mde_replicates
+    )
+    extended = None
+    honesty = None
+    if len(found) > len(primary["seeds_found"]):
+        extended = seed_variance(
+            seeds=found, claim=claim, root=root, mde_replicates=mde_replicates
+        )
+        honesty = {
+            name: {
+                "five_seed_mean": primary["spread"][name]["mean"],
+                "five_seed_ci": [
+                    primary["spread"][name]["ci_low"],
+                    primary["spread"][name]["ci_high"],
+                ],
+                "extended_mean": extended["spread"][name]["mean"],
+                "ci_contains_extended_mean": (
+                    primary["spread"][name]["ci_low"]
+                    <= extended["spread"][name]["mean"]
+                    <= primary["spread"][name]["ci_high"]
+                ),
+                "five_seed_sd": primary["spread"][name]["sd"],
+                "extended_sd": extended["spread"][name]["sd"],
+                "sd_ratio": (
+                    primary["spread"][name]["sd"] / extended["spread"][name]["sd"]
+                    if extended["spread"][name]["sd"]
+                    else None
+                ),
+                "extended_sd_inside_five_seed_interval": (
+                    primary["spread"][name]["sd_ci_low"]
+                    <= extended["spread"][name]["sd"]
+                    <= primary["spread"][name]["sd_ci_high"]
+                ),
+            }
+            for name in ALL_METRICS
+            if primary["spread"].get(name, {}).get("usable")
+            and extended["spread"].get(name, {}).get("usable")
+        }
+
+    return {
+        "schema": "am.t1_variance_report.v1",
+        "t1_ladder_version": T1_LADDER_VERSION,
+        "statistics_version": STATISTICS_VERSION,
+        "claim": claim,
+        "seeds_recorded": found,
+        "five_seeds": primary,
+        "extended": extended,
+        "was_the_five_seed_answer_honest": honesty,
     }
 
 
@@ -856,17 +1154,15 @@ def main(argv: Sequence[str] | None = None) -> int:
 
 def _report(*, root: Path, claim: str, reports: Path) -> int:
     reports.mkdir(parents=True, exist_ok=True)
-    curves = difficulty_curves(claim=claim, root=root)
-    found = sorted(
-        int((s.get("config") or {}).get("seed"))
-        for _, s in recorded_runs(ladder="R4", claim=claim, root=root)
-    )
-    variance = seed_variance(
-        seeds=found or R4_SEEDS, claim=claim, root=root
+    report = variance_report(claim=claim, root=root)
+    variance = report["extended"] or report["five_seeds"]
+    spread = (variance.get("spread") or {}).get(PRIMARY_METRIC) or {}
+    curves = difficulty_curves(
+        claim=claim, root=root, seed_sd=spread.get("sd") if spread.get("usable") else None
     )
     for name, payload in (
         ("a0_t1_difficulty_curves.json", curves),
-        ("a0_t1_seed_variance.json", variance),
+        ("a0_t1_seed_variance.json", report),
     ):
         (reports / name).write_text(json.dumps(payload, indent=2, sort_keys=False) + "\n")
         print(f"wrote {reports.name}/{name}")
@@ -877,10 +1173,17 @@ def _report(*, root: Path, claim: str, reports: Path) -> int:
         print(f"  base  {base['metrics']['associative_recall_accuracy']:.4f}  ({base['run_id']})")
     for axis, block in curves["axes"].items():
         rendered = "  ".join(
-            f"{point['level']}={_fmt(point['metrics']['associative_recall_accuracy'])}"
+            f"{point['level']}={_fmt(point['metrics'][PRIMARY_METRIC])}"
             for point in block["points"]
         )
-        print(f"  {axis:<16} {rendered}")
+        resolution = block["resolution"]
+        verdict = (
+            ""
+            if resolution.get("resolved") is None
+            else f"   [range {resolution['range_in_sigma']:.1f} sigma: "
+            f"{'RESOLVED' if resolution['resolved'] else 'inside seed noise'}]"
+        )
+        print(f"  {axis:<16} {rendered}{verdict}")
     negative = curves.get("negative_control")
     if negative:
         print(
@@ -898,17 +1201,42 @@ def _report(*, root: Path, claim: str, reports: Path) -> int:
             f"  {name:<40} mean {spread['mean']:>9.4f}  sd {spread['sd']:>8.4f}  "
             f"range {spread['range']:>8.4f}"
         )
-    detectable = variance.get("detectable_effect")
-    if detectable:
-        primary = detectable["per_metric"].get("associative_recall_accuracy")
+    noise = variance.get("evaluation_noise") or {}
+    if noise.get("measurable"):
         print(
-            f"\n  minimum detectable dz at {detectable['n_seeds']} seeds: "
-            f"{detectable['minimum_detectable_dz']:.3f}"
+            f"  evaluation-set noise bound on the primary metric: "
+            f"{noise['binomial_sd_bound']:.4f} over {noise['n_eval_queries']} queries "
+            f"({noise['ratio_measured_to_bound']:.1f}x smaller than the measured spread)"
         )
-        if primary:
+        print(f"  -> {noise['verdict']}")
+
+    for block, label in ((report["five_seeds"], "five seeds"), (report["extended"], "extended")):
+        detectable = (block or {}).get("detectable_effect")
+        if not detectable:
+            continue
+        primary = detectable["per_metric"].get(PRIMARY_METRIC)
+        print(
+            f"\n  {label}: minimum detectable dz {detectable['minimum_detectable_dz']:.3f}; "
+            f"smallest visible difference in {PRIMARY_METRIC} "
+            f"{primary['minimum_detectable_difference']:.4f}"
+            if primary
+            else f"\n  {label}: minimum detectable dz {detectable['minimum_detectable_dz']:.3f}"
+        )
+
+    honesty = report.get("was_the_five_seed_answer_honest")
+    if honesty:
+        audited = honesty.get(PRIMARY_METRIC)
+        held = sum(1 for entry in honesty.values() if entry["ci_contains_extended_mean"])
+        print(
+            f"\n  was the five-seed answer honest? {held}/{len(honesty)} metrics' five-seed "
+            "intervals contain the extended mean"
+        )
+        if audited:
             print(
-                f"  smallest visible difference in associative_recall_accuracy: "
-                f"{primary['minimum_detectable_difference']:.4f}"
+                f"    {PRIMARY_METRIC}: five-seed {audited['five_seed_mean']:.4f} "
+                f"[{audited['five_seed_ci'][0]:.4f}, {audited['five_seed_ci'][1]:.4f}] vs "
+                f"extended {audited['extended_mean']:.4f}; "
+                f"sd {audited['five_seed_sd']:.4f} -> {audited['extended_sd']:.4f}"
             )
     return 0
 
