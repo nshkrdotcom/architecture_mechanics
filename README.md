@@ -51,6 +51,34 @@ distance, distractor count, key collisions and simultaneous associations all hav
 ranges inside it at one seed per cell. `reports/a0_t1_difficulty_curves.json`
 records that verdict per axis rather than leaving it to whoever plots the curve.
 
+## Compare two architectures
+
+```bash
+make comparisons-check                      # every declared comparison, re-verified; no GPU
+make comparison-dry-run LADDER=R3           # what it would run, and what is still missing
+uv run python -m architecture_mechanics.experiments.runner \
+  --comparison a0_vs_a1 --ladder R3 --emit-bundle
+```
+
+A comparison is a **declared object**, committed before its runs exist, naming
+its control, its candidates, its seed set, its matching strategy and every
+configuration difference it permits with a justification for each. Both arms are
+built from one rung preset with only the mixing primitive changed, so §7.2's
+frozen variables are shared by construction rather than by care, and a
+configuration difference outside `permitted_differences` is refused *before the
+first model is built* — `bin/check_no_rescue.sh` catches it afterwards, by which
+time the GPU time is spent.
+
+`--comparison` refuses a command line that also names an architecture, a seed, a
+width, a budget, a task or a claim. Those come from the plan; a second place to
+set a frozen variable is exactly what the object removes.
+
+Both §7.2 matching strategies are produced by default — width-matched, and
+parameter-matched by retuning *the control's* width — and producing only one
+costs a written justification that travels with the result. A0 and A1 happen to
+have identical parameter counts at every width here, so the two coincide and the
+declarations say so.
+
 ## Reproduce a figure
 
 ```bash

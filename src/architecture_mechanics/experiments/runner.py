@@ -103,9 +103,11 @@ from architecture_mechanics.reporting.evidence_bundle import (
 from architecture_mechanics.seeding import SeedRecord, seed_everything
 
 __all__ = [
+    "COMPARISON_OWNED_FLAGS",
     "TASK_FAMILIES",
     "RunResult",
     "build_parser",
+    "check_comparison_flags",
     "check_task",
     "configs_for",
     "evaluate",
@@ -1290,8 +1292,55 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--assert-pass", action="store_true",
                         help="exit non-zero unless the rung's verdict passes; with --seeds, "
                              "stop at the first seed that does not")
+    parser.add_argument("--comparison", default=None, metavar="NAME",
+                        help="run every arm of the comparison declared in "
+                             "reports/comparisons/planned/NAME-<rung>-*.json, under both §7.2 "
+                             "matching strategies, and write the resolved declarations. The "
+                             "arms, the seeds and the claim come from the plan; a comparison "
+                             "whose configs differ outside its permitted_differences is "
+                             "refused before the first model is built")
+    parser.add_argument("--dry-run", action="store_true",
+                        help="with --comparison: build and check every arm, print the plan, "
+                             "and run nothing")
     parser.add_argument("--quiet", action="store_true")
     return parser
+
+
+COMPARISON_OWNED_FLAGS: tuple[str, ...] = (
+    "arch", "seed", "seeds", "d_model", "max_steps", "task", "claim", "config_json",
+)
+"""Flags a declared comparison owns, and a command line therefore may not set.
+
+Every one of these is a §7.2 frozen variable or the pre-registration itself. The
+whole point of the comparison object is that they come from a committed file
+rather than from whatever was typed that afternoon, so accepting them alongside
+``--comparison`` — even when they happen to agree — would reintroduce the second
+place to set them that this harness exists to remove."""
+
+
+def check_comparison_flags(args: argparse.Namespace) -> None:
+    """Refuse a command line that both names a comparison and overrides it."""
+    if not args.comparison:
+        if args.dry_run:
+            raise RunConfigError("--dry-run is only meaningful with --comparison")
+        return
+    # Compared against the parser's own defaults, not against None: --arch
+    # defaults to "softmax", and a command line that merely accepted the default
+    # has not asked for anything.
+    parser = build_parser()
+    offenders = sorted(
+        flag
+        for flag in COMPARISON_OWNED_FLAGS
+        if getattr(args, flag, None) != parser.get_default(flag)
+    )
+    if offenders:
+        raise RunConfigError(
+            "--comparison "
+            f"{args.comparison} takes its architectures, seeds, width, budget, task and claim "
+            f"from the declared plan; {['--' + flag.replace('_', '-') for flag in offenders]} "
+            "would be a second place to set a §7.2 frozen variable, which is exactly what a "
+            "declared comparison removes. Change the plan and commit it."
+        )
 
 
 def configs_for(args: argparse.Namespace) -> list[RunConfig]:
@@ -1336,8 +1385,28 @@ def configs_for(args: argparse.Namespace) -> list[RunConfig]:
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
-    configs = configs_for(args)
+    check_comparison_flags(args)
     out_dir = None if args.out.lower() == "none" else Path(args.out)
+
+    if args.comparison:
+        # Imported here rather than at module scope: experiments/comparison.py
+        # reads the R3 task matrix from experiments/t1_ladder.py, which drives
+        # this module, and a cycle at import time would be a worse problem than
+        # a deferred import is an untidiness.
+        from architecture_mechanics.experiments.comparison import run_comparison
+
+        return run_comparison(
+            args.comparison,
+            ladder=args.ladder,
+            out_dir=out_dir,
+            emit_bundle=args.emit_bundle,
+            overwrite=args.overwrite,
+            verbose=not args.quiet,
+            dry_run=args.dry_run,
+            assert_pass=args.assert_pass,
+        )
+
+    configs = configs_for(args)
 
     failures: list[str] = []
     for index, config in enumerate(configs, start=1):

@@ -94,6 +94,49 @@ def test_the_ladder_matches_check_claims():
     assert list(RUNGS) == _list_literal("check_claims.sh", "RUNGS")
 
 
+def test_always_permitted_differences_match_check_no_rescue():
+    """The one key a comparison may differ on without declaring it.
+
+    ``experiments/comparison.py`` mirrors this set so it can refuse an unmatched
+    comparison at construction time, before the gate could ever see it. Two
+    copies of a rule drift; this is where the drift surfaces."""
+    from architecture_mechanics.experiments.comparison import ALWAYS_PERMITTED
+
+    text = (BIN / "check_no_rescue.sh").read_text()
+    match = re.search(r"^ALWAYS_PERMITTED\s*=\s*(\{[^}]*\})", text, re.MULTILINE)
+    assert match, "check_no_rescue.sh no longer defines ALWAYS_PERMITTED"
+    assert set(ALWAYS_PERMITTED) == ast.literal_eval(match.group(1))
+
+
+def test_check_no_rescue_reads_the_fields_a_declaration_writes():
+    """The gate reads three keys out of every comparison file, plus the manifest's
+    config block, and all of them are ours to supply. A gate that stopped reading
+    ``permitted_differences`` would turn every declared exception into a silent
+    one; a resolver that stopped writing it would do the same from the other
+    side."""
+    from architecture_mechanics.experiments.comparison import DECLARATION_FIELDS
+
+    text = (BIN / "check_no_rescue.sh").read_text()
+    read_by_the_gate = {"control_run", "candidate_runs", "permitted_differences"}
+    for key in read_by_the_gate:
+        assert f'c.get("{key}")' in text, key
+    assert 'json.load(open(mp)).get("config")' in text
+    assert read_by_the_gate <= set(DECLARATION_FIELDS)
+
+
+def test_the_gate_directory_is_where_the_resolver_writes():
+    """``check_no_rescue.sh`` globs one directory, non-recursively. If that path
+    or that glob changed, every declaration this laboratory emits would stop
+    being checked while every gate stayed green."""
+    from architecture_mechanics.experiments.comparison import COMPARISONS_DIR, PLANNED_DIR
+
+    text = (BIN / "check_no_rescue.sh").read_text()
+    assert 'os.path.join(lab, "reports", "comparisons")' in text
+    assert 'glob.glob(os.path.join(comparisons_dir, "*.json"))' in text
+    assert COMPARISONS_DIR.as_posix() == "reports/comparisons"
+    assert PLANNED_DIR.parent == COMPARISONS_DIR
+
+
 def test_check_prereg_still_reads_the_fields_the_manifest_writes():
     """It reads two keys out of every manifest. Both are ours to supply."""
     text = (BIN / "check_prereg.sh").read_text()
