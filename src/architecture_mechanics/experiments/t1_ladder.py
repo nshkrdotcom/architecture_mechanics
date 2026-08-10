@@ -370,6 +370,18 @@ def recorded_runs(
     return found
 
 
+def _started_utc(run_dir: Path) -> str:
+    """When this run began, from its manifest; ``""`` if it does not say.
+
+    §8.3 puts the clock in the manifest and keeps it out of the run identity, so
+    this is the only place the *order* two runs were recorded in can be read from.
+    """
+    manifest = Path(run_dir) / "manifest.json"
+    if not manifest.is_file():
+        return ""
+    return str(json.loads(manifest.read_text()).get("started_utc") or "")
+
+
 def _matching(summaries: Sequence[tuple[Path, dict]], config_predicate) -> list[tuple[Path, dict]]:
     return [(path, s) for path, s in summaries if config_predicate(s.get("config") or {})]
 
@@ -829,6 +841,13 @@ def seed_variance(
         seed = (summary.get("config") or {}).get("seed")
         if seed in wanted:
             grouped.setdefault(int(seed), []).append((path, summary))
+    # Oldest first, so a seed recorded more than once keeps the run that was
+    # recorded first and a later reproduction of it cannot silently take its
+    # place in a citation. See :func:`_reproductions`.
+    grouped = {
+        seed: sorted(entries, key=lambda entry: (_started_utc(entry[0]), entry[0].name))
+        for seed, entries in grouped.items()
+    }
     by_seed = {seed: entries[0] for seed, entries in grouped.items()}
 
     missing = [seed for seed in wanted if seed not in by_seed]
@@ -938,9 +957,9 @@ def _reproductions(grouped: dict[int, list[tuple[Path, dict]]]) -> dict:
     the config, so what this looks like on disk is a *reproduction from a later
     source tree* — the same experiment, run again after something in ``src/``
     moved. Letting both into the arm would put one run into the spread twice and
-    shrink the standard deviation this mission exists to report, so the arm takes
-    the first by run directory and every copy is named here rather than dropped
-    silently.
+    shrink the standard deviation this mission exists to report, so the arm keeps
+    the copy recorded first — the one every committed report and state document
+    already cites — and every copy is named here rather than dropped silently.
 
     Agreement is checked on every metric the report reads, not only the primary.
     Copies that agree are evidence the source change was inert; copies that
