@@ -1,0 +1,142 @@
+claim_id: a1-linear-solves-positive-control
+schema: am.claim_packet.v1
+owner_prompt: '11'
+scope: 'A1 — kernelized linear attention — as an instrument, on this generator, at one seed.
+  Its children are the R0 invariant gate, the R1 known-easy positive control, and the R2 capacity-stressed
+  kill screen. It claims rung 1 and no higher. A second architecture now exists in this laboratory,
+  so a rung-2 claim is for the first time structurally *possible* — and it is deliberately
+  not made here: a difference between A0 and A1 requires a declared comparison record, matched
+  §7.2 variables and at least five seeds, which is prompt 13''s mission and not this one''s.
+  Where this packet mentions A0 at all it is to say that a number was read beside A0''s recorded
+  number, never that the difference between them was tested.'
+covers:
+  ladder:
+  - R0
+  - R1
+  - R2
+  arch:
+  - linear
+  condition:
+  - positive_control
+  - capacity_stressed
+CLAIM: 'A1 — multi-head causal linear attention with the feature map phi(x) = elu(x) + 1 and
+  a per-head augmented recurrent state, in the shared trunk — solves the known-easy positive
+  control (T1, ample width, distance one to two, no distractors, one association) at or above
+  prompt 03''s frozen exact answer-set recall threshold of 0.80 on the held-out split, and
+  the recurrent state it uses to do so is measurably non-degenerate: the row-stochastic matrix
+  it induces passes all three §6.3 activity gates, and the state itself accumulates rather
+  than acting as a per-position register. Nothing is claimed about any difference between A1
+  and A0; nothing is claimed about content addressing, for the reason recorded under NEAREST_BORING_EXPLANATION.'
+MECHANISM: 'Content-addressed retrieval by an accumulated finite state. Each position writes
+  a rank-one outer product phi(k_t) (x) [v_t, 1] into a per-head d_head x (d_head + 1) matrix;
+  the query position reads the whole matrix with phi(q_t) and divides the value block by the
+  normalizer column, which is exactly a convex combination of every earlier value weighted
+  by kernel similarity. The transport is the mechanism. What A1 removes relative to A0 is
+  the global softmax: the read is normalized by a *sum of positive affinities* rather than
+  by an exponential family, so no position''s weight is set by competition with the others
+  through an exponent. What A1 does **not** have is erasure — nothing is ever subtracted from
+  the state — which is the property A2 adds and the reason A1 exists before it. The MLP and
+  the learned position table are in the shared trunk and are therefore not part of the mechanism.'
+STRUCTURALLY_ENFORCED_PROPERTIES:
+- 'causality: the state at t is a prefix sum over j <= t and the read at t touches nothing
+  else, so there is no mask to apply to the wrong axis; asserted by perturbation on the output
+  and separately on the state trajectory'
+- 'row-stochastic mixing: phi = elu + 1 is strictly positive, so the induced weights over the
+  causal window are non-negative and sum to one, and ''how much came from where'' is a proportion
+  and not a score'
+- 'finite state: the carried state is d (d_head + 1) scalars whatever the context length, asserted
+  in §8.3''s operation summary at two sequence lengths — where A0''s recorded state grows as
+  2 T d'
+- 'coherent write intervention: the normalizer travels as an extra column of the state rather
+  than as a second tensor, so removing a write removes it from the numerator and the denominator
+  together and cannot leave a read normalized by a history it no longer contains'
+- 'no decorative site: every one of the eleven declared hook sites, zeroed, changes the output;
+  the induced attention matrix is therefore *derived* for measurement and is deliberately not
+  a site, because nothing in the forward pass consumes it'
+- 'one equation, three implementations: the parallel scan, the explicit recursion and a loop-written
+  kernel-sum reference agree to 1e-11 in float64, and the state trajectories of the first
+  two agree position by position — so ''linear attention'' names what the code computes, and
+  the form prompt 19 will intervene on is the form the runs measured'
+- 'hook transparency: capturing any or every site is bitwise a no-op on the forward pass, so
+  instrumenting the mechanism cannot be what makes it look active'
+LEARNED_OR_HOPED_PROPERTIES:
+- that the induced weights concentrate on the true source position rather than spreading over
+  the causal window, despite having no exponential to sharpen them with
+- that the state is used as a memory rather than as a register — that what the query reads
+  depends on writes from positions other than its own
+- that removing global softmax normalization does not by itself cost the positive control,
+  which is what makes A1 usable as the middle term of prompt 20's K1 test
+- that the augmented normalizer column stays far from its clamp, so the read is a genuine
+  average and not a floored division
+NEAREST_BORING_EXPLANATION: 'Three of them. (a) The model memorised the training programs and
+  the evaluation split shares their compositions, so the score measures recall of examples
+  rather than of associations. (b) The positive control is solvable without moving any token
+  — a position-wise MLP with an inert mixer would score the same — so a high number says nothing
+  about whether the state did anything. (c) **The positive control does not test addressing
+  at all.** Prompt 10 measured this on A0 and recorded it in claims/a0-t1-associative-recall.corrections.md
+  §3: the known-easy condition sets n_associations = 1, so the ordinal strategy copy_first_keyed
+  scores R^2 1.0000, a fixed-offset copier reaches 0.4968 exact recall with no addressing whatever,
+  and a fixed "attend to t-1" pattern clears the retrieval-lift gate at 6.09x. Whatever A1
+  scores here, the sentence it licenses is "A1 transports", not "A1 performs associative recall".'
+CONTROL_THAT_RULES_IT_OUT: '(a) is ruled out by the T1 template split, which holds out six
+  compositions entirely, and by reporting the held-out split as the result. (b) is ruled out
+  by §6.3''s three activity gates applied to the induced matrix — off-diagonal mass at or below
+  0.05 is a mechanism reading only its own position, entropy ratio at or above 0.95 is a running
+  prefix average, retrieval lift below 2.0x chance is weight that is not on the true source
+  — and, for this architecture specifically, by two state measures A0 cannot have: state_growth_ratio
+  at or below 1.0 is a state that does not accumulate, and a write_to_state_ratio at 1.0 is
+  a state used as a per-position register, which is the finite-state analogue of an inert mixer.
+  (c) is **not** ruled out and is not ruled out for A0 either; it is carried forward as a stated
+  limit on the scope of this claim, and the run that would rule it out is a multi-association
+  condition, which is prompt 13''s and prompt 20''s.'
+PRIMARY_METRIC: Exact answer-set recall accuracy (associative_recall_accuracy) on the held-out
+  evaluation split of the known-easy positive control, against prompt 03's frozen threshold
+  of 0.80 — the same metric, the same split, the same threshold and the same 32768-example
+  budget A0 was measured on, frozen before any second architecture existed that it could have
+  been chosen to flatter.
+MECHANISM_ACTIVITY_METRIC: '§6.3 mechanism_is_active, all three gates on the best layer, computed
+  from the row-stochastic matrix A1 induces by the same code that computes A0''s: off-diagonal
+  mass >= 0.05, entropy ratio <= 0.95, retrieval lift on the true source >= 2.0x chance. Recorded
+  beside four state measures that are specific to a recurrent mechanism and are the §6.3 "write
+  norm relative to state norm" line: state_norm, write_norm, write_to_state_ratio, state_growth_ratio,
+  and readout_magnitude, with normalizer_mean as the check that the clamp is nowhere near binding.'
+POSITIVE_CONTROL: 'R1: the known-easy positive control at d = d_recommended = 48, source-destination
+  distance one to two, no distractors, one association per program, 32768 examples and 4000
+  steps — §7.2''s frozen budget, unchanged from A0''s. A1 must clear 0.80 and its mechanism
+  must be active. Failure here is an implementation or optimisation defect and is debugged,
+  never interpreted: linear attention is a well-established mechanism and a positive control
+  it cannot solve is a bug in this laboratory. No optimizer setting, learning rate, schedule
+  or budget may be changed for A1; if one would have to be, that is a finding to report and
+  not a rescue to apply.'
+NEGATIVE_CONTROL: On the same evaluation data and in the same call, the training-marginal reference
+  predictor must fall below the threshold and the program oracle must clear it (instrument_ok).
+  A threshold a predictor that ignores its input can pass is measuring the task, not the model.
+  Independently, the §6.3 activity report must reach its degenerate values when the mechanism
+  is degenerate — a zero state must read as zero state norm and a flat feature map as entropy
+  ratio 1.0 — which is asserted in tests/identity/test_a1_model.py rather than hoped for. The
+  §4.4 information-destroyed condition is the standing negative control for capability claims;
+  it is declared here and is not exercised at this rung, because no capability difference is
+  claimed at this rung.
+KILL_CONDITION: 'This claim dies if any of the following fires. R1: exact answer-set recall
+  below 0.80 on the held-out split; instrument_ok false; any of the three §6.3 activity gates
+  failing on every layer; state_growth_ratio at or below 1.0 on every layer, which would say
+  the state never accumulates; normalizer_mean within 100x of NORMALIZER_FLOOR, which would
+  say the read is a floored division rather than an average. Any run: any §8.5 invariant failing,
+  the parallel and recurrent forms disagreeing beyond 1e-11 in float64, or a non-finite training
+  loss. R2 capacity-stressed screen: numerical failure, recall skill at or below the training
+  marginal, final recall below half its first measured value, or an inert mechanism. If a kill
+  condition fires it is reported as fired; the threshold, the split, and the metric are not
+  renegotiated afterwards, and in particular a failed R1 is not converted into a claim about
+  linear attention.'
+REPLICATION_REQUIREMENT: 'None across seeds at rungs 0 and 1, and that is a limit of the claim
+  rather than a waiver: these are instrument-validation rungs about one architecture at one
+  seed, where the required repetition is deterministic re-execution, checked by the run''s
+  own reproduce.sh. Rung 2 and above require at least five seeds with per-seed results, effect
+  sizes and bootstrap confidence intervals per §7.4, a comparison record naming its control
+  and candidate, and — from prompt 09''s measurement — an effect no smaller than 0.128 exact
+  recall to be visible at five seeds at all. This packet claims none of them. Any R2 screen
+  it governs is a screen of A1 alone; reading A1''s collapse width beside A0''s recorded 0.0129
+  / 0.0581 / 0.4807 at d = 16 / 32 / 64 is descriptive design information for prompt 13 and
+  is not a capability-difference claim at any rung.'
+primary_metric_key: associative_recall_accuracy
+claimed_rung: 1
