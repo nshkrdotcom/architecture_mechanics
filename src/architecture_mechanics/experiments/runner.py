@@ -450,6 +450,7 @@ def run(
     verbose: bool = True,
     claim: str | Path | None = None,
     emit_bundle: bool = False,
+    claims_dir: Path | None = None,
 ) -> RunResult:
     """Train, evaluate, and report. The whole entry point.
 
@@ -540,7 +541,7 @@ def run(
             "R0 invariants hold" if result.passed else f"R0 failures: {failed_checks}"
         )
         result.cost = _cost(started, device)
-        _record(result, out_dir, manifest, model, packet, emit_bundle, verbose)
+        _record(result, out_dir, manifest, model, packet, emit_bundle, verbose, claims_dir)
         if verbose:
             _print_checks(result.checks)
         return result
@@ -549,7 +550,7 @@ def run(
         result.passed = False
         result.verdict = f"refusing to train: R0 failures {failed_checks}"
         result.cost = _cost(started, device)
-        _record(result, out_dir, manifest, model, packet, emit_bundle, verbose)
+        _record(result, out_dir, manifest, model, packet, emit_bundle, verbose, claims_dir)
         return result
 
     train_started = time.perf_counter()
@@ -604,7 +605,7 @@ def run(
 
     result.cost = _cost(started, device) | {"train_seconds": round(train_seconds, 3)}
     result.cost["r4_five_seed_estimate_seconds"] = round(5 * (time.perf_counter() - started), 1)
-    _write(result, out_dir)
+    _record(result, out_dir, manifest, model, packet, emit_bundle, verbose, claims_dir)
     if verbose:
         _print_result(result)
     return result
@@ -786,6 +787,7 @@ def _record(
     packet,
     emit_bundle: bool,
     verbose: bool,
+    claims_dir: Path | None = None,
 ) -> None:
     """Write the run directory: results, claim gates, then the §8.4 bundle.
 
@@ -797,6 +799,7 @@ def _record(
         return
     run_dir = Path(out_dir) / result.run_id
     _write(result, run_dir)
+    claims_dir = Path(claims_dir) if claims_dir is not None else lab_root() / "claims"
 
     gates_dict = None
     if packet is not None:
@@ -810,7 +813,7 @@ def _record(
         gates, gates_path = update_gates_from_run(
             result,
             run_dir=evidence_path,
-            claims_dir=lab_root() / "claims",
+            claims_dir=claims_dir,
             claim_id=packet.claim_id,
         )
         gates_dict = gates.as_dict()
@@ -839,6 +842,14 @@ def _record(
 
 def _write(result: RunResult, directory: Path) -> None:
     directory = Path(directory)
+    if directory.name != result.run_id:
+        # Called once with the run *root* instead of the run directory, which
+        # silently scattered summary.json across runs/ and produced no run at
+        # all. The identity is in the path or the caller is confused.
+        raise RunConfigError(
+            f"run outputs belong in a directory named for the run: {directory} "
+            f"is not .../{result.run_id}"
+        )
     directory.mkdir(parents=True, exist_ok=True)
 
     payload = result.as_dict()
