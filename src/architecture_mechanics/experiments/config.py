@@ -43,8 +43,10 @@ oracle and the frequency ceiling, which needs far fewer examples than training a
 model does. It is not a training budget and is not used as one here."""
 
 __all__ = [
+    "DEFAULT_SEED",
     "LADDERS",
     "OPERATING_POINT_EVIDENCE",
+    "SEED_FAMILY",
     "ArchSpec",
     "DataSpec",
     "OptimizationConfig",
@@ -52,6 +54,7 @@ __all__ = [
     "config_fingerprint",
     "ladder_config",
     "run_config_from_dict",
+    "seed_family",
 ]
 
 
@@ -79,6 +82,52 @@ def _canonical(value):
 # --------------------------------------------------------------------------- #
 # Frozen comparison variables
 # --------------------------------------------------------------------------- #
+
+SEED_FAMILY: tuple[int, ...] = (
+    20260809,
+    20260810,
+    20260811,
+    20260812,
+    20260813,
+    20260814,
+    20260815,
+    20260816,
+)
+"""§7.2's frozen seed set, in the order runs are added to an arm.
+
+§7.2 freezes *the seed set*, not the number of seeds, so it lives here beside
+everything else a comparison must hold constant rather than in whichever module
+first needed five of them. The first member is the laboratory's single-seed
+default and the seed every screen runs at; the first five are §10.1's
+replication; all eight are what prompt 09 used to ask whether the five-seed
+interval had been honest.
+
+Arms take *prefixes*, never samples. ``--seeds 5`` is the first five and
+``--seeds 8`` is all of them, so an arm replicated at five seeds and a later arm
+replicated at eight share their first five runs instead of merely their count,
+and the paired comparison §7.4 wants is available between them without rerunning
+anything. Growing the list is a deliberate act — every arm a comparison touches
+has to grow with it — which is why :func:`seed_family` refuses to invent a seed
+past the end rather than letting a command line quietly widen the set.
+"""
+
+DEFAULT_SEED: int = SEED_FAMILY[0]
+"""The seed a run uses when nobody names one. One value, one place."""
+
+
+def seed_family(n_seeds: int) -> tuple[int, ...]:
+    """The first ``n_seeds`` of :data:`SEED_FAMILY`, or refuse to invent any."""
+    if n_seeds < 1:
+        raise RunConfigError(f"n_seeds must be at least 1, got {n_seeds}")
+    if n_seeds > len(SEED_FAMILY):
+        raise RunConfigError(
+            f"{n_seeds} seeds were asked for and §7.2's frozen family has "
+            f"{len(SEED_FAMILY)}. Seeds are not generated on demand here: an arm run at a "
+            "seed no other arm ever ran is not a matched comparison, it is a different "
+            "experiment with the same name. Extend SEED_FAMILY deliberately, and extend "
+            "every arm that has to match it."
+        )
+    return SEED_FAMILY[:n_seeds]
 
 
 @dataclass(frozen=True)
@@ -299,7 +348,7 @@ class RunConfig:
     """One run: a rung, an architecture, a condition, a seed, and a device."""
 
     ladder: str = "R1"
-    seed: int = 20260809
+    seed: int = DEFAULT_SEED
     device: str = "cuda"
     arch: ArchSpec = field(default_factory=ArchSpec)
     data: DataSpec = field(default_factory=DataSpec)
@@ -459,7 +508,7 @@ def ladder_config(
     ladder: str,
     *,
     arch: str = "softmax",
-    seed: int = 20260809,
+    seed: int = DEFAULT_SEED,
     device: str = "cuda",
     d_model: int | None = None,
     overrides: dict | None = None,
@@ -534,7 +583,7 @@ def run_config_from_dict(payload: dict) -> RunConfig:
 
     return RunConfig(
         ladder=payload.get("ladder", "R1"),
-        seed=int(payload.get("seed", 20260809)),
+        seed=int(payload.get("seed", DEFAULT_SEED)),
         device=payload.get("device", "cuda"),
         capture_examples=int(payload.get("capture_examples", 256)),
         geometry_examples=int(payload.get("geometry_examples", 1024)),

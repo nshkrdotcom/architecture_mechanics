@@ -288,6 +288,61 @@ def test_seed_variance_reads_every_family_of_metric(tmp_path):
     )
 
 
+def test_one_seed_recorded_twice_is_a_reproduction_and_not_a_second_run(tmp_path):
+    """A source-tree change gives the same experiment a second run ID (§8.3).
+
+    Counting both would put one run into the arm twice and shrink the very
+    standard deviation the arm exists to report, so the spread must stay at five
+    while both copies are named.
+    """
+    for index, seed in enumerate(R4_SEEDS):
+        _write_run(
+            tmp_path, run_id=f"R4-{seed}-a", rung="R4", seed=seed, condition="capacity_stressed",
+            overrides={}, recall=0.50 + 0.01 * index, claim=t1_ladder.CLAIM,
+        )
+    _write_run(
+        tmp_path, run_id=f"R4-{R4_SEEDS[0]}-b", rung="R4", seed=R4_SEEDS[0],
+        condition="capacity_stressed", overrides={}, recall=0.50, claim=t1_ladder.CLAIM,
+    )
+
+    variance = seed_variance(seeds=R4_SEEDS, root=tmp_path, mde_replicates=200)
+    assert variance["seeds_found"] == sorted(R4_SEEDS)
+    assert variance["spread"]["associative_recall_accuracy"]["n"] == 5
+    reproduced = variance["reproductions"][str(R4_SEEDS[0])]
+    assert len(reproduced["run_dirs"]) == 2
+    assert reproduced["agree"] and reproduced["metrics_that_disagree"] == []
+
+
+def test_a_reproduction_that_moved_a_number_is_named_rather_than_averaged(tmp_path):
+    for seed in R4_SEEDS:
+        _write_run(
+            tmp_path, run_id=f"R4-{seed}-a", rung="R4", seed=seed, condition="capacity_stressed",
+            overrides={}, recall=0.50, claim=t1_ladder.CLAIM,
+        )
+    _write_run(
+        tmp_path, run_id=f"R4-{R4_SEEDS[0]}-b", rung="R4", seed=R4_SEEDS[0],
+        condition="capacity_stressed", overrides={}, recall=0.90, claim=t1_ladder.CLAIM,
+    )
+    reproduced = seed_variance(seeds=R4_SEEDS, root=tmp_path, mde_replicates=200)[
+        "reproductions"
+    ][str(R4_SEEDS[0])]
+    assert not reproduced["agree"]
+    assert "associative_recall_accuracy" in reproduced["metrics_that_disagree"]
+
+
+def test_asking_for_one_seed_twice_measures_it_once(tmp_path):
+    for seed in R4_SEEDS[:2]:
+        _write_run(
+            tmp_path, run_id=f"R4-{seed}", rung="R4", seed=seed, condition="capacity_stressed",
+            overrides={}, recall=0.5, claim=t1_ladder.CLAIM,
+        )
+    variance = seed_variance(
+        seeds=(R4_SEEDS[0], R4_SEEDS[0], R4_SEEDS[1]), root=tmp_path, mde_replicates=200
+    )
+    assert variance["seeds_requested"] == [R4_SEEDS[0], R4_SEEDS[1]]
+    assert len(variance["runs"]) == 2
+
+
 def test_difficulty_curves_place_each_run_on_the_axis_that_names_it(tmp_path):
     for index, cell in enumerate((*cells(), NEGATIVE_CONTROL_CELL)):
         _write_run(

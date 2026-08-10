@@ -40,7 +40,12 @@ from pathlib import Path
 
 import numpy as np
 
-from architecture_mechanics.experiments.config import RunConfig, ladder_config
+from architecture_mechanics.experiments.config import (
+    SEED_FAMILY,
+    RunConfig,
+    ladder_config,
+    seed_family,
+)
 from architecture_mechanics.experiments.manifest import lab_root
 from architecture_mechanics.metrics.statistics import (
     ALPHA,
@@ -92,12 +97,13 @@ R2_WIDTHS: tuple[int, ...] = (16, 32, 64)
 collapses, which is the question "where does the baseline stop being a baseline"
 and is not answerable from a single width."""
 
-R4_SEEDS: tuple[int, ...] = (20260809, 20260810, 20260811, 20260812, 20260813)
-"""§10.1's five. The first three match the seeds already used for R1, so the
-laboratory's seed family stays one family."""
+R4_SEEDS: tuple[int, ...] = seed_family(5)
+"""§10.1's five: the first five of ``config.SEED_FAMILY``. A prefix rather than a
+list written here, so the seeds R1 already ran and the seeds this arm replicates
+over are the same family and not two lists that agree by coincidence."""
 
-R4_SEEDS_EXTENDED: tuple[int, ...] = R4_SEEDS + (20260814, 20260815, 20260816)
-"""Eight. Whether the five-seed interval was honest is checkable only against
+R4_SEEDS_EXTENDED: tuple[int, ...] = SEED_FAMILY
+"""All eight. Whether the five-seed interval was honest is checkable only against
 seeds it did not see, and at this scale three more runs cost four minutes."""
 
 
@@ -817,12 +823,13 @@ def seed_variance(
     twice as variable makes the detectable effect larger, never smaller.
     """
     recorded = recorded_runs(ladder="R4", claim=claim, root=root)
-    wanted = list(seeds)
-    by_seed: dict[int, tuple[Path, dict]] = {}
+    wanted = list(dict.fromkeys(seeds))
+    grouped: dict[int, list[tuple[Path, dict]]] = {}
     for path, summary in recorded:
         seed = (summary.get("config") or {}).get("seed")
         if seed in wanted:
-            by_seed[int(seed)] = (path, summary)
+            grouped.setdefault(int(seed), []).append((path, summary))
+    by_seed = {seed: entries[0] for seed, entries in grouped.items()}
 
     missing = [seed for seed in wanted if seed not in by_seed]
     runs: list[RunSummary] = []
@@ -916,10 +923,49 @@ def seed_variance(
         "seeds_found": sorted(by_seed),
         "seeds_missing": missing,
         "runs": per_run,
+        "reproductions": _reproductions(grouped),
         "spread": spreads,
         "detectable_effect": detectable,
         "evaluation_noise": _evaluation_noise(primary, n_queries),
     }
+
+
+def _reproductions(grouped: dict[int, list[tuple[Path, dict]]]) -> dict:
+    """Seeds with more than one recorded run, and whether the copies agree.
+
+    A second recorded run at the same rung, claim, configuration and seed is not
+    a second measurement. §8.3's run identity digests the source tree as well as
+    the config, so what this looks like on disk is a *reproduction from a later
+    source tree* — the same experiment, run again after something in ``src/``
+    moved. Letting both into the arm would put one run into the spread twice and
+    shrink the standard deviation this mission exists to report, so the arm takes
+    the first by run directory and every copy is named here rather than dropped
+    silently.
+
+    Agreement is checked on every metric the report reads, not only the primary.
+    Copies that agree are evidence the source change was inert; copies that
+    disagree are the finding, and the arm's number should not be quoted until
+    somebody has said which source tree it belongs to.
+    """
+    report: dict[str, dict] = {}
+    for seed, entries in sorted(grouped.items()):
+        if len(entries) < 2:
+            continue
+        measured = [run_metrics(summary) for _, summary in entries]
+        first = measured[0]
+        disagreeing = sorted(
+            name
+            for name in ALL_METRICS
+            if any(other.get(name) != first.get(name) for other in measured[1:])
+        )
+        report[str(seed)] = {
+            "run_dirs": [f"runs/{path.name}" for path, _ in entries],
+            "run_ids": [summary.get("run_id") for _, summary in entries],
+            "used_by_the_arm": f"runs/{entries[0][0].name}",
+            "metrics_that_disagree": disagreeing,
+            "agree": not disagreeing,
+        }
+    return report
 
 
 PRIMARY_METRIC = "associative_recall_accuracy"
@@ -973,9 +1019,13 @@ def variance_report(
     finding that out here costs four minutes where finding it out in prompt 15
     costs a conclusion.
     """
+    # A set: a seed recorded twice is one seed reproduced, not two seeds. See
+    # :func:`_reproductions`, which names every copy and says whether they agree.
     found = sorted(
-        int((summary.get("config") or {}).get("seed"))
-        for _, summary in recorded_runs(ladder="R4", claim=claim, root=root)
+        {
+            int((summary.get("config") or {}).get("seed"))
+            for _, summary in recorded_runs(ladder="R4", claim=claim, root=root)
+        }
     )
     primary = seed_variance(
         seeds=primary_seeds, claim=claim, root=root, mde_replicates=mde_replicates
@@ -1087,7 +1137,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--stage", required=True, choices=("r1", "r2", "r3", "r4", "report"))
     parser.add_argument("--arch", default="softmax")
     parser.add_argument("--seeds", type=int, nargs="+", default=None,
-                        help="seeds for this stage; R4 defaults to the five in R4_SEEDS")
+                        help="the seeds for this stage, named individually and all drawn from "
+                             "§7.2's frozen family; R4 defaults to the five in R4_SEEDS. Note "
+                             "the runner's flag of the same name takes a *count* instead: "
+                             "'runner --ladder R4 --seeds 5' is this stage's default arm")
     parser.add_argument("--out", default="runs")
     parser.add_argument("--claim", default=CLAIM)
     parser.add_argument("--reports", default="reports")
@@ -1100,6 +1153,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         return _report(root=root, claim=args.claim, reports=root / args.reports)
 
     seeds = tuple(args.seeds) if args.seeds else (R4_SEEDS if args.stage == "r4" else R4_SEEDS[:1])
+    outside = [seed for seed in seeds if seed not in SEED_FAMILY]
+    if outside:
+        print(
+            f"refusing to run {args.stage.upper()}: seeds {outside} are not in §7.2's frozen "
+            f"seed family {list(SEED_FAMILY)}. An arm run at a seed no other arm can be run "
+            "at is not a matched comparison; extend SEED_FAMILY deliberately instead.",
+            file=sys.stderr,
+        )
+        return 2
     if args.stage in ("r3", "r4"):
         ok, why = _passed_r1(claim=args.claim, root=root)
         if not ok:
@@ -1209,6 +1271,17 @@ def _report(*, root: Path, claim: str, reports: Path) -> int:
             f"({noise['ratio_measured_to_bound']:.1f}x smaller than the measured spread)"
         )
         print(f"  -> {noise['verdict']}")
+
+    reproductions = variance.get("reproductions") or {}
+    if reproductions:
+        agreeing = sum(1 for entry in reproductions.values() if entry["agree"])
+        print(
+            f"  {len(reproductions)} seed(s) recorded more than once — the same configuration "
+            f"re-run from a later source tree; {agreeing} agree on every metric"
+        )
+        for seed, entry in reproductions.items():
+            if not entry["agree"]:
+                print(f"    seed {seed} DISAGREES on {entry['metrics_that_disagree']}")
 
     for block, label in ((report["five_seeds"], "five seeds"), (report["extended"], "extended")):
         detectable = (block or {}).get("detectable_effect")

@@ -22,7 +22,9 @@ The rungs of §7.3:
         what this rung contributes is the operating point and the bundle.
 ``R4``  the replication: the pilot's base cell at five or more seeds. Identical
         in every §7.2 variable except the seed, so the spread it produces is the
-        spread of the procedure.
+        spread of the procedure. ``--seeds 5`` runs the arm; the seeds are a
+        prefix of the frozen family in ``experiments/config.py`` and are never
+        chosen at a command line.
 
 R1's verdict is deliberately not computed here. It comes from
 :func:`~architecture_mechanics.metrics.capability.positive_control`, which was
@@ -58,11 +60,13 @@ from architecture_mechanics.experiments.claim_packet import (
     update_gates_from_run,
 )
 from architecture_mechanics.experiments.config import (
+    DEFAULT_SEED,
     LADDERS,
     RunConfig,
     RunConfigError,
     ladder_config,
     run_config_from_dict,
+    seed_family,
 )
 from architecture_mechanics.experiments.manifest import build_manifest, lab_root, utc_now
 from architecture_mechanics.instrumentation.hooks import NO_HOOKS, CaptureContext, capture_all
@@ -98,7 +102,17 @@ from architecture_mechanics.reporting.evidence_bundle import (
 )
 from architecture_mechanics.seeding import SeedRecord, seed_everything
 
-__all__ = ["RunResult", "evaluate", "main", "run", "run_r0_checks"]
+__all__ = [
+    "TASK_FAMILIES",
+    "RunResult",
+    "build_parser",
+    "check_task",
+    "configs_for",
+    "evaluate",
+    "main",
+    "run",
+    "run_r0_checks",
+]
 
 
 # --------------------------------------------------------------------------- #
@@ -1201,11 +1215,56 @@ def _print_result(result: RunResult) -> None:
 # --------------------------------------------------------------------------- #
 
 
-def main(argv: Sequence[str] | None = None) -> int:
+TASK_FAMILIES: dict[str, str] = {"t1": "T1"}
+"""Task families with a declared §7.3 ladder: CLI name to generator family.
+
+``--task`` does not *choose* the operating point. §7.2's frozen variables live in
+exactly one place — the rung presets in ``experiments/config.py`` — and a second
+place to set them is how a candidate architecture ends up measured on a
+different task than its control. What the flag does is make a command line state
+which task family it ran, and refuse if the rung it named is not on that family.
+
+Today the refusal cannot fire: every §4.4 condition is built from the T1 family,
+so T1 is the only entry and every rung is on it. That is worth saying out loud
+rather than dressing up. The flag earns its place the day a second family exists
+— prompt 20's T2 adds an entry here and its own rung presets, and the first
+command that points a T1 rung at ``--task t2`` is refused instead of quietly
+producing a T1 run filed under T2.
+"""
+
+
+def check_task(config: RunConfig, task: str) -> str:
+    """The generator family this run's condition belongs to, or refuse the run."""
+    if task not in TASK_FAMILIES:
+        raise RunConfigError(
+            f"unknown task family {task!r}; expected one of {sorted(TASK_FAMILIES)}"
+        )
+    expected = TASK_FAMILIES[task]
+    actual = config.data.generator_config().family
+    if actual != expected:
+        raise RunConfigError(
+            f"--task {task} names family {expected}, but rung {config.ladder} declares "
+            f"condition {config.data.condition!r}, which the generator builds from family "
+            f"{actual}. The rung preset owns the operating point (§7.2); change it there "
+            "rather than renaming the task it is on."
+        )
+    return actual
+
+
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run one rung of the §7.3 ladder.")
     parser.add_argument("--ladder", choices=sorted(LADDERS), default="R1")
     parser.add_argument("--arch", default="softmax")
-    parser.add_argument("--seed", type=int, default=20260809)
+    parser.add_argument("--task", choices=sorted(TASK_FAMILIES), default=None,
+                        help="the task family this rung must be on; the run is refused if the "
+                             "rung's declared condition is built from another one")
+    parser.add_argument("--seed", type=int, default=None,
+                        help=f"one seed; default {DEFAULT_SEED}, the first of §7.2's frozen "
+                             "seed family")
+    parser.add_argument("--seeds", type=int, default=None, metavar="N",
+                        help="run the first N seeds of §7.2's frozen seed family in order, "
+                             "instead of a single --seed; the R4 replication is --seeds 5. "
+                             "Seeds past the end of the family are refused, not invented")
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--d-model", type=int, default=None,
                         help="override the condition's d_recommended; recorded in the run identity")
@@ -1225,32 +1284,84 @@ def main(argv: Sequence[str] | None = None) -> int:
                         help="replace an already-recorded run of the same ID; without it a "
                              "repeat that agrees is kept and one that disagrees is refused")
     parser.add_argument("--assert-pass", action="store_true",
-                        help="exit non-zero unless the rung's verdict passes")
+                        help="exit non-zero unless the rung's verdict passes; with --seeds, "
+                             "stop at the first seed that does not")
     parser.add_argument("--quiet", action="store_true")
-    args = parser.parse_args(argv)
+    return parser
 
+
+def configs_for(args: argparse.Namespace) -> list[RunConfig]:
+    """The runs one command line asks for, in the order to run them.
+
+    Separated from :func:`main` because every refusal below is about what a
+    command *means* rather than about what a model does, and none of them should
+    need a GPU to test.
+    """
     if args.config_json:
-        config = run_config_from_dict(json.loads(Path(args.config_json).read_text()))
-    else:
+        if args.seeds is not None or args.task is not None:
+            raise RunConfigError(
+                "--config-json re-runs a configuration recorded in a manifest, which already "
+                "names its seed and its condition; --seeds and --task would contradict it. "
+                "Drop them, or drop --config-json."
+            )
+        return [run_config_from_dict(json.loads(Path(args.config_json).read_text()))]
+
+    if args.seeds is not None and args.seed is not None:
+        raise RunConfigError(
+            f"--seed {args.seed} names one seed and --seeds {args.seeds} names the first "
+            f"{args.seeds} of §7.2's frozen family; pass one or the other"
+        )
+    seeds = (
+        seed_family(args.seeds)
+        if args.seeds is not None
+        else (DEFAULT_SEED if args.seed is None else args.seed,)
+    )
+
+    configs = []
+    for seed in seeds:
         config = ladder_config(
-            args.ladder, arch=args.arch, seed=args.seed, device=args.device, d_model=args.d_model
+            args.ladder, arch=args.arch, seed=seed, device=args.device, d_model=args.d_model
         )
         if args.max_steps is not None:
             config = replace(config, optim=replace(config.optim, max_steps=args.max_steps))
+        if args.task is not None:
+            check_task(config, args.task)
+        configs.append(config)
+    return configs
 
+
+def main(argv: Sequence[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
+    configs = configs_for(args)
     out_dir = None if args.out.lower() == "none" else Path(args.out)
-    result = run(
-        config,
-        out_dir=out_dir,
-        verbose=not args.quiet,
-        claim=args.claim,
-        emit_bundle=args.emit_bundle,
-        overwrite=args.overwrite,
-    )
 
-    if args.assert_pass and not result.passed:
-        print(f"FAILED: {result.verdict}", file=sys.stderr)
-        return 1
+    failures: list[str] = []
+    for index, config in enumerate(configs, start=1):
+        if len(configs) > 1 and not args.quiet:
+            print(f"\n[{index}/{len(configs)}] seed {config.seed}")
+        result = run(
+            config,
+            out_dir=out_dir,
+            verbose=not args.quiet,
+            claim=args.claim,
+            emit_bundle=args.emit_bundle,
+            overwrite=args.overwrite,
+        )
+        if result.passed:
+            continue
+        # --assert-pass stops here rather than finishing the arm. The flag is
+        # used on rungs whose failure means the instrument is broken (§7.3 R1),
+        # and four more runs of a broken instrument are four more measurements
+        # of the bug.
+        if args.assert_pass:
+            print(f"FAILED: {result.run_id}: {result.verdict}", file=sys.stderr)
+            return 1
+        failures.append(f"{result.run_id}: {result.verdict}")
+
+    if failures and not args.quiet:
+        print("\nruns that did not pass their rung's own check:")
+        for line in failures:
+            print(f"  {line}")
     return 0
 
 
