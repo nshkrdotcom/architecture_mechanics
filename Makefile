@@ -1,4 +1,5 @@
-.PHONY: test lint gpu-check selftest metrics-selftest geometry-selftest t0 gates \
+.PHONY: test lint gpu-check selftest metrics-selftest geometry-selftest \
+        statistics-selftest statistics-calibration t0 gates \
         r0 r1 r2 index figure1 figures geometry-table geometry-across-seeds
 
 # The pre-registration every ladder run below is a child of. A recorded run
@@ -36,6 +37,22 @@ metrics-selftest:
 geometry-selftest:
 	uv run python -m architecture_mechanics.metrics.geometry --selftest
 
+# The statistics gate: re-runs both §7.4 calibrations at reduced replicate counts
+# and fails if any estimator's false-positive rate has left its recorded
+# tolerance — including if one recorded as unusable starts behaving. Twenty
+# seconds of CPU; no GPU, no model, no data.
+statistics-selftest:
+	uv run python -m architecture_mechanics.metrics.statistics --selftest
+
+# The recorded calibration at full replicate counts: 2000 null replicates per
+# estimator per noise shape per seed count, the power sweep, and the minimum
+# detectable effect. About four minutes of CPU. Its numbers are what
+# state/08_statistics.md quotes and what tests/metrics/test_statistics_selftest_gate.py
+# checks the register against.
+statistics-calibration:
+	uv run python -m architecture_mechanics.metrics.statistics --calibrate \
+	  --json reports/statistics_calibration.json
+
 # The recorded expected-versus-measured table, regenerated into reports/.
 geometry-table:
 	uv run python -m architecture_mechanics.metrics.geometry --table \
@@ -54,7 +71,7 @@ geometry-across-seeds:
 t0:
 	uv run python -m architecture_mechanics.metrics.capability --t0
 
-gates: selftest metrics-selftest geometry-selftest
+gates: selftest metrics-selftest geometry-selftest statistics-selftest
 
 # The section 7.3 run ladder. R0 builds the model and checks the section 8.5
 # invariants without training; R1 is the known-easy positive control and exits

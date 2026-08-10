@@ -34,6 +34,25 @@ command, and the file comes back with the same sha256, so a changed figure
 means changed evidence. The caption beside each PNG carries every parameter
 needed to reproduce it.
 
+## What this laboratory can and cannot see
+
+```bash
+make statistics-selftest      # re-runs both §7.4 calibrations and checks every recorded threshold
+```
+
+The estimators in `metrics/statistics.py` are calibrated against data with **no
+effect at all**, so their false-positive rates are measured rather than assumed,
+and against injected effects of known size, so their power is too. At the five
+seeds §10.1 asks for, the smallest paired difference detected with 80% power is
+**1.68 standard deviations of the run-to-run difference**; a half-standard-deviation
+difference needs 34 seeds. Below that line a null result means *underpowered*,
+not *no effect*, and every comparison in this repository is designed knowing it.
+
+The run is the experimental unit and the API enforces it: every test takes one
+`RunSummary` per run and refuses a bare array. Pooling 64 tokens per run narrows
+the standard error by a factor of five, which is the difference between a null
+result and a finding.
+
 ## Check the GPU
 
 ```bash

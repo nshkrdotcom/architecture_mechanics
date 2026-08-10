@@ -128,6 +128,18 @@ class RunResult:
     """§6.2 scalars only. The per-feature arrays go to ``geometry_metrics.npz``:
     a summary that carried 36 features times 12 measures times 10 sites would
     stop being a summary."""
+    comparisons: list[dict] = field(default_factory=list)
+    """§7.4 comparison records, written by
+    :func:`~architecture_mechanics.metrics.statistics.attach_comparisons`.
+
+    Absent rather than empty when there are none, which is the opposite of the
+    convention ``evidence_bundle`` uses for its files — and deliberately. An empty
+    ``interventions.jsonl`` says "this run performed no interventions", which is a
+    fact about the run. A comparison is not a property of a run at all: it is a
+    statement about a set of them, and one run cannot have measured it. Writing
+    ``"comparisons": []`` into every screen would assert that each one looked and
+    found nothing, and would rewrite every summary already recorded."""
+
     positive_control: dict | None = None
     kill: dict | None = None
     cost: dict = field(default_factory=dict)
@@ -135,7 +147,10 @@ class RunResult:
     verdict: str = ""
 
     def as_dict(self) -> dict:
-        return asdict(self)
+        record = asdict(self)
+        if not record["comparisons"]:
+            record.pop("comparisons")
+        return record
 
 
 # --------------------------------------------------------------------------- #

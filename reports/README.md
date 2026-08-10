@@ -19,6 +19,13 @@ no model exists in it at all.
   the oracle, chance, and marginal reference predictors. Regenerate with
   `make metrics-selftest` / `python -m architecture_mechanics.metrics.capability
   --calibrate --json <path>`.
+- `statistics_calibration.json` — the §7.4 estimators against two known truths:
+  a null with no effect at all, and an injected effect of declared size. Records
+  the empirical false-positive rate of every estimator at three, five and ten
+  seeds under three noise shapes, the power curve, and the minimum detectable
+  effect at five seeds — the number that tells every later mission whether a null
+  result means "no effect" or "underpowered". Regenerate with
+  `make statistics-calibration`.
 - `geometry_calibration.json` — the §6.2 measures against five *constructed*
   representations whose geometry is known before it is measured: an orthogonal
   basis, a known superposition, a random rotation of the first, a degenerate
