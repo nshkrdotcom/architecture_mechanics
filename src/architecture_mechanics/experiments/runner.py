@@ -17,6 +17,12 @@ The rungs of §7.3:
         an exit code.
 ``R2``  the capacity-stressed kill screen: short, one seed, stop on collapse,
         inactivity, or numerical failure.
+``R3``  the full pilot: one seed per cell of a fixed task matrix, complete §8.4
+        evidence bundle. The matrix is declared in ``experiments/t1_ladder.py``;
+        what this rung contributes is the operating point and the bundle.
+``R4``  the replication: the pilot's base cell at five or more seeds. Identical
+        in every §7.2 variable except the seed, so the spread it produces is the
+        spread of the procedure.
 
 R1's verdict is deliberately not computed here. It comes from
 :func:`~architecture_mechanics.metrics.capability.positive_control`, which was
@@ -43,7 +49,6 @@ from torch.nn import functional as F
 
 from architecture_mechanics.data.feature_program import (
     FeatureProgramDataset,
-    condition_config,
     generate_dataset,
 )
 from architecture_mechanics.device import resolve_device
@@ -197,15 +202,8 @@ def _datasets(config: RunConfig) -> tuple[FeatureProgramDataset, FeatureProgramD
     spec = config.data
     if spec.condition == "positive_control":
         return positive_control_datasets(n_examples=spec.n_train, seed=spec.data_seed)
-    overrides: dict = {}
-    if spec.data_seed is not None:
-        overrides["seed"] = spec.data_seed
-    train = generate_dataset(
-        condition_config(spec.condition, split="train", n_examples=spec.n_train, **overrides)
-    )
-    evaluation = generate_dataset(
-        condition_config(spec.condition, split="test", n_examples=spec.n_eval, **overrides)
-    )
+    train = generate_dataset(spec.generator_config(split="train", n_examples=spec.n_train))
+    evaluation = generate_dataset(spec.generator_config(split="test", n_examples=spec.n_eval))
     return train, evaluation
 
 
@@ -731,6 +729,8 @@ def run(
             if result.passed
             else f"kill conditions fired: {result.kill['fired']}"
         )
+    elif config.ladder in FINAL_RUNGS:
+        result.passed, result.verdict = _pilot_verdict(result, history, stopped_early)
 
     result.cost = _cost(started, device) | {"train_seconds": round(train_seconds, 3)}
     result.cost["r4_five_seed_estimate_seconds"] = round(5 * (time.perf_counter() - started), 1)
@@ -870,6 +870,46 @@ def _kill_screen(result: RunResult, history: Sequence[dict], stopped_early: bool
         "final_recall": recall,
         "recall_skill": skill,
     }
+
+
+def _pilot_verdict(
+    result: RunResult, history: Sequence[dict], stopped_early: bool
+) -> tuple[bool, str]:
+    """§7.3 R3–R5: did this run produce usable evidence?
+
+    Deliberately *not* a capability threshold. A pilot's number is the result;
+    turning "A0 scored less than X" into a failed run would mean the rung could
+    only be passed by a run that agreed with someone's expectation, which is the
+    §13.4 confusion with the sign flipped. What a pilot can fail at is being
+    evidence: an invariant broken, a loss that went non-finite, or a mechanism
+    that never became active — exactly §7.5's rungs 0 and 1, which is what
+    ``evaluate_rungs`` will read out of this result afterwards.
+
+    A pilot on the information-destroyed negative control is *expected* to have
+    no measurable retrieval, and ``mechanism_is_active`` already declines to
+    fail a lift it could not measure. What it will not excuse is attention that
+    never leaves the diagonal.
+    """
+    failed_checks = sorted(name for name, record in result.checks.items() if not record["ok"])
+    numerical = stopped_early or any(
+        not math.isfinite(entry.get("train_loss", 0.0)) for entry in history
+    )
+    verdict = result.mechanism.get("verdict", {})
+    active = bool(verdict.get("active"))
+
+    problems: list[str] = []
+    if failed_checks:
+        problems.append(f"§8.5 invariants failed: {failed_checks}")
+    if numerical:
+        problems.append("non-finite training loss")
+    if not active:
+        problems.append(f"mechanism INERT ({'; '.join(verdict.get('reasons', []))})")
+
+    recall = result.final.get("associative_recall_accuracy")
+    shown = "n/a" if recall is None else f"{recall:.4f}"
+    if problems:
+        return False, f"pilot unusable: {'; '.join(problems)}"
+    return True, f"pilot complete; recall {shown}; mechanism active"
 
 
 def _cost(started: float, device: torch.device) -> dict:

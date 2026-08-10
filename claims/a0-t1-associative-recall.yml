@@ -1,0 +1,187 @@
+claim_id: a0-t1-associative-recall
+schema: am.claim_packet.v1
+owner_prompt: '09'
+scope: >-
+  A0 — multi-head causal softmax attention — taken through §7.3's ladder on T1 associative
+  recall, the first task family in this laboratory that cannot be solved without moving
+  information between positions. Its children are the R1 known-easy positive control, the R2
+  capacity-stressed kill screen at three widths, the R3 pilot over §4.3's five difficulty axes
+  plus the §4.4 information-destroyed control, and the R4 replication of the R3 base cell
+  across five seeds and then eight. It claims rung 1 and no higher, and that ceiling is
+  structural rather than modest: rung 2 is `capability_difference_replicates`, this laboratory
+  holds exactly one architecture, and there is therefore no difference for a rung-2 claim to be
+  about however good the numbers are. The quantity this packet exists to produce is not a score
+  at all — it is A0's own seed-to-seed spread at a frozen operating point, which is the
+  reference every later "architecture X differs from architecture Y" has to be read against.
+covers:
+  ladder:
+  - R3
+  - R4
+  arch:
+  - softmax
+  condition:
+  - capacity_stressed
+  - negative_control
+CLAIM: >-
+  At the frozen R3/R4 operating point — §4.4's `capacity_stressed` T1 condition, F = 124,
+  sequence 48, six simultaneous key/value bindings, three distractors, source-destination
+  distance 5 to 16, per-group activation probability 0.12, d = 64, two layers, two heads,
+  16384 training examples, 3000 steps — A0 performs the transport T1 requires rather than
+  reconstructing the answer locally, and its attention is measurably non-degenerate by all
+  three §6.3 activity gates. Its exact answer-set recall sits strictly between the floor
+  (0.05) and the ceiling (0.95), so the operating point can carry a measurement; its
+  seed-to-seed standard deviation on that metric, over at least five seeds differing only in
+  initialisation and batch order, is finite, reportable, and larger than the evaluation-sample
+  noise of a single run. On §4.4's information-destroyed condition, evaluated at the same
+  operating point, A0 is at chance. Along each of §4.3's five difficulty axes, A0's competence
+  falls monotonically or stays flat as the axis is made harder, with no axis on which the
+  baseline is already at the floor at the base cell. **No architecture difference of any kind
+  is claimed, predicted, or measurable here.**
+MECHANISM: >-
+  Content-addressed retrieval by softmax attention, at a difficulty where the addressing has
+  to work: six bindings are live at once, so a query cannot be answered by "the only binding
+  in the sequence"; three distractors sit between source and destination, so it cannot be
+  answered by "the nearest content-bearing position"; distances run from 5 to 16, so it cannot
+  be answered by a fixed offset. The query formed at the last position matches the key written
+  at the source, and the row-stochastic weight vector transports the source's content features
+  along the residual stream to the destination, where the two readout heads decode presence
+  and magnitude. The transport is the mechanism; the MLP and the learned position table are in
+  the shared trunk and are not part of it.
+STRUCTURALLY_ENFORCED_PROPERTIES:
+- 'causality: no output at position t depends on any input after t, asserted by perturbation
+  at the start of every run rather than by inspection of the mask'
+- 'row-stochastic mixing: attention weights over the causal window sum to one by construction,
+  so "how much came from where" is a proportion and not a score'
+- 'observability: the (B, H, T, T) weight matrix is materialised, so §6.3 activity is measured
+  from the tensor the model used rather than inferred from its outputs'
+- 'hook transparency: capturing any or every site is bitwise a no-op on the forward pass'
+- 'one equation: the batched path agrees with a loop-written reference to 1e-11 in float64'
+- 'single-axis cells: every cell of the R3 matrix differs from the base cell in exactly one
+  generator field, checked in tests/experiments/test_t1_ladder.py against the generator
+  dataclass rather than promised in a comment, so a point on a difficulty curve cannot have
+  moved two things at once'
+- 'a fixed evaluation target across seeds: the seed moves initialisation and batch order only.
+  The generator seed family, the template split, and both dataset content hashes are identical
+  across the five R4 runs and are recorded in each manifest, so the measured spread is the
+  spread of the training procedure and not of the data'
+- 'matched replication: the R4 configuration differs from the R3 base cell in the rung label
+  and the seed and in nothing else, asserted by diffing the two config dictionaries'
+LEARNED_OR_HOPED_PROPERTIES:
+- 'that attention concentrates on the true source position rather than on the most recent
+  binding, the nearest content position, or a fixed offset'
+- 'that the retrieved value stays clean rather than blending with the five other live
+  bindings — measured as the gap between exact answer-set recall and graded Jaccard overlap'
+- 'that the seed-to-seed spread at this operating point is small relative to the range of the
+  metric, so that a future architecture comparison at five seeds is not hopeless before it
+  starts. This is a hope and not a prediction: prompt 08 measured that the adopted paired
+  t-test needs 1.68 standard deviations of the paired difference at five seeds, and if A0''s
+  own spread is large then the honest finding of this mission is that five seeds is not
+  enough at this scale'
+- 'that competence degrades smoothly along the §4.3 axes rather than falling off a cliff, so
+  that an operating point chosen from the curves is a choice and not a coin flip'
+NEAREST_BORING_EXPLANATION: >-
+  Four of them, and the third is the one that would quietly invalidate the deliverable.
+  (a) A0 scores well because the answer can be reconstructed locally without transport — a
+  position-wise MLP with an inert mixer would do as well. (b) A0 scores well only because
+  d = 64 makes the capacity-stressed condition no longer capacity-stressed, so the operating
+  point measures an easy task wearing a hard task's name. (c) The seed-to-seed spread I report
+  is not training variance at all but evaluation-sample noise: any two identical models scored
+  on a finite held-out set would differ by about this much, and a "minimum detectable effect"
+  derived from it would be a statement about the size of the evaluation set rather than about
+  the architecture. (d) The difficulty curves measure extrapolation rather than competence,
+  because one model was trained at one difficulty and scored at others.
+CONTROL_THAT_RULES_IT_OUT: >-
+  (a) §6.3's three activity gates, each of which fails a specific degenerate mechanism:
+  off-diagonal mass at or below 0.05 is a model attending only to its own position; entropy
+  ratio at or above 0.95 is weight spread uniformly over the causal window; retrieval lift
+  below 2.0x chance is weight that is not on the true source. All three are measured on the
+  best layer and reported with the argmax hit rate. An untrained model at this operating point
+  was measured to fail two of the three, so the gates are not free.
+  (b) The R2 kill screen runs the same condition at d = 16 (the condition's own
+  `d_recommended`, F/d = 7.75), 32, and 64, so the width at which capability collapses is
+  measured in this mission rather than assumed, and the operating point is reported together
+  with the collapse curve it sits above. The base cell's score is additionally reported against
+  the program oracle (1.0) and the training marginal (0.0) on the same evaluation data.
+  (c) The evaluation split is bitwise identical across the five R4 seeds — same generator seed
+  family, same template split, same recorded content hash — so no seed resamples the evaluation
+  set and the across-seed spread cannot be evaluation-set resampling noise. The residual
+  concern is *scoring* noise on a fixed finite set, which for an exact-set accuracy p over the
+  4096 supervised recall queries is bounded by sqrt(p(1-p)/4096) <= 0.0079. That number is
+  reported beside the measured across-seed standard deviation. If the measured spread is not
+  clearly above it, this mission reports that the spread is at the resolution limit of the
+  evaluation set rather than reporting it as training variance.
+  (d) Every difficulty cell trains *and* evaluates at its own difficulty. No model is scored
+  off its training distribution anywhere in the matrix, and each cell's generator overrides are
+  recorded in its own manifest and enter its run identity.
+PRIMARY_METRIC: >-
+  `associative_recall_accuracy` — exact answer-set recall over transport operations on the
+  held-out evaluation split. Prompt 03 froze it as T1's primary capability number and
+  calibrated it against the oracle, the training marginal, and the frequency ceiling before any
+  architecture existed that its threshold could have been chosen to flatter. It is used twice
+  here and the two uses are different: at R1 it is a pass/fail bar at 0.80, and at R3/R4 it is
+  a measured quantity whose across-seed standard deviation is this mission's deliverable. The
+  R3/R4 use has no threshold attached beyond the floor and ceiling named in the kill condition,
+  because "A0 scored X on capacity-stressed T1" is a measurement and not a hypothesis test.
+MECHANISM_ACTIVITY_METRIC: >-
+  §6.3 `mechanism_is_active`, all three gates on the best layer: off-diagonal attention mass
+  >= 0.05, entropy ratio <= 0.95, and retrieval lift on the true source position >= 2.0x
+  chance, with the argmax hit rate reported as a companion. The three underlying numbers are
+  recorded per run and their seed-to-seed spread is reported alongside the capability and
+  geometry spreads, because a gate passed by a hair and a gate passed by a mile are different
+  states of the instrument and the pass/fail bit does not distinguish them.
+POSITIVE_CONTROL: >-
+  R1, the §4.4 known-easy positive control: T1 at ample width (d = 48 > F = 36), distance one
+  to two, no distractors, one association, 32768 examples and 4000 steps — the §7.2-frozen
+  budget calibrated in prompt 04. A0 must clear 0.80 exact answer-set recall on the held-out
+  split and its mechanism must be active, and this must happen before any R3 or R4 run starts.
+  The ordering is enforced in code: `experiments/t1_ladder.py --stage r3` refuses to start
+  until a recorded R1 for this packet has passed. §7.3 is explicit that an R1 failure is an
+  implementation or optimisation defect and is debugged rather than interpreted; a sixteen-cell
+  task matrix run on a broken instrument is sixteen measurements of the bug.
+NEGATIVE_CONTROL: >-
+  §4.4's information-destroyed condition (`negative_control`: the source binding keeps its
+  shape but its key becomes one nothing queries and its content is redrawn, so the supervised
+  target is drawn from a stream the input never touches and I(input; target) = 0 by
+  construction), trained and evaluated at the same R3 operating point as the base cell and
+  differing from it in that one field. Prompt 02 bounded chance on it with a perfect-memory
+  33-strategy oracle at exactly 0.0. A0 must be at chance: `associative_recall_accuracy` at or
+  below 0.05 and normalized skill against the training marginal at or below 0.05. This is the
+  standing control for every capability number in this laboratory, because a trained model
+  beating an information-destroyed control means the task leaks and every result recorded to
+  date would be measuring the leak.
+KILL_CONDITION: >-
+  This claim dies if any of the following fires, and each is a promise rather than a guideline:
+  the threshold, the split, and the metric are not renegotiated after the data is seen.
+  (1) R1: exact answer-set recall below 0.80 on the held-out split, or `instrument_ok` false,
+  or any of the three §6.3 activity gates failing on every layer. Nothing further runs.
+  (2) NEGATIVE CONTROL, and this one is a hard stop for the whole laboratory: A0's
+  `associative_recall_accuracy` on the information-destroyed condition above 0.05, or its
+  normalized skill above 0.05. If it fires, the claim dies, the generator is fixed, every
+  affected run is re-executed, and the entire episode is recorded in the mission artifact
+  rather than quietly repaired.
+  (3) R3 BASE CELL: exact answer-set recall at or below 0.05, or at or above 0.95. Either
+  bound means the operating point cannot carry a variance measurement — a standard deviation
+  pinned against a floor or a ceiling is a statement about the bound and not about the
+  procedure — and the claim dies at rung 1 with the operating point re-derived from the R2
+  width curve, in public, rather than adjusted after the seed spread is seen.
+  (4) R4: fewer than five recorded seeds; any seed with a non-finite training loss; any seed
+  whose mechanism is inert. A replication with a hole in it is not a replication.
+  (5) ANY RUN: any §8.5 invariant failing, or a run recorded from a dirty working tree.
+REPLICATION_REQUIREMENT: >-
+  At least five seeds at the R3 base cell, differing from one another and from the pilot in the
+  seed alone, with every per-seed value recorded raw. Reported for each capability, geometry
+  and mechanism-activity metric: mean, sample standard deviation, min, max, and range; a
+  studentized bootstrap confidence interval on the mean, which prompt 08 measured to be the
+  only bootstrap interval whose coverage at five runs is what it says (0.044 against a nominal
+  0.05, where the percentile and BCa intervals read 0.167 and 0.189); and a chi-square interval
+  on the standard deviation itself, because a sigma estimated from five points carries a 35%
+  relative standard error and quoting it bare would invite later missions to trust it to two
+  decimal places. The five-seed result is then extended to eight seeds and the five-seed
+  interval is checked against the eight-seed mean — whether the five-seed interval was honest
+  is checkable, cheap at this scale, and directly determines how much weight prompts 15 and 21
+  can put on their own five-seed results. No permutation test is named anywhere in this packet:
+  prompt 08 measured its p-value floor at five seeds to be 0.0625, so naming one would
+  pre-register a test that cannot fire. No architecture comparison is claimed and none is
+  possible; the deliverable is the spread that a future comparison will have to exceed.
+primary_metric_key: associative_recall_accuracy
+claimed_rung: 1

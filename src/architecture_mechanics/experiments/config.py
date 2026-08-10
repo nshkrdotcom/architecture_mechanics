@@ -26,6 +26,7 @@ from dataclasses import asdict, dataclass, field, fields, replace
 from architecture_mechanics.data.feature_program import (
     CONDITION_NAMES,
     GENERATOR_VERSION,
+    FeatureProgramConfig,
     condition_config,
 )
 from architecture_mechanics.metrics.capability import METRIC_VERSION
@@ -43,6 +44,7 @@ model does. It is not a training budget and is not used as one here."""
 
 __all__ = [
     "LADDERS",
+    "OPERATING_POINT_EVIDENCE",
     "ArchSpec",
     "DataSpec",
     "OptimizationConfig",
@@ -55,6 +57,23 @@ __all__ = [
 
 class RunConfigError(ValueError):
     """A run configuration that would not mean what it says."""
+
+
+def _canonical(value):
+    """What this value looks like after a round trip through JSON.
+
+    A run's identity is a digest of ``RunConfig.as_dict()`` serialised as JSON,
+    and ``reproduce.sh`` hands the manifest's recorded config straight back to
+    :func:`run_config_from_dict`. A tuple written in source becomes a list in
+    the manifest; if the two disagreed the reproduction would compute a
+    different run ID for the same experiment. Normalising on the way in makes
+    the identity a property of the values rather than of how they were typed.
+    """
+    if isinstance(value, dict):
+        return {str(key): _canonical(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_canonical(item) for item in value]
+    return value
 
 
 # --------------------------------------------------------------------------- #
@@ -191,9 +210,47 @@ class DataSpec:
     :func:`~architecture_mechanics.metrics.capability.positive_control_datasets`
     uses. Setting it moves the whole seed family, data and all."""
 
+    generator_overrides: dict = field(default_factory=dict)
+    """Fields of :class:`~...data.feature_program.FeatureProgramConfig` this run
+    moves away from its condition's declared value.
+
+    This exists for exactly one thing: §4.3 names five difficulty axes for T1 —
+    source distance, distractor count, feature sparsity, key collisions, and
+    simultaneous associations — and a competence envelope is a curve along them.
+    Every axis is already a field of the generator config, so the alternative
+    was six near-duplicate conditions, and §4.4's six controls are a fixed list
+    that means something.
+
+    An override is *declared data*: it goes into ``as_dict``, therefore into the
+    run identity, the manifest, and ``bin/check_no_rescue.sh``'s diff. A cell
+    that moved an axis cannot be mistaken for the condition it started from, and
+    a candidate architecture given a different axis value than its control is an
+    undeclared difference the gate names. Values are canonicalised to what JSON
+    round-trips, so a config rebuilt from a manifest has the same identity as
+    the one that produced it.
+    """
+
     def __post_init__(self) -> None:
         if self.condition not in CONDITION_NAMES:
             raise RunConfigError(f"unknown condition {self.condition!r}; expected {CONDITION_NAMES}")
+        object.__setattr__(self, "generator_overrides", _canonical(self.generator_overrides))
+        unknown = sorted(
+            set(self.generator_overrides) - {f.name for f in fields(FeatureProgramConfig)}
+        )
+        if unknown:
+            raise RunConfigError(f"generator_overrides names no such generator field: {unknown}")
+        forbidden = sorted(
+            set(self.generator_overrides) & {"family", "condition", "split", "n_examples", "seed"}
+        )
+        if forbidden:
+            # These four are set by the runner from the condition, the split and
+            # the DataSpec's own fields. An override would be silently discarded
+            # by _datasets() while still changing the run identity, which is the
+            # worst of both: a different name for the same experiment.
+            raise RunConfigError(
+                f"generator_overrides may not set {forbidden}; those come from the condition, "
+                "the split, n_train/n_eval and data_seed"
+            )
         if self.n_train < 1 or self.n_eval < 1:
             raise RunConfigError("n_train and n_eval must be >= 1")
         if self.condition == "positive_control" and self.n_train != self.n_eval:
@@ -204,10 +261,34 @@ class DataSpec:
                 "the positive control draws train and eval at one size; "
                 f"got n_train={self.n_train} and n_eval={self.n_eval}"
             )
+        if self.generator_overrides and self.condition == "positive_control":
+            # positive_control_datasets() owns the R1 split and hashes it. An
+            # override here would be discarded there and the run would be named
+            # for a dataset it never saw.
+            raise RunConfigError(
+                "the positive control is the frozen known-easy condition and takes no "
+                "generator_overrides; sweep difficulty on capacity_stressed"
+            )
+        self.generator_config(split="train", n_examples=self.n_train)
+
+    def generator_config(self, *, split: str = "train", n_examples: int = 1) -> FeatureProgramConfig:
+        """This run's generator configuration, overrides applied.
+
+        Built once here so that an override combination the generator would
+        refuse — three distractors between a source and a destination two apart
+        — is refused when the configuration is written rather than after the
+        model has been placed on the GPU.
+        """
+        overrides = dict(self.generator_overrides)
+        if self.data_seed is not None:
+            overrides["seed"] = self.data_seed
+        return condition_config(
+            self.condition, split=split, n_examples=n_examples, **overrides
+        )
 
     @property
     def d_recommended(self) -> int:
-        return condition_config(self.condition).d_recommended
+        return self.generator_config().d_recommended
 
     def as_dict(self) -> dict:
         return asdict(self)
@@ -298,7 +379,55 @@ LADDERS: dict[str, dict] = {
         "data": {"condition": "capacity_stressed", "n_train": 16384, "n_eval": 4096},
         "optim": {"max_steps": 2000, "eval_every": 500},
     },
+    # Full pilot: one seed per cell of the fixed task matrix, complete evidence
+    # bundle. The matrix itself is declared in experiments/t1_ladder.py; what is
+    # declared here is the operating point every cell shares.
+    #
+    # d = 64 rather than the condition's d_recommended = 16, and this is the one
+    # place in the laboratory where a rung does not honour it. The reason is
+    # recorded in OPERATING_POINT_EVIDENCE below and in the run itself, which
+    # writes honours_d_recommended: false. It is a choice of *regime*, made once
+    # and frozen for every architecture that follows; a pilot run where the
+    # baseline scores 0.013 measures the floor and nothing else.
+    "R3": {
+        "description": "full pilot, one seed per task-matrix cell, complete bundle",
+        "data": {"condition": "capacity_stressed", "n_train": 16384, "n_eval": 4096},
+        "optim": {"max_steps": 3000, "eval_every": 500},
+        "arch": {"d_model": 64},
+    },
+    # Replication: the R3 base cell at five or more seeds. Identical in every
+    # §7.2 variable to R3's base cell except the seed and the rung, so the
+    # spread it measures is the spread of the procedure and not of the design.
+    "R4": {
+        "description": "replication of the R3 base cell across seeds",
+        "data": {"condition": "capacity_stressed", "n_train": 16384, "n_eval": 4096},
+        "optim": {"max_steps": 3000, "eval_every": 500},
+        "arch": {"d_model": 64},
+    },
 }
+
+OPERATING_POINT_EVIDENCE: tuple[dict, ...] = (
+    {"d_model": 16, "note": "the condition's d_recommended", "recall": 0.0129, "feature_f1": 0.3101},
+    {"d_model": 32, "recall": 0.0581, "feature_f1": 0.4175},
+    {"d_model": 64, "recall": 0.4807, "feature_f1": 0.8318},
+)
+"""Why R3 and R4 run at ``d = 64``, recorded so the choice is auditable.
+
+Measured by prompt 07's three recorded R2 kill screens — A0, seed 20260809,
+``capacity_stressed``, 16384 examples, 2000 steps — and committed to this
+laboratory before the pre-registration that cites them. ``recall`` is
+``associative_recall_accuracy`` on the held-out split.
+
+At the condition's own ``d_recommended = 16`` A0 answers 1.3% of recall queries
+exactly, which is the floor: a comparison run there would measure which
+architecture is marginally less useless, and a seed-to-seed spread there is the
+spread of a number pinned against zero. At 64 the baseline sits near the middle
+of its range, which is where both a difference and a variance are visible.
+
+This is a choice of regime, not a tuning of A0: it is a §7.2 frozen variable,
+identical for every architecture measured at this operating point, and it is
+declared here rather than passed at a call site so that a candidate cannot
+receive a different one."""
 
 EXAMPLE_BUDGET_CALIBRATION: tuple[dict, ...] = (
     {"n_train": 512, "max_steps": 1500, "recall": 0.3867, "feature_f1": 0.8149},
@@ -339,11 +468,17 @@ def ladder_config(
     if ladder not in LADDERS:
         raise RunConfigError(f"unknown ladder rung {ladder!r}; expected {sorted(LADDERS)}")
     preset = LADDERS[ladder]
+    # The rung's own architecture block first, then an explicit d_model. R3 and
+    # R4 declare their width because it is part of the operating point; passing
+    # --d-model still overrides it, and the run identity records which happened.
+    arch_spec = replace(ArchSpec(**preset.get("arch", {})), arch=arch)
+    if d_model is not None:
+        arch_spec = replace(arch_spec, d_model=d_model)
     config = RunConfig(
         ladder=ladder,
         seed=seed,
         device=device,
-        arch=ArchSpec(arch=arch, d_model=d_model),
+        arch=arch_spec,
         data=DataSpec(**preset["data"]),
         optim=replace(OptimizationConfig(), **preset["optim"]),
     )

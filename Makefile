@@ -1,6 +1,7 @@
 .PHONY: test lint gpu-check selftest metrics-selftest geometry-selftest \
         statistics-selftest statistics-calibration t0 gates \
-        r0 r1 r2 index figure1 figures geometry-table geometry-across-seeds
+        r0 r1 r2 index figure1 figures geometry-table geometry-across-seeds \
+        t1-r1 t1-r2 t1-r3 t1-r4 t1-r4-extended t1-report t1-ladder
 
 # The pre-registration every ladder run below is a child of. A recorded run
 # must have one: bin/check_prereg.sh refuses a manifest without it, and the
@@ -89,6 +90,41 @@ r1:
 r2:
 	uv run python -m architecture_mechanics.experiments.runner --ladder R2 \
 	  --claim $(CLAIM) --emit-bundle
+
+# A0 through the ladder on T1 — the task that cannot be solved without
+# transport. Every stage is a child of claims/a0-t1-associative-recall.yml, and
+# the stages must be run in this order: t1-r3 refuses to start until a recorded
+# R1 for that packet has passed, because a sixteen-cell task matrix run on a
+# broken instrument is sixteen measurements of the bug.
+#
+# R3 and R4 write full §8.4 bundles, so the working tree must be clean or
+# bin/check_evidence.sh will (correctly) refuse the result.
+T1 = uv run python -m architecture_mechanics.experiments.t1_ladder
+
+t1-r1:
+	$(T1) --stage r1
+
+t1-r2:
+	$(T1) --stage r2
+
+t1-r3:
+	$(T1) --stage r3
+
+t1-r4:
+	$(T1) --stage r4
+
+# Three seeds beyond §10.1's five. Whether the five-seed interval was honest is
+# only checkable against seeds it did not see, and here that costs four minutes.
+t1-r4-extended:
+	$(T1) --stage r4 --seeds 20260814 20260815 20260816
+
+# The two reports this mission exists to produce: A0's competence envelope along
+# §4.3's five axes, and A0's seed-to-seed spread — the reference every later
+# "architecture X differs from architecture Y" has to be read against.
+t1-report:
+	$(T1) --stage report
+
+t1-ladder: t1-r1 t1-r2 t1-r3 t1-r4 t1-report
 
 # Every run in the laboratory against its claim packet, in one screen. The
 # partial defence against selection over experiments; prompt 29 is told to look.
