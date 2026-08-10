@@ -1,4 +1,4 @@
-.PHONY: test lint gpu-check selftest metrics-selftest t0 gates
+.PHONY: test lint gpu-check selftest metrics-selftest t0 gates r0 r1 r2
 
 test:
 	uv run pytest tests -q
@@ -28,3 +28,15 @@ t0:
 	uv run python -m architecture_mechanics.metrics.capability --t0
 
 gates: selftest metrics-selftest
+
+# The section 7.3 run ladder. R0 builds the model and checks the section 8.5
+# invariants without training; R1 is the known-easy positive control and exits
+# non-zero if A0 does not solve it; R2 is the capacity-stressed kill screen.
+r0:
+	uv run python -m architecture_mechanics.experiments.runner --ladder R0 --assert-pass
+
+r1:
+	uv run python -m architecture_mechanics.experiments.runner --ladder R1 --assert-pass
+
+r2:
+	uv run python -m architecture_mechanics.experiments.runner --ladder R2

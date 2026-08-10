@@ -6,8 +6,20 @@
 > legibility?
 
 The laboratory generates its own data and trains its own tiny models, so every
-result is reproducible from this repository and a GPU. There is no science in it
-yet — this is the skeleton.
+result is reproducible from this repository and a GPU.
+
+## Run the ladder
+
+```bash
+make r0            # build A0 and check the section 8.5 invariants; no training
+make r1            # the known-easy positive control; exits non-zero if A0 fails it
+make r2            # the capacity-stressed kill screen
+```
+
+A0 — standard causal softmax attention — is the reference architecture. Its fast
+path is held to a loop-written slow reference in `tests/equations`, because every
+later claim in this program is stated relative to A0 and a bug there is a bug in
+everything.
 
 ## Check the GPU
 
