@@ -56,7 +56,6 @@
     "device_name": "NVIDIA GeForce RTX 5060 Ti",
     "compute_capability": "12.0",
     "total_memory_bytes": 17102864384,
-    "free_memory_bytes": 15894315008,
     "multi_processor_count": 36,
     "torch_version": "2.11.0+cu128",
     "cuda_version": "12.8",
@@ -376,15 +375,6 @@
     },
     "final_recall": 0.480712890625,
     "recall_skill": 0.480712890625
-  },
-  "cost": {
-    "wall_clock_seconds": 43.012,
-    "peak_allocated_bytes": 1272905216,
-    "peak_reserved_bytes": 1358954496,
-    "peak_allocated_mib": 1213.94,
-    "peak_reserved_mib": 1296.0,
-    "train_seconds": 19.357,
-    "r4_five_seed_estimate_seconds": 215.1
   },
   "passed": true,
   "verdict": "kill screen survived"

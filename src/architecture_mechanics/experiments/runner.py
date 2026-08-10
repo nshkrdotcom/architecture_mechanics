@@ -85,7 +85,15 @@ __all__ = ["RunResult", "evaluate", "main", "run", "run_r0_checks"]
 
 @dataclass
 class RunResult:
-    """Everything one run produced. Serialised verbatim to ``summary.json``."""
+    """Everything one run produced.
+
+    Split across two files by :func:`_write`. Everything the experiment
+    determines goes to ``summary.json``; the measurements that belong to the
+    machine and the moment rather than to the experiment — wall clock, peak
+    VRAM, free VRAM at start — go to ``cost.json``. Re-running an identical
+    config therefore rewrites ``summary.json`` byte for byte, which is what
+    makes "the run directory is unchanged" a meaningful statement.
+    """
 
     run_id: str
     config: dict
@@ -702,7 +710,16 @@ def _write(result: RunResult, out_dir: Path | None) -> None:
         return
     directory = Path(out_dir) / result.run_id
     directory.mkdir(parents=True, exist_ok=True)
-    (directory / "summary.json").write_text(json.dumps(result.as_dict(), indent=2, default=_json_default) + "\n")
+
+    payload = result.as_dict()
+    cost = payload.pop("cost", {})
+    # Free VRAM at start is a fact about the machine at that instant, not about
+    # the run; it travels with the timings so that what remains is reproducible.
+    free_memory = payload.get("device", {}).pop("free_memory_bytes", None)
+    cost = {"run_id": result.run_id, "device_free_memory_bytes": free_memory} | cost
+
+    (directory / "summary.json").write_text(json.dumps(payload, indent=2, default=_json_default) + "\n")
+    (directory / "cost.json").write_text(json.dumps(cost, indent=2, default=_json_default) + "\n")
     with (directory / "metrics.jsonl").open("w") as handle:
         for entry in result.history:
             handle.write(json.dumps(entry, default=_json_default) + "\n")

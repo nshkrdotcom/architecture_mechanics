@@ -56,7 +56,6 @@
     "device_name": "NVIDIA GeForce RTX 5060 Ti",
     "compute_capability": "12.0",
     "total_memory_bytes": 17102864384,
-    "free_memory_bytes": 15894315008,
     "multi_processor_count": 36,
     "torch_version": "2.11.0+cu128",
     "cuda_version": "12.8",
@@ -210,13 +209,6 @@
   "mechanism": {},
   "positive_control": null,
   "kill": null,
-  "cost": {
-    "wall_clock_seconds": 1.353,
-    "peak_allocated_bytes": 69816320,
-    "peak_reserved_bytes": 71303168,
-    "peak_allocated_mib": 66.58,
-    "peak_reserved_mib": 68.0
-  },
   "passed": true,
   "verdict": "R0 invariants hold"
 }
