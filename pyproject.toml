@@ -1,0 +1,45 @@
+[project]
+name = "architecture-mechanics"
+version = "0.1.0"
+description = "A controlled synthetic laboratory for measuring how sequence-mixing and state-writing mechanisms change feature geometry and causal legibility."
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "torch>=2.11.0",
+    "numpy>=2.2.0",
+    "matplotlib>=3.10.0",
+    "pyyaml>=6.0.2",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/architecture_mechanics"]
+
+# The GPU here is an RTX 5060 Ti (Blackwell, sm_120). PyPI's default torch
+# wheels do not carry sm_120 kernels; the cu128 index does. This block is
+# copied from attention_lab's known-good configuration on this machine.
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+[tool.uv.sources]
+torch = [
+    { index = "pytorch-cu128", marker = "sys_platform == 'linux'" },
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.0",
+    "ruff>=0.12.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
