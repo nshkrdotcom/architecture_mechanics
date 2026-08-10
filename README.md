@@ -21,6 +21,19 @@ path is held to a loop-written slow reference in `tests/equations`, because ever
 later claim in this program is stated relative to A0 and a bug there is a bug in
 everything.
 
+## Reproduce a figure
+
+```bash
+make figure1       # regenerates reports/figures/figure1_benchmark.png
+```
+
+Figures are generated only from recorded artifacts — figure 1 from one real
+generated example, later figures from recorded run outputs — and never from
+hand-drawn numbers. Regeneration is byte-identical: delete the PNG, run the
+command, and the file comes back with the same sha256, so a changed figure
+means changed evidence. The caption beside each PNG carries every parameter
+needed to reproduce it.
+
 ## Check the GPU
 
 ```bash

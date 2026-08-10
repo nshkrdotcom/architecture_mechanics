@@ -53,6 +53,10 @@ MODULES = [
     "architecture_mechanics.reporting.tables",
     "architecture_mechanics.reporting.figures",
     "architecture_mechanics.reporting.evidence_bundle",
+    # Beyond §8.2's suggested list. Four figures arrive across four prompts and
+    # a style decided once is what keeps them one paper; recorded here so the
+    # deviation from the suggested layout is visible rather than incidental.
+    "architecture_mechanics.reporting.figure_style",
 ]
 
 

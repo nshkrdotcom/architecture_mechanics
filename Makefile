@@ -1,4 +1,5 @@
-.PHONY: test lint gpu-check selftest metrics-selftest t0 gates r0 r1 r2 index
+.PHONY: test lint gpu-check selftest metrics-selftest t0 gates r0 r1 r2 index \
+        figure1 figures
 
 # The pre-registration every ladder run below is a child of. A recorded run
 # must have one: bin/check_prereg.sh refuses a manifest without it, and the
@@ -56,3 +57,12 @@ r2:
 # partial defence against selection over experiments; prompt 29 is told to look.
 index:
 	uv run python -m architecture_mechanics.experiments.index
+
+# The section 10.2 figures, from recorded artifacts only. --verify-deterministic
+# deletes the PNG, regenerates it, and exits non-zero unless the bytes match:
+# a figure that moves when nothing moved makes review impossible.
+figure1:
+	uv run python -m architecture_mechanics.reporting.figures --figure 1 \
+	  --verify-deterministic
+
+figures: figure1
