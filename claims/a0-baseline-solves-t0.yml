@@ -1,0 +1,84 @@
+claim_id: a0-baseline-solves-t0
+schema: am.claim_packet.v1
+owner_prompt: '05'
+scope: 'The A0 softmax baseline as an instrument, on this generator, at one seed. Its children
+  are the R0 invariant gate, the R1 known-easy positive control, and the R2 capacity-stressed
+  kill screen. It claims rung 1 and no higher: there is exactly one architecture in this laboratory,
+  so there is no difference for a rung-2 claim to be about.'
+CLAIM: A0 — multi-head causal softmax attention in the shared trunk — solves the known-easy
+  positive control (T1 associative recall, ample width, distance one to two, no distractors,
+  one association) at or above prompt 03's frozen exact answer-set recall threshold of 0.80
+  on held-out compositions, and the attention it uses to do so is measurably non-degenerate
+  by all three §6.3 activity gates. Nothing is claimed about any architecture difference.
+MECHANISM: Content-addressed retrieval by softmax attention. The query formed at the destination
+  position matches the key written at the source position, and the resulting row-stochastic
+  weight vector transports the source's content features along the residual stream to the
+  destination, where the two readout heads decode presence and magnitude. The transport is
+  the mechanism; the MLP and the learned position table are in the shared trunk and are therefore
+  not part of it.
+STRUCTURALLY_ENFORCED_PROPERTIES:
+- 'causality: no output at position t depends on any input after t, asserted by perturbation
+  rather than by inspection of the mask'
+- 'row-stochastic mixing: the attention weights over the causal window sum to one by construction,
+  so ''how much came from where'' is a proportion and not a score'
+- 'observability: the (B, H, T, T) weight matrix is materialised, so §6.3 activity is measured
+  from the tensor the model actually used rather than inferred from its outputs'
+- 'hook transparency: capturing any or every site is bitwise a no-op on the forward pass,
+  so instrumenting the mechanism cannot be what makes it look active'
+- 'one equation: the batched path agrees with a loop-written reference to 1e-11 in float64,
+  so ''softmax attention'' names what the code computes'
+LEARNED_OR_HOPED_PROPERTIES:
+- that attention concentrates on the true source position rather than spreading over the causal
+  window
+- that the answer is transported from the source rather than reconstructed from position or
+  from the marginal statistics of the feature bank
+- that the two readout heads separate 'this feature is present' from 'this feature has this
+  magnitude' instead of collapsing presence into magnitude
+NEAREST_BORING_EXPLANATION: Two of them. (a) The model memorised the training programs and
+  the evaluation split shares their compositions, so the score measures recall of examples
+  rather than of associations. (b) The positive control is solvable without moving any token
+  — a position-wise MLP with an inert mixer would score the same — so a high number says nothing
+  about whether attention did anything.
+CONTROL_THAT_RULES_IT_OUT: '(a) is ruled out by the T1 template split, which holds out six
+  compositions entirely and gives full per-axis coverage on both sides, and by reporting the
+  held-out split as the result. (b) is ruled out by §6.3''s three activity gates, each of
+  which fails a specific degenerate mechanism: off-diagonal mass at or below 0.05 is a model
+  attending only to its own position; entropy ratio at or above 0.95 is weight spread uniformly
+  over the causal window; retrieval lift below 2.0x chance is weight that is not on the true
+  source. All three are measured on the best layer, because a two-layer model may transport
+  in either.'
+PRIMARY_METRIC: Exact answer-set recall accuracy (associative_recall_accuracy) on the held-out
+  evaluation split of the known-easy positive control, against prompt 03's frozen threshold
+  of 0.80. Frozen before any architecture existed that could have been flattered by it, and
+  calibrated against oracle (1.0000), training marginal (0.0000 skill) and frequency ceiling
+  (0.0078).
+MECHANISM_ACTIVITY_METRIC: '§6.3 mechanism_is_active, all three gates on the best layer: off-diagonal
+  attention mass >= 0.05, entropy ratio <= 0.95, and retrieval lift on the true source position
+  >= 2.0x chance. Reported with the argmax hit rate as a companion.'
+POSITIVE_CONTROL: 'R1: the known-easy positive control at d = d_recommended = 48, source-destination
+  distance one to two, no distractors, one association per program, 32768 examples and 4000
+  steps (the §7.2-frozen budget calibrated in prompt 04). A0 must clear 0.80 and its mechanism
+  must be active. Failure here is an implementation or optimisation defect and is debugged,
+  never interpreted.'
+NEGATIVE_CONTROL: On the same evaluation data and in the same call, the training-marginal
+  reference predictor must fall below the threshold and the program oracle must clear it (instrument_ok).
+  A threshold a predictor that ignores its input can pass is measuring the task, not the model.
+  The §4.4 information-destroyed condition — on which a 33-strategy perfect-memory oracle
+  scores at chance — is the standing negative control for capability claims; it is declared
+  here and is not exercised at this rung, because no capability difference is claimed at this
+  rung.
+KILL_CONDITION: 'This claim dies if any of the following fires. R1: exact answer-set recall
+  below 0.80 on the held-out split; instrument_ok false; any of the three §6.3 activity gates
+  failing on every layer. Any run: any §8.5 invariant failing, or a non-finite training loss.
+  R2 capacity-stressed screen: numerical failure, recall skill at or below the training marginal,
+  final recall below half its first measured value, or an inert mechanism. If a kill condition
+  fires it is reported as fired; the threshold, the split, and the metric are not renegotiated
+  afterwards.'
+REPLICATION_REQUIREMENT: 'None across seeds at rungs 0 and 1, and that is a limit of the claim
+  rather than a waiver: these are instrument-validation rungs about one architecture at one
+  seed, where the required repetition is deterministic re-execution, checked by the run''s
+  own reproduce.sh regenerating the primary metric exactly. Rung 2 and above require at least
+  five seeds with per-seed results, effect sizes and bootstrap confidence intervals per §7.4,
+  and this packet does not claim them.'
+primary_metric_key: associative_recall_accuracy
+claimed_rung: 1

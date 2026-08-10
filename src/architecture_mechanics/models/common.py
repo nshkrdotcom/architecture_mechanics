@@ -226,6 +226,31 @@ class MixingPrimitive(nn.Module, ABC):
         to read its own tensors back.
         """
 
+    @abstractmethod
+    def operation_state_summary(self) -> dict:
+        """§8.3's theoretical operation and state cost for this mechanism.
+
+        Abstract, and deliberately not defaulted, because this is the one
+        provenance field no shared code can compute: the whole point of the
+        §5 quiver is that A0's ``O(T^2 d)`` pairwise mixing and A1's ``O(T d^2)``
+        recurrent state are different *theoretical objects*, not different
+        constants. A default inherited from softmax attention would put a wrong
+        number in every linear-attention manifest and nothing would ever
+        contradict it — §13.2's "semantic naming without enforcement", applied
+        to the provenance record instead of to the code.
+
+        Required keys, so that :func:`architecture_mechanics.experiments.manifest`
+        can assemble them without knowing what mechanism it is holding:
+
+        ``mechanism``                        a human-readable name;
+        ``ops_per_sequence``                 asymptotic operation count;
+        ``state_growth``                     asymptotic size of what a streaming
+                                             implementation must carry forward;
+        ``multiply_accumulates_per_sequence``  a concrete count at this config;
+        ``recurrent_state_scalars``          a concrete count at this config;
+        ``materialises_pairwise_matrix``     whether an ``O(T^2)`` object exists.
+        """
+
     # -- provided ---------------------------------------------------------- #
 
     def hook_sites(self) -> tuple[str, ...]:
@@ -427,6 +452,42 @@ class FeatureModel(nn.Module):
 
     def parameter_report(self) -> dict:
         return parameter_report(self)
+
+    def operation_state_summary(self) -> dict:
+        """§8.3's theoretical operation/state summary for the whole model.
+
+        Trunk arithmetic is counted here because it is shared by every
+        architecture and therefore must not be attributed to any mechanism; the
+        mixing entry is whatever the primitive declares about itself. Counts are
+        multiply-accumulates per sequence at this config, which is a *theoretical*
+        quantity and deliberately not a measurement — measured cost is
+        ``cost.json``, belongs to this machine at that instant, and is not
+        committed.
+        """
+        config = self.config
+        seq_len, width = config.seq_len, config.d_model
+        encoder = seq_len * config.n_features * width
+        heads = 2 * seq_len * width * config.n_features
+        mlp = 2 * config.mlp_ratio * seq_len * width * width
+        mixing = [block.mix.operation_state_summary() for block in self.blocks]
+        trunk = encoder + heads + config.n_layers * mlp
+        return {
+            "seq_len": seq_len,
+            "d_model": width,
+            "n_features": config.n_features,
+            "n_layers": config.n_layers,
+            "trunk_multiply_accumulates_per_sequence": int(trunk),
+            "mixing_multiply_accumulates_per_sequence": int(
+                sum(entry["multiply_accumulates_per_sequence"] for entry in mixing)
+            ),
+            "total_multiply_accumulates_per_sequence": int(
+                trunk + sum(entry["multiply_accumulates_per_sequence"] for entry in mixing)
+            ),
+            "recurrent_state_scalars": int(
+                sum(entry["recurrent_state_scalars"] for entry in mixing)
+            ),
+            "mixing": mixing,
+        }
 
 
 def count_parameters(model: nn.Module) -> int:

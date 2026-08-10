@@ -21,7 +21,7 @@ differs between them is the *task* and the *budget*, and both are declared.
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field, replace
+from dataclasses import asdict, dataclass, field, fields, replace
 
 from architecture_mechanics.data.feature_program import (
     CONDITION_NAMES,
@@ -49,6 +49,7 @@ __all__ = [
     "RunConfig",
     "config_fingerprint",
     "ladder_config",
+    "run_config_from_dict",
 ]
 
 
@@ -336,6 +337,59 @@ def ladder_config(
     if overrides:
         config = replace(config, **overrides)
     return config
+
+
+def run_config_from_dict(payload: dict) -> RunConfig:
+    """Rebuild a :class:`RunConfig` from what :meth:`RunConfig.as_dict` wrote.
+
+    This is what makes a run reproducible from its own manifest rather than from
+    a remembered command line: ``reproduce.sh`` hands the manifest's recorded
+    ``config`` block straight back here, so a run that used an option nobody
+    thought to expose on the CLI still reproduces exactly.
+
+    The three version stamps are *verified*, not ignored. ``as_dict`` writes
+    them as outputs; if the generator, the metrics, or the model have changed
+    semantics since the run, re-executing this config would produce a different
+    experiment under the same name, which is worse than refusing. A reproduction
+    that must silence this is not a reproduction.
+    """
+    expected = {
+        "generator_version": GENERATOR_VERSION,
+        "metric_version": METRIC_VERSION,
+        "model_version": MODEL_VERSION,
+    }
+    for key, current in expected.items():
+        recorded = payload.get(key)
+        if recorded is not None and recorded != current:
+            raise RunConfigError(
+                f"config records {key}={recorded!r} but this source tree is {current!r}; "
+                "re-running it would be a different experiment under the same name"
+            )
+
+    known = set(expected) | {"ladder", "seed", "device", "capture_examples", "arch", "data", "optim"}
+    unknown = sorted(set(payload) - known)
+    if unknown:
+        raise RunConfigError(f"unknown configuration keys {unknown}")
+
+    def section(name: str, kind: type) -> dict:
+        block = payload.get(name) or {}
+        if not isinstance(block, dict):
+            raise RunConfigError(f"{name} must be a mapping, got {type(block).__name__}")
+        allowed = {f.name for f in fields(kind)}
+        extra = sorted(set(block) - allowed)
+        if extra:
+            raise RunConfigError(f"unknown {name} keys {extra}")
+        return block
+
+    return RunConfig(
+        ladder=payload.get("ladder", "R1"),
+        seed=int(payload.get("seed", 20260809)),
+        device=payload.get("device", "cuda"),
+        capture_examples=int(payload.get("capture_examples", 256)),
+        arch=ArchSpec(**section("arch", ArchSpec)),
+        data=DataSpec(**section("data", DataSpec)),
+        optim=OptimizationConfig(**section("optim", OptimizationConfig)),
+    )
 
 
 def config_fingerprint(config: RunConfig) -> str:

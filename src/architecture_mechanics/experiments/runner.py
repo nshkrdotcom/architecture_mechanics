@@ -47,14 +47,21 @@ from architecture_mechanics.data.feature_program import (
     generate_dataset,
 )
 from architecture_mechanics.device import resolve_device
+from architecture_mechanics.experiments.claim_packet import (
+    load_packet,
+    update_gates_from_run,
+)
 from architecture_mechanics.experiments.config import (
     LADDERS,
     RunConfig,
-    config_fingerprint,
+    RunConfigError,
     ladder_config,
+    run_config_from_dict,
 )
+from architecture_mechanics.experiments.manifest import build_manifest, lab_root, utc_now
 from architecture_mechanics.instrumentation.hooks import NO_HOOKS, CaptureContext, capture_all
 from architecture_mechanics.metrics.capability import (
+    POSITIVE_CONTROL_METRIC,
     EvaluationReference,
     Predictions,
     ProgramOracle,
@@ -73,6 +80,7 @@ from architecture_mechanics.metrics.mechanism import (
     mechanism_is_active,
 )
 from architecture_mechanics.models.common import FeatureModel, ModelOutput, parameter_report
+from architecture_mechanics.reporting.evidence_bundle import FINAL_RUNGS, write_bundle
 from architecture_mechanics.seeding import SeedRecord, seed_everything
 
 __all__ = ["RunResult", "evaluate", "main", "run", "run_r0_checks"]
@@ -435,9 +443,30 @@ def run_r0_checks(model: FeatureModel, inputs: torch.Tensor) -> dict:
 # --------------------------------------------------------------------------- #
 
 
-def run(config: RunConfig, *, out_dir: Path | None = None, verbose: bool = True) -> RunResult:
-    """Train, evaluate, and report. The whole entry point."""
+def run(
+    config: RunConfig,
+    *,
+    out_dir: Path | None = None,
+    verbose: bool = True,
+    claim: str | Path | None = None,
+    emit_bundle: bool = False,
+) -> RunResult:
+    """Train, evaluate, and report. The whole entry point.
+
+    ``claim`` names the §7.1 pre-registration this run belongs to and is
+    **required whenever a run directory is written**. A recorded run that names
+    no prediction is an anecdote with a timestamp; ``bin/check_prereg.sh``
+    refuses it afterwards, and refusing it here is cheaper. The packet is loaded
+    and validated before the first gradient step, so a malformed
+    pre-registration costs no GPU time.
+
+    ``emit_bundle`` makes §8.4 completeness fatal. The bundle for the rung is
+    written either way — provenance is not an opt-in — but with this flag the
+    run refuses to finish having produced an incomplete one.
+    """
     started = time.perf_counter()
+    started_utc = utc_now()
+    packet, claim_path = _resolve_claim(claim, required=out_dir is not None)
     seed_record: SeedRecord = seed_everything(config.seed)
     torch.set_float32_matmul_precision(config.optim.float32_matmul_precision)
     device, device_record = resolve_device(config.device)
@@ -456,7 +485,22 @@ def run(config: RunConfig, *, out_dir: Path | None = None, verbose: bool = True)
     model = FeatureModel(model_config).to(device)
     parameters = parameter_report(model)
 
-    run_id = f"{config.ladder}-{config.arch.arch}-{config.data.condition}-s{config.seed}-{config_fingerprint(config)}"
+    # §8.3: identity from config and source, never from the clock. Built here,
+    # before training, because a manifest is a description of what is being run.
+    manifest = build_manifest(
+        config=config,
+        model=model,
+        train_dataset=train_dataset,
+        eval_dataset=eval_dataset,
+        device_record=device_record,
+        parent_claim_packet=claim_path or "",
+        claimed_rung=None if packet is None else packet.claimed_rung,
+        primary_metric=(
+            (packet.primary_metric_key if packet else None) or POSITIVE_CONTROL_METRIC
+        ),
+        started_utc=started_utc,
+    )
+    run_id = manifest.run_id
     result = RunResult(
         run_id=run_id,
         config=config.as_dict(),
@@ -496,7 +540,7 @@ def run(config: RunConfig, *, out_dir: Path | None = None, verbose: bool = True)
             "R0 invariants hold" if result.passed else f"R0 failures: {failed_checks}"
         )
         result.cost = _cost(started, device)
-        _write(result, out_dir)
+        _record(result, out_dir, manifest, model, packet, emit_bundle, verbose)
         if verbose:
             _print_checks(result.checks)
         return result
@@ -505,7 +549,7 @@ def run(config: RunConfig, *, out_dir: Path | None = None, verbose: bool = True)
         result.passed = False
         result.verdict = f"refusing to train: R0 failures {failed_checks}"
         result.cost = _cost(started, device)
-        _write(result, out_dir)
+        _record(result, out_dir, manifest, model, packet, emit_bundle, verbose)
         return result
 
     train_started = time.perf_counter()
@@ -705,10 +749,96 @@ def _cost(started: float, device: torch.device) -> dict:
     return record
 
 
-def _write(result: RunResult, out_dir: Path | None) -> None:
+def _resolve_claim(claim: str | Path | None, *, required: bool):
+    """Load the pre-registration, and give its path relative to the laboratory.
+
+    Relative because ``bin/check_prereg.sh`` resolves ``parent_claim_packet``
+    against the lab directory and then asks git when that file was committed. An
+    absolute path would work on this machine and nowhere else, and provenance
+    that only means something on the machine that produced it is not provenance.
+    """
+    if claim is None:
+        if required:
+            raise RunConfigError(
+                "a recorded run must name its §7.1 pre-registration: pass claim=... "
+                "(--claim claims/<id>.yml). A run directory with no parent claim packet "
+                "is refused by bin/check_prereg.sh, and refusing it here is cheaper."
+            )
+        return None, None
+
+    path = Path(claim)
+    if not path.is_absolute():
+        candidate = lab_root() / path
+        path = candidate if candidate.exists() else path.resolve()
+    packet = load_packet(path)
+    try:
+        relative = path.resolve().relative_to(lab_root()).as_posix()
+    except ValueError:
+        relative = str(path.resolve())
+    return packet, relative
+
+
+def _record(
+    result: RunResult,
+    out_dir: Path | None,
+    manifest,
+    model: FeatureModel,
+    packet,
+    emit_bundle: bool,
+    verbose: bool,
+) -> None:
+    """Write the run directory: results, claim gates, then the §8.4 bundle.
+
+    Order matters. The gates file is updated from the measured result before the
+    bundle copies it, and the manifest is written last of all because it hashes
+    everything beside it.
+    """
     if out_dir is None:
         return
-    directory = Path(out_dir) / result.run_id
+    run_dir = Path(out_dir) / result.run_id
+    _write(result, run_dir)
+
+    gates_dict = None
+    if packet is not None:
+        # Evidence is named by where it actually landed. A run written outside
+        # the laboratory still supports the claim, and recording it as though it
+        # sat in runs/ would put a path in the gates file that nobody can open.
+        try:
+            evidence_path = run_dir.resolve().relative_to(lab_root()).as_posix()
+        except ValueError:
+            evidence_path = str(run_dir.resolve())
+        gates, gates_path = update_gates_from_run(
+            result,
+            run_dir=evidence_path,
+            claims_dir=lab_root() / "claims",
+            claim_id=packet.claim_id,
+        )
+        gates_dict = gates.as_dict()
+        if verbose:
+            print(
+                f"  gates    {gates_path.name}: highest supported rung "
+                f"{gates.highest_supported_rung}"
+            )
+
+    manifest.finished_utc = utc_now()
+    report = write_bundle(
+        result=result,
+        manifest=manifest,
+        run_dir=run_dir,
+        claim_gates=gates_dict,
+        model=model if manifest.ladder_rung in FINAL_RUNGS else None,
+    )
+    if report.problems:
+        message = f"incomplete §8.4 bundle for {result.run_id}: {report.problems}"
+        if emit_bundle:
+            raise RunConfigError(message)
+        print(f"  WARNING  {message}", file=sys.stderr)
+    elif verbose:
+        print(f"  bundle   {len(report.files)} files, {manifest.ladder_rung} complete")
+
+
+def _write(result: RunResult, directory: Path) -> None:
+    directory = Path(directory)
     directory.mkdir(parents=True, exist_ok=True)
 
     payload = result.as_dict()
@@ -766,20 +896,37 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--d-model", type=int, default=None,
                         help="override the condition's d_recommended; recorded in the run identity")
     parser.add_argument("--max-steps", type=int, default=None)
+    parser.add_argument("--config-json", default=None,
+                        help="run the config recorded in this JSON file, ignoring the rung flags; "
+                             "this is what reproduce.sh uses")
+    parser.add_argument("--claim", default=None,
+                        help="the §7.1 pre-registration this run belongs to, e.g. "
+                             "claims/a0-baseline-solves-t0.yml. Required when --out writes a run.")
     parser.add_argument("--out", default="runs", help="run directory root, or 'none'")
+    parser.add_argument("--emit-bundle", action="store_true",
+                        help="refuse to finish having written an incomplete §8.4 evidence bundle")
     parser.add_argument("--assert-pass", action="store_true",
                         help="exit non-zero unless the rung's verdict passes")
     parser.add_argument("--quiet", action="store_true")
     args = parser.parse_args(argv)
 
-    config = ladder_config(
-        args.ladder, arch=args.arch, seed=args.seed, device=args.device, d_model=args.d_model
-    )
-    if args.max_steps is not None:
-        config = replace(config, optim=replace(config.optim, max_steps=args.max_steps))
+    if args.config_json:
+        config = run_config_from_dict(json.loads(Path(args.config_json).read_text()))
+    else:
+        config = ladder_config(
+            args.ladder, arch=args.arch, seed=args.seed, device=args.device, d_model=args.d_model
+        )
+        if args.max_steps is not None:
+            config = replace(config, optim=replace(config.optim, max_steps=args.max_steps))
 
     out_dir = None if args.out.lower() == "none" else Path(args.out)
-    result = run(config, out_dir=out_dir, verbose=not args.quiet)
+    result = run(
+        config,
+        out_dir=out_dir,
+        verbose=not args.quiet,
+        claim=args.claim,
+        emit_bundle=args.emit_bundle,
+    )
 
     if args.assert_pass and not result.passed:
         print(f"FAILED: {result.verdict}", file=sys.stderr)

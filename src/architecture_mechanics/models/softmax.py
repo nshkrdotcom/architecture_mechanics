@@ -123,6 +123,45 @@ class SoftmaxAttention(MixingPrimitive):
     def _split_heads(self, tensor: torch.Tensor, batch: int, seq_len: int) -> torch.Tensor:
         return tensor.view(batch, seq_len, self.n_heads, self.d_head).transpose(1, 2)
 
+    # -- §8.3 theoretical cost --------------------------------------------- #
+
+    def operation_state_summary(self) -> dict:
+        """What softmax attention costs in operations and in carried state.
+
+        Counted against :meth:`forward`, the path runs actually take, which
+        computes the *dense* ``T x T`` score matrix and then masks it. A causal
+        implementation could do a little over half this arithmetic; writing the
+        smaller number here would record a mechanism this laboratory does not
+        run. The slow reference skips the masked half, which is why it is the
+        definition of the equation and not of the cost.
+
+        ``recurrent_state_scalars`` is the size of the keys and values a
+        streaming decoder would have to keep to produce the last position:
+        ``2 d`` per position, all of them, for ever. That linear-in-context
+        growth is precisely the property A1 and A2 claim to remove, so it is the
+        number a later manifest diff has to be able to compare against.
+        """
+        seq_len, width = self.config.seq_len, self.config.d_model
+        qkv = 3 * seq_len * width * width
+        scores = seq_len * seq_len * width
+        mixing = seq_len * seq_len * width
+        projection = seq_len * width * width
+        return {
+            "mechanism": "softmax_attention",
+            "ops_per_sequence": "O(T^2 d + T d^2)",
+            "state_growth": "O(T d) — linear in context, nothing is discarded",
+            "multiply_accumulates_per_sequence": int(qkv + scores + mixing + projection),
+            "recurrent_state_scalars": int(2 * seq_len * width),
+            "materialises_pairwise_matrix": True,
+            "pairwise_matrix_scalars_per_example": int(self.n_heads * seq_len * seq_len),
+            "breakdown": {
+                "qkv_projection": int(qkv),
+                "scores": int(scores),
+                "value_mixing": int(mixing),
+                "output_projection": int(projection),
+            },
+        }
+
     # -- slow reference ---------------------------------------------------- #
 
     def reference_forward(self, x: torch.Tensor) -> torch.Tensor:
