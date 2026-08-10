@@ -1,0 +1,258 @@
+{
+  "schema": "am.r2_boundary.v1",
+  "owner_prompt": "11",
+  "recorded_utc": "2026-08-10T17:37:13+00:00",
+  "what": "Where A1 and A0 stand on the \u00a77.3 R2 capacity-stressed kill screen at three widths, so that prompt 13 does not design its main experiment in a regime where one architecture is already at its floor.",
+  "matched": "One rung preset, one seed (20260809), one condition (capacity_stressed, F=124, T=48), 16384 train / 4096 eval, 2000 steps, and every \u00a77.2 optimisation variable identical. The only declared difference between an A0 row and the A1 row beside it is the mixing primitive; the parameter counts are equal at each width, so the width-matched and parameter-matched readings coincide.",
+  "not_a_claim": "Descriptive, one seed per cell, and NOT a \u00a77.5 rung-2 capability difference. Prompt 09 measured that a T1 recall difference below 0.128 is invisible at five seeds in this laboratory; these are single runs with no interval at all. A rung-2 claim needs a comparison record naming its control and candidate, matched variables, and at least five seeds \u2014 prompt 13's mission, not this one's.",
+  "unconverged": "Both architectures are still rising at the end of the 2000-step screen at d=32 and d=64, so these are positions on a curve and not asymptotes. A1's non-monotonicity across d=32 (0.1101) and d=64 (0.0964) should be read that way: d=64 was behind d=32 at every evaluation and gaining faster at the last one.",
+  "reads_against": "experiments/config.py OPERATING_POINT_EVIDENCE, which chose d=64 for R3 and R4 because A0 sits mid-range there. That calibration was made on A0 and this screen says it does not transfer: at d=64 and this budget A1 answers 9.6% of recall queries exactly, which is nearer its floor than its middle.",
+  "cells": [
+    {
+      "run_id": "R2-linear-capacity_stressed-s20260809-45ff18090e05",
+      "arch": "linear",
+      "d_model": 16,
+      "parameters_total": 13576,
+      "associative_recall_accuracy": 0.024169921875,
+      "feature_f1": 0.2832679843162359,
+      "recall_skill": 0.024169921875,
+      "recall_curve": [
+        [
+          500,
+          0.000244140625
+        ],
+        [
+          1000,
+          0.00439453125
+        ],
+        [
+          1500,
+          0.024169921875
+        ],
+        [
+          2000,
+          0.024169921875
+        ]
+      ],
+      "final_step_gain": 0.0,
+      "mechanism": {
+        "off_diagonal_mass": 0.8994057439917144,
+        "entropy_ratio": 0.6925961378043186,
+        "retrieval_lift": 33.47893629307447,
+        "active": true,
+        "state_growth_ratio": 877.847927900784,
+        "write_to_state_ratio": 0.12594426831657365,
+        "state_norm": 10.743375890898657,
+        "write_norm": 0.7822435400433232,
+        "readout_magnitude": 0.9853006385558865,
+        "normalizer_mean": 1.2377618140704088
+      },
+      "kill_conditions_fired": []
+    },
+    {
+      "run_id": "R2-linear-capacity_stressed-s20260809-298a886bf017",
+      "arch": "linear",
+      "d_model": 32,
+      "parameters_total": 39192,
+      "associative_recall_accuracy": 0.110107421875,
+      "feature_f1": 0.4028966952068496,
+      "recall_skill": 0.110107421875,
+      "recall_curve": [
+        [
+          500,
+          0.000732421875
+        ],
+        [
+          1000,
+          0.0390625
+        ],
+        [
+          1500,
+          0.095947265625
+        ],
+        [
+          2000,
+          0.110107421875
+        ]
+      ],
+      "final_step_gain": 0.01416,
+      "mechanism": {
+        "off_diagonal_mass": 0.8925101611412412,
+        "entropy_ratio": 0.8414074546537617,
+        "retrieval_lift": 32.98144632581108,
+        "active": true,
+        "state_growth_ratio": 267.4784534410744,
+        "write_to_state_ratio": 0.10932365886643468,
+        "state_norm": 140.8027544044852,
+        "write_norm": 7.60822035718201,
+        "readout_magnitude": 2.2152700377191863,
+        "normalizer_mean": 1.6685368188034913
+      },
+      "kill_conditions_fired": []
+    },
+    {
+      "run_id": "R2-linear-capacity_stressed-s20260809-ab717ec883ef",
+      "arch": "linear",
+      "d_model": 64,
+      "parameters_total": 127288,
+      "associative_recall_accuracy": 0.096435546875,
+      "feature_f1": 0.43418420420901016,
+      "recall_skill": 0.096435546875,
+      "recall_curve": [
+        [
+          500,
+          0.000244140625
+        ],
+        [
+          1000,
+          0.02392578125
+        ],
+        [
+          1500,
+          0.061767578125
+        ],
+        [
+          2000,
+          0.096435546875
+        ]
+      ],
+      "final_step_gain": 0.034668,
+      "mechanism": {
+        "off_diagonal_mass": 0.9015073141317966,
+        "entropy_ratio": 0.8855006803448083,
+        "retrieval_lift": 39.58038379391737,
+        "active": true,
+        "state_growth_ratio": 203.0734250202008,
+        "write_to_state_ratio": 0.10396776978450455,
+        "state_norm": 442.87800206637627,
+        "write_norm": 21.365638114724995,
+        "readout_magnitude": 4.475955453675272,
+        "normalizer_mean": 1.4861011516006475
+      },
+      "kill_conditions_fired": []
+    },
+    {
+      "run_id": "R2-softmax-capacity_stressed-s20260809-ace8601f7552",
+      "arch": "softmax",
+      "d_model": 16,
+      "parameters_total": 13576,
+      "associative_recall_accuracy": 0.012939453125,
+      "feature_f1": 0.31007441786028644,
+      "recall_skill": 0.012939453125,
+      "recall_curve": [
+        [
+          500,
+          0.000244140625
+        ],
+        [
+          1000,
+          0.00146484375
+        ],
+        [
+          1500,
+          0.0068359375
+        ],
+        [
+          2000,
+          0.012939453125
+        ]
+      ],
+      "final_step_gain": 0.006104,
+      "mechanism": {
+        "off_diagonal_mass": 0.8716582702936376,
+        "entropy_ratio": 0.8460269490999359,
+        "retrieval_lift": 33.34999461238409,
+        "active": true,
+        "state_growth_ratio": null,
+        "write_to_state_ratio": null,
+        "state_norm": null,
+        "write_norm": null,
+        "readout_magnitude": null,
+        "normalizer_mean": null
+      },
+      "kill_conditions_fired": []
+    },
+    {
+      "run_id": "R2-softmax-capacity_stressed-s20260809-9d278ca58394",
+      "arch": "softmax",
+      "d_model": 32,
+      "parameters_total": 39192,
+      "associative_recall_accuracy": 0.05810546875,
+      "feature_f1": 0.4175402096503161,
+      "recall_skill": 0.05810546875,
+      "recall_curve": [
+        [
+          500,
+          0.0009765625
+        ],
+        [
+          1000,
+          0.01171875
+        ],
+        [
+          1500,
+          0.0263671875
+        ],
+        [
+          2000,
+          0.05810546875
+        ]
+      ],
+      "final_step_gain": 0.031738,
+      "mechanism": {
+        "off_diagonal_mass": 0.8800859825894575,
+        "entropy_ratio": 0.5118171213977957,
+        "retrieval_lift": 46.49738828837872,
+        "active": true,
+        "state_growth_ratio": null,
+        "write_to_state_ratio": null,
+        "state_norm": null,
+        "write_norm": null,
+        "readout_magnitude": null,
+        "normalizer_mean": null
+      },
+      "kill_conditions_fired": []
+    },
+    {
+      "run_id": "R2-softmax-capacity_stressed-s20260809-5a1e36e61385",
+      "arch": "softmax",
+      "d_model": 64,
+      "parameters_total": 127288,
+      "associative_recall_accuracy": 0.480712890625,
+      "feature_f1": 0.8317996319116588,
+      "recall_skill": 0.480712890625,
+      "recall_curve": [
+        [
+          500,
+          0.08837890625
+        ],
+        [
+          1000,
+          0.329345703125
+        ],
+        [
+          1500,
+          0.442138671875
+        ],
+        [
+          2000,
+          0.480712890625
+        ]
+      ],
+      "final_step_gain": 0.038574,
+      "mechanism": {
+        "off_diagonal_mass": 0.8785384180260744,
+        "entropy_ratio": 0.5775544525231642,
+        "retrieval_lift": 47.87673003505916,
+        "active": true,
+        "state_growth_ratio": null,
+        "write_to_state_ratio": null,
+        "state_norm": null,
+        "write_norm": null,
+        "readout_magnitude": null,
+        "normalizer_mean": null
+      },
+      "kill_conditions_fired": []
+    }
+  ]
+}
