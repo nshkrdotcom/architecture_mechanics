@@ -1,0 +1,824 @@
+{
+  "conditions": [
+    {
+      "condition": "T0",
+      "family": "T0",
+      "n_examples": 512,
+      "n_supervised": 8192,
+      "scores": {
+        "answer_set_accuracy": {
+          "ceiling": 0.0,
+          "marginal": 0.0,
+          "oracle": 1.0,
+          "random": 0.0
+        },
+        "associative_recall_accuracy": {
+          "ceiling": null,
+          "marginal": null,
+          "oracle": null,
+          "random": null
+        },
+        "associative_recall_jaccard": {
+          "ceiling": null,
+          "marginal": null,
+          "oracle": null,
+          "random": null
+        },
+        "brier": {
+          "ceiling": 0.07625550450757146,
+          "marginal": 0.07774011418223381,
+          "oracle": 0.0,
+          "random": 0.07668533874675632
+        },
+        "distance_degradation_slope": {
+          "ceiling": null,
+          "marginal": null,
+          "oracle": null,
+          "random": null
+        },
+        "distractor_sensitivity_slope": {
+          "ceiling": null,
+          "marginal": null,
+          "oracle": null,
+          "random": null
+        },
+        "ece": {
+          "ceiling": 0.0,
+          "marginal": 0.030197143554687503,
+          "oracle": 0.0,
+          "random": 0.00809478759765625
+        },
+        "feature_f1": {
+          "ceiling": 0.11173464732183594,
+          "marginal": 0.05995072543115248,
+          "oracle": 1.0,
+          "random": 0.08390364084314263
+        },
+        "feature_macro_precision": {
+          "ceiling": 0.11096941258656408,
+          "marginal": 0.05929569674135083,
+          "oracle": 1.0,
+          "random": 0.08370360867233204
+        },
+        "feature_macro_recall": {
+          "ceiling": 0.08335650723025584,
+          "marginal": 0.08311855670103092,
+          "oracle": 1.0,
+          "random": 0.08348097636347714
+        },
+        "feature_precision": {
+          "ceiling": 0.11173464732183594,
+          "marginal": 0.05995072543115248,
+          "oracle": 1.0,
+          "random": 0.08390364084314263
+        },
+        "feature_recall": {
+          "ceiling": 0.11173464732183594,
+          "marginal": 0.05995072543115248,
+          "oracle": 1.0,
+          "random": 0.08390364084314263
+        },
+        "heldout_composition_accuracy": {
+          "ceiling": 0.0,
+          "marginal": 0.0,
+          "oracle": 1.0,
+          "random": 0.0
+        },
+        "heldout_composition_gap": {
+          "ceiling": 0.0,
+          "marginal": 0.0,
+          "oracle": 0.0,
+          "random": 0.0
+        },
+        "overwrite_accuracy": {
+          "ceiling": null,
+          "marginal": null,
+          "oracle": null,
+          "random": null
+        },
+        "recall_at_free_threshold": {
+          "ceiling": 1.0,
+          "marginal": 1.0,
+          "oracle": 1.0,
+          "random": 1.0
+        },
+        "reconstruction_loss": {
+          "ceiling": 0.026062295135419043,
+          "marginal": 0.0263060391442562,
+          "oracle": 0.0,
+          "random": 0.05469766062630367
+        },
+        "stale_value_error_rate": {
+          "ceiling": null,
+          "marginal": null,
+          "oracle": null,
+          "random": null
+        }
+      }
+    },
+    {
+      "condition": "positive_control",
+      "family": "T1",
+      "n_examples": 512,
+      "n_supervised": 512,
+      "scores": {
+        "answer_set_accuracy": {
+          "ceiling": 0.001953125,
+          "marginal": 0.0,
+          "oracle": 1.0,
+          "random": 0.00390625
+        },
+        "associative_recall_accuracy": {
+          "ceiling": 0.001953125,
+          "marginal": 0.0,
+          "oracle": 1.0,
+          "random": 0.00390625
+        },
+        "associative_recall_jaccard": {
+          "ceiling": 0.10007207961309524,
+          "marginal": 0.052541387648809515,
+          "oracle": 1.0,
+          "random": 0.06287977430555555
+        },
+        "brier": {
+          "ceiling": 0.09226640065511067,
+          "marginal": 0.0974871317545573,
+          "oracle": 0.0,
+          "random": 0.09370676676432292
+        },
+        "distance_degradation_slope": {
+          "ceiling": -0.00392156862745098,
+          "marginal": 0.0,
+          "oracle": 0.0,
+          "random": -3.0518043793392735e-05
+        },
+        "distractor_sensitivity_slope": {
+          "ceiling": null,
+          "marginal": null,
+          "oracle": null,
+          "random": null
+        },
+        "ece": {
+          "ceiling": 0.0,
+          "marginal": 0.07112630208333333,
+          "oracle": 0.0,
+          "random": 0.0021158854166666713
+        },
+        "feature_f1": {
+          "ceiling": 0.16329704510108864,
+          "marginal": 0.08164852255054432,
+          "oracle": 1.0,
+          "random": 0.10964230171073094
+        },
+        "feature_macro_precision": {
+          "ceiling": 0.16467378339694658,
+          "marginal": 0.07829894243002544,
+          "oracle": 1.0,
+          "random": 0.10936497413290362
+        },
+        "feature_macro_recall": {
+          "ceiling": 0.10768398268398267,
+          "marginal": 0.0992063492063492,
+          "oracle": 1.0,
+          "random": 0.11300544382238976
+        },
+        "feature_precision": {
+          "ceiling": 0.16329704510108864,
+          "marginal": 0.08164852255054432,
+          "oracle": 1.0,
+          "random": 0.10964230171073094
+        },
+        "feature_recall": {
+          "ceiling": 0.16329704510108864,
+          "marginal": 0.08164852255054432,
+          "oracle": 1.0,
+          "random": 0.10964230171073094
+        },
+        "heldout_composition_accuracy": {
+          "ceiling": 0.00390625,
+          "marginal": 0.0,
+          "oracle": 1.0,
+          "random": 0.00390625
+        },
+        "heldout_composition_gap": {
+          "ceiling": -0.00390625,
+          "marginal": 0.0,
+          "oracle": 0.0,
+          "random": 0.0
+        },
+        "overwrite_accuracy": {
+          "ceiling": null,
+          "marginal": null,
+          "oracle": null,
+          "random": null
+        },
+        "recall_at_free_threshold": {
+          "ceiling": 1.0,
+          "marginal": 1.0,
+          "oracle": 1.0,
+          "random": 1.0
+        },
+        "reconstruction_loss": {
+          "ceiling": 0.033596950022488664,
+          "marginal": 0.034929973914784765,
+          "oracle": 0.0,
+          "random": 0.0652964448282102
+        },
+        "stale_value_error_rate": {
+          "ceiling": null,
+          "marginal": null,
+          "oracle": null,
+          "random": null
+        }
+      }
+    },
+    {
+      "condition": "capacity_stressed",
+      "family": "T1",
+      "n_examples": 512,
+      "n_supervised": 512,
+      "scores": {
+        "answer_set_accuracy": {
+          "ceiling": 0.0,
+          "marginal": 0.0,
+          "oracle": 1.0,
+          "random": 0.0
+        },
+        "associative_recall_accuracy": {
+          "ceiling": 0.0,
+          "marginal": 0.0,
+          "oracle": 1.0,
+          "random": 0.0
+        },
+        "associative_recall_jaccard": {
+          "ceiling": 0.03541511656746032,
+          "marginal": 0.019449869791666664,
+          "oracle": 1.0,
+          "random": 0.014815799434940059
+        },
+        "brier": {
+          "ceiling": 0.031378706296284996,
+          "marginal": 0.03166643778483073,
+          "oracle": 0.0,
+          "random": 0.031512230634689324
+        },
+        "distance_degradation_slope": {
+          "ceiling": 0.0,
+          "marginal": 0.0,
+          "oracle": 0.0,
+          "random": 0.0
+        },
+        "distractor_sensitivity_slope": {
+          "ceiling": null,
+          "marginal": null,
+          "oracle": null,
+          "random": null
+        },
+        "ece": {
+          "ceiling": 0.0,
+          "marginal": 0.0008748372395833287,
+          "oracle": 0.0,
+          "random": 0.0008748372395833356
+        },
+        "feature_f1": {
+          "ceiling": 0.059962523422860715,
+          "marginal": 0.03185509056839475,
+          "oracle": 1.0,
+          "random": 0.030605871330418487
+        },
+        "feature_macro_precision": {
+          "ceiling": 0.060306490384615385,
+          "marginal": 0.02490234375,
+          "oracle": 1.0,
+          "random": 0.030042830643958823
+        },
+        "feature_macro_recall": {
+          "ceiling": 0.03273809523809524,
+          "marginal": 0.03125,
+          "oracle": 1.0,
+          "random": 0.027656895461788168
+        },
+        "feature_precision": {
+          "ceiling": 0.059962523422860715,
+          "marginal": 0.03185509056839475,
+          "oracle": 1.0,
+          "random": 0.030605871330418487
+        },
+        "feature_recall": {
+          "ceiling": 0.059962523422860715,
+          "marginal": 0.03185509056839475,
+          "oracle": 1.0,
+          "random": 0.030605871330418487
+        },
+        "heldout_composition_accuracy": {
+          "ceiling": 0.0,
+          "marginal": 0.0,
+          "oracle": 1.0,
+          "random": 0.0
+        },
+        "heldout_composition_gap": {
+          "ceiling": 0.0,
+          "marginal": 0.0,
+          "oracle": 0.0,
+          "random": 0.0
+        },
+        "overwrite_accuracy": {
+          "ceiling": null,
+          "marginal": null,
+          "oracle": null,
+          "random": null
+        },
+        "recall_at_free_threshold": {
+          "ceiling": 1.0,
+          "marginal": 1.0,
+          "oracle": 1.0,
+          "random": 1.0
+        },
+        "reconstruction_loss": {
+          "ceiling": 0.011011796943795548,
+          "marginal": 0.011072800606500493,
+          "oracle": 0.0,
+          "random": 0.021471057670935413
+        },
+        "stale_value_error_rate": {
+          "ceiling": null,
+          "marginal": null,
+          "oracle": null,
+          "random": null
+        }
+      }
+    },
+    {
+      "condition": "synthetic_overwrite",
+      "family": "T2",
+      "n_examples": 256,
+      "n_supervised": 256,
+      "scores": {
+        "answer_set_accuracy": {
+          "ceiling": 0.00390625,
+          "marginal": 0.00390625,
+          "oracle": 1.0,
+          "random": 0.0,
+          "stale": 0.0
+        },
+        "associative_recall_accuracy": {
+          "ceiling": null,
+          "marginal": null,
+          "oracle": null,
+          "random": null,
+          "stale": null
+        },
+        "associative_recall_jaccard": {
+          "ceiling": null,
+          "marginal": null,
+          "oracle": null,
+          "random": null,
+          "stale": null
+        },
+        "brier": {
+          "ceiling": 0.18571853637695312,
+          "marginal": 0.18571853637695312,
+          "oracle": 0.0,
+          "random": 0.18668354882134333,
+          "stale": 0.37109375
+        },
+        "distance_degradation_slope": {
+          "ceiling": null,
+          "marginal": null,
+          "oracle": null,
+          "random": null,
+          "stale": null
+        },
+        "distractor_sensitivity_slope": {
+          "ceiling": null,
+          "marginal": null,
+          "oracle": null,
+          "random": null,
+          "stale": null
+        },
+        "ece": {
+          "ceiling": 0.0,
+          "marginal": 0.0,
+          "oracle": 0.0,
+          "random": 2.7755575615628914e-17,
+          "stale": 0.37109375
+        },
+        "feature_f1": {
+          "ceiling": 0.2817824377457405,
+          "marginal": 0.2817824377457405,
+          "oracle": 1.0,
+          "random": 0.22935779816513763,
+          "stale": 0.25688073394495414
+        },
+        "feature_macro_precision": {
+          "ceiling": 0.2780460195441813,
+          "marginal": 0.2780460195441813,
+          "oracle": 1.0,
+          "random": 0.2307250142129258,
+          "stale": 0.2553868567882845
+        },
+        "feature_macro_recall": {
+          "ceiling": 0.2453051643192488,
+          "marginal": 0.2453051643192488,
+          "oracle": 1.0,
+          "random": 0.22766300079556792,
+          "stale": 0.2565131241284471
+        },
+        "feature_precision": {
+          "ceiling": 0.2817824377457405,
+          "marginal": 0.2817824377457405,
+          "oracle": 1.0,
+          "random": 0.22935779816513763,
+          "stale": 0.25688073394495414
+        },
+        "feature_recall": {
+          "ceiling": 0.2817824377457405,
+          "marginal": 0.2817824377457405,
+          "oracle": 1.0,
+          "random": 0.22935779816513763,
+          "stale": 0.25688073394495414
+        },
+        "heldout_composition_accuracy": {
+          "ceiling": null,
+          "marginal": null,
+          "oracle": null,
+          "random": null,
+          "stale": null
+        },
+        "heldout_composition_gap": {
+          "ceiling": null,
+          "marginal": null,
+          "oracle": null,
+          "random": null,
+          "stale": null
+        },
+        "overwrite_accuracy": {
+          "ceiling": 0.00390625,
+          "marginal": 0.00390625,
+          "oracle": 1.0,
+          "random": 0.0,
+          "stale": 0.0
+        },
+        "recall_at_free_threshold": {
+          "ceiling": 1.0,
+          "marginal": 1.0,
+          "oracle": 1.0,
+          "random": 1.0,
+          "stale": 1.0
+        },
+        "reconstruction_loss": {
+          "ceiling": 0.06620705418423481,
+          "marginal": 0.06620705418423481,
+          "oracle": 0.0,
+          "random": 0.13720390643386235,
+          "stale": 0.13749356141950692
+        },
+        "stale_value_error_rate": {
+          "ceiling": 0.47265625,
+          "marginal": 0.47265625,
+          "oracle": 0.0,
+          "random": 0.50390625,
+          "stale": 1.0
+        }
+      }
+    }
+  ],
+  "metric_version": "cap-1.0.0",
+  "notes": {
+    "T0_best_over_thresholds": {
+      "ceiling": {
+        "f1": 0.16375465959247146,
+        "precision": 0.10926055908203125,
+        "recall": 1.0
+      },
+      "oracle": {
+        "f1": 1.0,
+        "precision": 1.0,
+        "recall": 1.0
+      }
+    },
+    "T0_train_eval_frequency_correlation": -0.9537891237305296,
+    "distance_slope_marginal_vs_oracle": {
+      "ceiling": {
+        "level": 0.0,
+        "slope": 0.0
+      },
+      "marginal": {
+        "level": 0.0,
+        "slope": 0.0
+      },
+      "oracle": {
+        "level": 1.0,
+        "slope": 0.0
+      }
+    },
+    "distractor_sensitivity_sweep": {
+      "marginal": {
+        "axis": "n_distractors",
+        "n": [
+          128,
+          128,
+          128,
+          128
+        ],
+        "name": "sweep:n_distractors",
+        "slope": 0.0,
+        "x": [
+          0.0,
+          1.0,
+          2.0,
+          3.0
+        ],
+        "y": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "oracle": {
+        "axis": "n_distractors",
+        "n": [
+          128,
+          128,
+          128,
+          128
+        ],
+        "name": "sweep:n_distractors",
+        "slope": 0.0,
+        "x": [
+          0.0,
+          1.0,
+          2.0,
+          3.0
+        ],
+        "y": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    "stale_copier_overwrite_accuracy": 0.0,
+    "stale_copier_stale_value_error_rate": 1.0
+  },
+  "ok": true,
+  "positive_control": {
+    "ceiling_margin": 0.7921875,
+    "derived_threshold": 0.8015625000000001,
+    "marginal_margin": 0.8,
+    "metric": "associative_recall_accuracy",
+    "n_examples": 256,
+    "oracle_margin": 0.19999999999999996,
+    "threshold": 0.8,
+    "values": {
+      "ceiling": 0.0078125,
+      "marginal": 0.0,
+      "oracle": 1.0,
+      "random": 0.0
+    },
+    "verdicts": {
+      "ceiling": false,
+      "marginal": false,
+      "oracle": true,
+      "random": false
+    }
+  },
+  "verdicts": [
+    {
+      "agrees_with_recorded_status": true,
+      "condition": "T0",
+      "frequency_ceiling": 0.026062295135419043,
+      "marginal": 0.0263060391442562,
+      "marginal_skill": -0.0,
+      "name": "reconstruction_loss",
+      "oracle": 0.0,
+      "random": 0.05469766062630367,
+      "rule_passed": true,
+      "rule_reason": "ceiling/max(oracle, floor) = 260.6x",
+      "status": "retained"
+    },
+    {
+      "agrees_with_recorded_status": true,
+      "condition": "T0",
+      "frequency_ceiling": 0.11173464732183594,
+      "marginal": 0.05995072543115248,
+      "marginal_skill": 0.0,
+      "name": "feature_precision",
+      "oracle": 1.0,
+      "random": 0.08390364084314263,
+      "rule_passed": true,
+      "rule_reason": "gap 0.8883, ceiling 0.1117",
+      "status": "retained"
+    },
+    {
+      "agrees_with_recorded_status": true,
+      "condition": "T0",
+      "frequency_ceiling": 0.11173464732183594,
+      "marginal": 0.05995072543115248,
+      "marginal_skill": 0.0,
+      "name": "feature_recall",
+      "oracle": 1.0,
+      "random": 0.08390364084314263,
+      "rule_passed": true,
+      "rule_reason": "gap 0.8883, ceiling 0.1117",
+      "status": "retained"
+    },
+    {
+      "agrees_with_recorded_status": true,
+      "condition": "T0",
+      "frequency_ceiling": 0.11173464732183594,
+      "marginal": 0.05995072543115248,
+      "marginal_skill": 0.0,
+      "name": "feature_f1",
+      "oracle": 1.0,
+      "random": 0.08390364084314263,
+      "rule_passed": true,
+      "rule_reason": "gap 0.8883, ceiling 0.1117",
+      "status": "retained"
+    },
+    {
+      "agrees_with_recorded_status": true,
+      "condition": "T0",
+      "frequency_ceiling": 0.11096941258656408,
+      "marginal": 0.05929569674135083,
+      "marginal_skill": 0.0,
+      "name": "feature_macro_precision",
+      "oracle": 1.0,
+      "random": 0.08370360867233204,
+      "rule_passed": true,
+      "rule_reason": "gap 0.8890, ceiling 0.1110",
+      "status": "retained"
+    },
+    {
+      "agrees_with_recorded_status": true,
+      "condition": "T0",
+      "frequency_ceiling": 0.08335650723025584,
+      "marginal": 0.08311855670103092,
+      "marginal_skill": 0.0,
+      "name": "feature_macro_recall",
+      "oracle": 1.0,
+      "random": 0.08348097636347714,
+      "rule_passed": true,
+      "rule_reason": "gap 0.9166, ceiling 0.0834",
+      "status": "retained"
+    },
+    {
+      "agrees_with_recorded_status": true,
+      "condition": "T0",
+      "frequency_ceiling": 0.0,
+      "marginal": 0.0,
+      "marginal_skill": 0.0,
+      "name": "answer_set_accuracy",
+      "oracle": 1.0,
+      "random": 0.0,
+      "rule_passed": true,
+      "rule_reason": "gap 1.0000, ceiling 0.0000",
+      "status": "retained"
+    },
+    {
+      "agrees_with_recorded_status": true,
+      "condition": "positive_control",
+      "frequency_ceiling": 0.001953125,
+      "marginal": 0.0,
+      "marginal_skill": 0.0,
+      "name": "associative_recall_accuracy",
+      "oracle": 1.0,
+      "random": 0.00390625,
+      "rule_passed": true,
+      "rule_reason": "gap 0.9980, ceiling 0.0020",
+      "status": "retained"
+    },
+    {
+      "agrees_with_recorded_status": true,
+      "condition": "positive_control",
+      "frequency_ceiling": 0.10007207961309524,
+      "marginal": 0.052541387648809515,
+      "marginal_skill": 0.0,
+      "name": "associative_recall_jaccard",
+      "oracle": 1.0,
+      "random": 0.06287977430555555,
+      "rule_passed": true,
+      "rule_reason": "gap 0.8999, ceiling 0.1001",
+      "status": "retained"
+    },
+    {
+      "agrees_with_recorded_status": true,
+      "condition": "T0",
+      "frequency_ceiling": 0.0,
+      "marginal": 0.0,
+      "marginal_skill": 0.0,
+      "name": "heldout_composition_accuracy",
+      "oracle": 1.0,
+      "random": 0.0,
+      "rule_passed": true,
+      "rule_reason": "gap 1.0000, ceiling 0.0000",
+      "status": "retained"
+    },
+    {
+      "agrees_with_recorded_status": true,
+      "condition": "T0",
+      "frequency_ceiling": 0.07625550450757146,
+      "marginal": 0.07774011418223381,
+      "marginal_skill": -0.0,
+      "name": "brier",
+      "oracle": 0.0,
+      "random": 0.07668533874675632,
+      "rule_passed": true,
+      "rule_reason": "ceiling/max(oracle, floor) = 76.3x",
+      "status": "retained"
+    },
+    {
+      "agrees_with_recorded_status": true,
+      "condition": "synthetic_overwrite",
+      "frequency_ceiling": 0.00390625,
+      "marginal": 0.00390625,
+      "marginal_skill": 0.0,
+      "name": "overwrite_accuracy",
+      "oracle": 1.0,
+      "random": 0.0,
+      "rule_passed": true,
+      "rule_reason": "gap 0.9961, ceiling 0.0039",
+      "status": "retained"
+    },
+    {
+      "agrees_with_recorded_status": true,
+      "condition": "synthetic_overwrite",
+      "frequency_ceiling": 0.47265625,
+      "marginal": 0.47265625,
+      "marginal_skill": -0.0,
+      "name": "stale_value_error_rate",
+      "oracle": 0.0,
+      "random": 0.50390625,
+      "rule_passed": true,
+      "rule_reason": "ceiling/max(oracle, floor) = 23.6x",
+      "status": "retained"
+    },
+    {
+      "agrees_with_recorded_status": true,
+      "condition": "T0",
+      "frequency_ceiling": 0.0,
+      "marginal": 0.030197143554687503,
+      "marginal_skill": -0.0,
+      "name": "ece",
+      "oracle": 0.0,
+      "random": 0.00809478759765625,
+      "rule_passed": false,
+      "rule_reason": "frequency ceiling 0.00000 <= oracle 0.00000",
+      "status": "retired"
+    },
+    {
+      "agrees_with_recorded_status": true,
+      "condition": "T0",
+      "frequency_ceiling": 1.0,
+      "marginal": 1.0,
+      "marginal_skill": null,
+      "name": "recall_at_free_threshold",
+      "oracle": 1.0,
+      "random": 1.0,
+      "rule_passed": false,
+      "rule_reason": "frequency ceiling 1.0000 >= oracle 1.0000",
+      "status": "retired"
+    },
+    {
+      "agrees_with_recorded_status": true,
+      "condition": "capacity_stressed",
+      "frequency_ceiling": 0.0,
+      "marginal": 0.0,
+      "marginal_skill": null,
+      "name": "distance_degradation_slope",
+      "oracle": 0.0,
+      "random": 0.0,
+      "rule_passed": true,
+      "rule_reason": "diagnostic; exempt from the rule and never reported alone",
+      "status": "diagnostic"
+    },
+    {
+      "agrees_with_recorded_status": true,
+      "condition": "capacity_stressed",
+      "frequency_ceiling": null,
+      "marginal": null,
+      "marginal_skill": null,
+      "name": "distractor_sensitivity_slope",
+      "oracle": null,
+      "random": null,
+      "rule_passed": true,
+      "rule_reason": "diagnostic; exempt from the rule and never reported alone",
+      "status": "diagnostic"
+    },
+    {
+      "agrees_with_recorded_status": true,
+      "condition": "T0",
+      "frequency_ceiling": 0.0,
+      "marginal": 0.0,
+      "marginal_skill": null,
+      "name": "heldout_composition_gap",
+      "oracle": 0.0,
+      "random": 0.0,
+      "rule_passed": true,
+      "rule_reason": "diagnostic; exempt from the rule and never reported alone",
+      "status": "diagnostic"
+    }
+  ]
+}
