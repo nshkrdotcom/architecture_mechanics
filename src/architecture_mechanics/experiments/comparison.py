@@ -67,6 +67,7 @@ from architecture_mechanics.experiments.manifest import lab_root, utc_now
 from architecture_mechanics.experiments.t1_ladder import (
     BASE_CELL,
     NEGATIVE_CONTROL_CELL,
+    POSITIVE_CONTROL_CELL,
     Cell,
     cell_config,
     cells,
@@ -493,6 +494,7 @@ def _parameters(model_config: ModelConfig) -> int:
 def _cell_by_name(name: str) -> Cell:
     known = {cell.name: cell for cell in cells()}
     known[NEGATIVE_CONTROL_CELL.name] = NEGATIVE_CONTROL_CELL
+    known[POSITIVE_CONTROL_CELL.name] = POSITIVE_CONTROL_CELL
     if name not in known:
         raise ComparisonError(
             f"unknown cell {name!r}; the R3 matrix declares {sorted(known)}"
@@ -1551,6 +1553,108 @@ DECLARED_COMPARISONS: dict[str, dict] = {
             "until it exists and its primary_metric_key matches the echo committed here."
         ),
     },
+    # ----------------------------------------------------------------- P13 ---
+    # Prompt 12 declared the design; the comparisons below declare the
+    # *operating points*, which prompt 12 explicitly left to prompt 13: "if the
+    # intersection of the two competence envelopes says another width is better
+    # it declares a new comparison at that width — a new plan, committed before
+    # its runs — rather than editing this one."
+    "a0_vs_a1_r1": {
+        "claim_id": "a1-vs-a0-t1-capability-gap",
+        "primary_metric": "associative_recall_accuracy",
+        "control_arch": "softmax",
+        "candidate_archs": ("linear",),
+        "task": "T1",
+        "cells": (POSITIVE_CONTROL_CELL.name,),
+        "d_model": None,
+        "owner_prompt": "13",
+        "rungs": {"R1": 1},
+        "notes": (
+            "The comparison's own §7.3 R1: the known-easy positive control, run as a matched "
+            "pair. Its answer is known before it runs — prompt 04 recorded A0 at 0.9055 and "
+            "prompt 11 recorded A1 at 0.8954, a difference of 0.010 against prompt 09's "
+            "measured five-seed minimum detectable effect of 0.128 — so this comparison must "
+            "come out NULL. That is what makes it a control: a harness that reports a gap "
+            "where both architectures are known to succeed is measuring itself, and a "
+            "capability gap reported at R2 or R3 by a harness that failed here would be a "
+            "measurement of the harness. §7.3's 'never skip R1' applies to a comparison as "
+            "much as to an architecture, and a failure here is an implementation defect to "
+            "debug rather than a finding to interpret. Operating point: the frozen R1 preset, "
+            "d = d_recommended = 48, 32768 examples, 4000 steps, unchanged from the budget "
+            "both architectures were separately measured on."
+        ),
+    },
+    "a0_vs_a1_screen": {
+        "claim_id": "a1-vs-a0-t1-capability-gap",
+        "primary_metric": "associative_recall_accuracy",
+        "control_arch": "softmax",
+        "candidate_archs": ("linear",),
+        "task": "T1",
+        # Ten of the R3 matrix's sixteen cells. Which six are absent, and why, is
+        # the shrink this screen is allowed to make, and it is recorded here
+        # rather than left to be inferred from what is present.
+        #
+        #   distractors-n0 / -n1 / -n4  prompt 09 measured that this axis does
+        #     not vary interference at all: global density and mean active
+        #     features per position are identical to four decimal places across
+        #     all four levels, because n_distractors is implemented as a
+        #     *position* knob and not a *quantity* knob. It therefore cannot move
+        #     A1's state load, which is a sum over writes and is indifferent to
+        #     where in the prefix a write happened; and A0's whole measured range
+        #     on it is 0.029, or 0.4 sigma of a single-run difference.
+        #   source_distance-d10-16 / -d20-26  the axis is screened at its two
+        #     extremes. The question is whether A1 survives short distance and
+        #     dies at long, which two points answer with half the runs; prompt 09
+        #     measured the middle two as within 1.3 sigma of each other.
+        #   negative-control  not a difficulty cell and not a search for an
+        #     operating point. It is the standing control for a *capability*
+        #     claim, so it belongs to the pilot, where capability is read.
+        #
+        # key_collisions-on is screened despite A0's range on it being 0.005,
+        # because it is the one cell where the two mechanisms are predicted to
+        # differ for a mechanistic reason: phi(x) = elu(x) + 1 has no exponential
+        # with which to sharpen the difference between a key and a near-miss key
+        # sharing all but one index, and softmax has. An axis flat for the
+        # control is exactly where an architecture-specific effect would show.
+        "cells": (
+            BASE_CELL,
+            "sparsity-p006",
+            "sparsity-p024",
+            "sparsity-p040",
+            "associations-a2",
+            "associations-a4",
+            "associations-a10",
+            "source_distance-d4-6",
+            "source_distance-d34-40",
+            "key_collisions-on",
+        ),
+        "d_model": 64,
+        "owner_prompt": "13",
+        "rungs": {"R2": 1},
+        "notes": (
+            "The R2 kill screen for the A0/A1 comparison, at ten cells of the R3 matrix, one "
+            "seed, both arms. Its purpose is to locate the intersection of the two competence "
+            "envelopes so that the R3 pilot runs where *both* architectures are alive: a pilot "
+            "cell where either arm has already collapsed measures the collapse and not the "
+            "architectures. "
+            "d = 64 rather than R2's own preset of d_recommended = 16, and that is the whole "
+            "reason this comparison is declared separately from prompt 12's. At d = 16 both "
+            "architectures are at the floor — prompt 07 measured A0 at 0.0129 and prompt 11 "
+            "measured A1 at 0.0242 — so a screen there ranks two useless models. d = 64 is the "
+            "frozen R3/R4 operating point (config.OPERATING_POINT_EVIDENCE), so this screen "
+            "and the pilot it screens for differ in the step budget alone, 2000 against 3000, "
+            "which is what makes a screen cheaper than the pilot it screens for. The width is "
+            "a §7.2 frozen variable, is identical for both arms, and is declared here rather "
+            "than passed at a call site so that a candidate cannot receive a different one. "
+            "What this screen can and cannot do: at one seed per cell it cannot resolve a "
+            "recall difference below about 0.13 (prompt 09's five-seed minimum detectable "
+            "effect; a single pair is weaker still), so no cell of it is evidence for a "
+            "capability difference at any rung. What it is evidence about is whether each "
+            "architecture is off its floor and whether its mechanism is active there — both "
+            "decidable from one run, because both are comparisons against a fixed threshold "
+            "rather than against another architecture."
+        ),
+    },
 }
 """Every comparison this laboratory declares, as data.
 
@@ -1577,9 +1681,11 @@ def declare(name: str, *, lab: Path | None = None, write: bool = True) -> list[C
             candidate_archs=spec["candidate_archs"],
             seeds=seed_family(n_seeds),
             cell_names=spec["cells"],
+            d_model=spec.get("d_model"),
             task=spec["task"],
             primary_metric=spec["primary_metric"],
             notes=spec["notes"],
+            owner_prompt=spec.get("owner_prompt", "12"),
         )
         for plan in plans:
             if write:
@@ -1650,7 +1756,7 @@ def build_parser() -> argparse.ArgumentParser:
         "architecture_mechanics.experiments.runner --comparison."
     )
     parser.add_argument("--declare", metavar="NAME", default=None,
-                        help=f"write every plan for a declared comparison "
+                        help=f"write every plan for a declared comparison, or 'all' "
                              f"({sorted(DECLARED_COMPARISONS)})")
     parser.add_argument("--check", action="store_true",
                         help="re-verify every committed plan under this source tree")
@@ -1666,10 +1772,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         build_parser().print_help()
         return 2
     if args.declare:
-        for plan in declare(args.declare, lab=lab):
-            path = Path(lab or lab_root()) / PLANNED_DIR / plan.filename
-            if not args.quiet:
-                print(f"declared {path.relative_to(Path(lab or lab_root()))}")
+        names = sorted(DECLARED_COMPARISONS) if args.declare == "all" else [args.declare]
+        for name in names:
+            for plan in declare(name, lab=lab):
+                path = Path(lab or lab_root()) / PLANNED_DIR / plan.filename
+                if not args.quiet:
+                    print(f"declared {path.relative_to(Path(lab or lab_root()))}")
     if args.check:
         return check(lab, verbose=not args.quiet)
     return 0

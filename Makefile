@@ -2,7 +2,8 @@
         statistics-selftest statistics-calibration t0 gates \
         r0 r1 r2 index figure1 figures geometry-table geometry-across-seeds \
         t1-r1 t1-r2 t1-r3 t1-r4 t1-r4-extended t1-report t1-ladder \
-        comparisons comparisons-check comparison-dry-run
+        comparisons comparisons-check comparison-dry-run \
+        a0-a1-r1 a0-a1-screen a0-a1-pilot a0-a1-report a0-a1
 
 # The pre-registration every ladder run below is a child of. A recorded run
 # must have one: bin/check_prereg.sh refuses a manifest without it, and the
@@ -83,7 +84,7 @@ gates: selftest metrics-selftest geometry-selftest statistics-selftest \
 # matched under this source tree, which is the property that decays silently as
 # later missions edit rung presets. No GPU, no data, no training.
 comparisons:
-	uv run python -m architecture_mechanics.experiments.comparison --declare a0_vs_a1
+	uv run python -m architecture_mechanics.experiments.comparison --declare all
 
 comparisons-check:
 	uv run python -m architecture_mechanics.experiments.comparison --check
@@ -95,6 +96,36 @@ comparison-dry-run:
 	  --comparison a0_vs_a1 --ladder $(LADDER) --dry-run
 
 LADDER ?= R3
+
+# ------------------------------------------------------------------ P13 ---
+# The first architecture comparison, in the order §7.3 requires it be run.
+# Every stage is a child of claims/a1-vs-a0-t1-capability-gap.yml and each is
+# refused until that packet is committed.
+#
+# a0-a1-r1 is the comparison's own positive control and comes first: both
+# architectures are known to solve the known-easy condition, so the pair must
+# come out null, and a harness that reports a gap there is measuring itself.
+# a0-a1-screen locates the intersection of the two competence envelopes; the
+# pilot cells are chosen from its output and declared before the pilot runs.
+CMP = uv run python -m architecture_mechanics.experiments.runner --comparison
+TABLE = uv run python -m architecture_mechanics.reporting.tables
+
+a0-a1-r1:
+	$(CMP) a0_vs_a1_r1 --ladder R1 --emit-bundle
+
+a0-a1-screen:
+	$(CMP) a0_vs_a1_screen --ladder R2 --emit-bundle
+
+a0-a1-pilot:
+	$(CMP) a0_vs_a1_pilot --ladder R3 --emit-bundle
+
+# Read back from recorded artifacts only; runs no model.
+a0-a1-report:
+	$(TABLE) --comparison a0_vs_a1_r1 --ladder R1 --json reports/a0_a1_r1_control.json
+	$(TABLE) --comparison a0_vs_a1_screen --ladder R2 --json reports/a0_a1_screens.json
+	$(TABLE) --comparison a0_vs_a1_pilot --ladder R3 --json reports/a0_a1_pilots.json
+
+a0-a1: a0-a1-r1 a0-a1-screen a0-a1-pilot a0-a1-report
 
 # The section 7.3 run ladder. R0 builds the model and checks the section 8.5
 # invariants without training; R1 is the known-easy positive control and exits

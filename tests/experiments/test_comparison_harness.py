@@ -636,13 +636,24 @@ def test_dry_run_without_a_comparison_is_refused():
 
 
 def test_a_dry_run_of_the_declared_comparison_checks_every_arm(capsys):
-    """What prompt 13's command does before it spends anything: build both
-    strategies, check every pair, and report what is still missing. Exits
-    non-zero here because the pre-registration this comparison names is a forward
-    reference until the mission that runs it commits the packet."""
+    """What a comparison command does before it spends anything: build both
+    strategies, check every pair, and report what is still missing.
+
+    Prompt 12 wrote this asserting a non-zero exit and ``NOT READY TO RUN``,
+    because the packet ``a0_vs_a1`` names was a forward reference until the
+    mission that ran the comparison committed it. Prompt 13 committed
+    ``claims/a1-vs-a0-t1-capability-gap.yml``, so the readiness half of this test
+    now asserts the other outcome — the pre-registration exists and the plan is
+    ready. The refusal it used to observe has not been dropped: it is asserted
+    against a missing packet in
+    ``test_a_comparison_cannot_run_before_its_pre_registration_exists``, which is
+    where it belongs, since it is a statement about a missing packet and not
+    about this laboratory's state on one day."""
     exit_code = C.run_comparison("a0_vs_a1", ladder="R3", dry_run=True)
     out = capsys.readouterr().out
     assert "width_matched" in out and "parameter_matched" in out
     assert "2 distinct arm configurations" in out, "the coinciding controls run once"
     assert "every pair above is matched" in out
-    assert exit_code == 1 and "NOT READY TO RUN" in out
+    assert exit_code == 0 and "NOT READY TO RUN" not in out
+    assert "a1-vs-a0-t1-capability-gap" in out
+    assert "associative_recall_accuracy" in out

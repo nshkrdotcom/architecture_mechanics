@@ -65,6 +65,8 @@ __all__ = [
     "DIFFICULTY_AXES",
     "GEOMETRY_METRICS",
     "MECHANISM_METRICS",
+    "NEGATIVE_CONTROL_CELL",
+    "POSITIVE_CONTROL_CELL",
     "R2_WIDTHS",
     "R4_SEEDS",
     "R4_SEEDS_EXTENDED",
@@ -240,6 +242,28 @@ Not a difficulty level: it is the same task with the mutual information removed,
 and it belongs to the matrix because a trained model beating it means the task
 leaks and every capability number in this laboratory is measuring the leak. The
 oracle bound recorded in prompt 02 puts chance at exactly 0.0."""
+
+
+POSITIVE_CONTROL_CELL = Cell(
+    name="positive-control",
+    axis="positive_control",
+    level="known_easy",
+    overrides={},
+    condition="positive_control",
+)
+"""§4.4's known-easy condition, as a cell so that a *comparison* can be run on it.
+
+Not part of the R3 matrix — :func:`cells` does not return it and the difficulty
+curves do not pass through it — and it is usable at R0 and R1 only, because
+:class:`~...experiments.config.DataSpec` refuses the positive control at any rung
+whose preset draws train and eval at different sizes.
+
+It exists because §7.3's "never skip R1" applies to a comparison as much as to an
+architecture. Prompt 11 recorded A0 at 0.9055 and A1 at 0.8954 here, so a matched
+pair on this cell is a comparison whose answer is known in advance to be *null* —
+which is the only positive control a comparison harness can have. A harness that
+reports a gap where two architectures are both known to succeed is measuring
+itself. Empty overrides, because the positive control is frozen and takes none."""
 
 
 def cell_config(cell: Cell, *, ladder: str = "R3", seed: int = R4_SEEDS[0], **kwargs) -> RunConfig:

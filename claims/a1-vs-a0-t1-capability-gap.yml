@@ -1,0 +1,184 @@
+claim_id: a1-vs-a0-t1-capability-gap
+schema: am.claim_packet.v1
+owner_prompt: '13'
+scope: 'The first architecture comparison in this laboratory: A0 against A1 on T1, at one
+  seed, through §7.3''s R1, R2 and R3. Its children are the a0_vs_a1_r1 matched pair (the
+  comparison''s own positive control), the a0_vs_a1_screen kill screen over ten cells of the
+  R3 matrix at d = 64, and the pilot that the screen selects. It claims rung 1 and no higher.
+  There is deliberately NO covers: block. A covers: block ranges over (ladder, arch, condition),
+  and every combination this comparison touches is already claimed by a0-baseline-solves-t0.yml,
+  a0-t1-associative-recall.yml or a1-linear-solves-positive-control.yml; adding one here would
+  give those missions'' runs two parents and an ambiguous prediction. Every run of this packet
+  names it explicitly, which the comparison harness does by construction, and bin/check_prereg.sh
+  checks the commit time either way.'
+CLAIM: 'At the T1 operating point this mission selects from the intersection of A0''s and
+  A1''s competence envelopes — §4.4 capacity_stressed, d = 64, two layers, two heads, one
+  seed, 3000 steps, every §7.2 variable shared — A0 (causal softmax attention) attains strictly
+  higher exact answer-set recall than A1 (kernelized linear attention, phi(x) = elu(x) + 1,
+  no erasure) at the base cell and at every cell where six or more key/value bindings are
+  simultaneously live. Four components, each falsifiable: (1) the gap at the base cell exceeds
+  0.25 exact recall, twice prompt 09''s measured five-seed minimum detectable effect of 0.128;
+  (2) the gap shrinks as the number of simultaneous associations falls and is smallest at
+  n_associations = 2; (3) A1''s mechanism is ACTIVE wherever it is measured — all three §6.3
+  gates pass, state_growth_ratio is far above 1.0 and write_to_state_ratio lies strictly between
+  0 and 1 — so the gap separates two working mechanisms rather than announcing an inert branch;
+  (4) on the known-easy positive control both architectures clear 0.80 and differ by less
+  than 0.128, so the harness returns a null where a null is known in advance to be the right
+  answer. Nothing here is claimed at §7.5 rung 2 or above: every cell is one seed, and one
+  seed is not replication however large the gap.'
+MECHANISM: 'The two architectures differ in exactly one thing — how a query''s weight over
+  the causal prefix is formed — and the prediction is a consequence of that difference. A0
+  forms it by softmax over inner products, so the weight on the matching key can be made arbitrarily
+  large relative to every non-matching key by scaling the logits: retrieval is a competition
+  resolved by an exponent, and the sharpness of that competition is learnable. A1 forms it
+  as phi(q_t).phi(k_j) normalized by the sum over the prefix, reading a single fixed-size
+  state S_t = sum_{j<=t} phi(k_j) (x) [v_j, 1]; phi is strictly positive, so every write in
+  the prefix contributes to both the numerator and the denominator and no write can be driven
+  to zero weight. The predicted binding constraint on A1 is therefore the number of bindings
+  superposed in one d_head x (d_head + 1) state, not the distance between the source and the
+  query — a sum has no decay, so an interfering write costs the same whether it happened one
+  position ago or thirty. The MLP, the position table and the residual trunk are shared and
+  are not part of either mechanism.'
+STRUCTURALLY_ENFORCED_PROPERTIES:
+- 'one preset, two arms: both configurations come from a single ladder_config call with arch.arch
+  alone replaced, and the pairwise config diff is computed and refused before a model is built,
+  so an unmatched comparison cannot reach the GPU'
+- identical parameter counts at every width in this laboratory (127288 at d = 64), so §7.2's
+  width-matched and parameter-matched comparisons are literally the same two runs and neither
+  strategy can be the flattering one that gets reported
+- 'identical data and not merely identical requests for it: resolution requires the two runs''
+  recorded train and eval split hashes to be equal'
+- 'paired seeds: one seed set for both arms, one pair per seed, and seed is a config field,
+  so an unpaired comparison is an undeclared difference the gate names'
+- 'measured compute parity: the resolver reads each run''s own step count and examples processed
+  out of its history and refuses a pair in which the candidate did more of the work, so a
+  slower architecture cannot be given more training'
+- 'one copy of every ruler: prompt 11 moved the five distribution statistics into models/common.py,
+  so A0''s and A1''s mechanism activity are computed by the same code and a difference in
+  activity cannot be a difference between two implementations of a measure'
+- fixed-step stopping with the final evaluation reported rather than the best, so neither
+  arm can be stopped at its luckiest evaluation
+- 'hook transparency: capturing every site is bitwise a no-op on both architectures'' forward
+  passes, so instrumenting a mechanism cannot be what makes it look active'
+LEARNED_OR_HOPED_PROPERTIES:
+- that A1's degradation is driven by the number of simultaneous bindings rather than by source-destination
+  distance — the mechanistic prediction, and the one most likely to be wrong
+- that A1's mechanism stays active at cells where its capability is at the floor, as prompt
+  09 found for A0 at d = 16 and prompt 11 found for A1 at every screened width
+- that near-miss keys cost A1 more than A0, because elu + 1 has no exponential with which
+  to separate a key from one differing in a single index
+- that at least one cell of the R3 matrix has both architectures off the floor and below ceiling,
+  so that a pilot has an operating point at all
+- that A1's representation geometry differs from A0's in the direction prompt 11's R1 measurement
+  pointed — lower probe R-squared, lower purity, higher interference fraction, lower effective
+  rank
+NEAREST_BORING_EXPLANATION: 'Five, and only two of them are ruled out here. (a) THE GAP IS
+  A WIDTH EFFECT. Prompt 09 measured that at this scale the binding constraint on A0 is the
+  width of the residual stream and not the addressing; if A1 simply needs more width to express
+  the same circuit, then a comparison at one width reports ''A1 is behind at d = 64'' while
+  sounding like ''A1 is worse''. (b) THE GAP IS AN OPTIMISATION TIMING EFFECT. Prompt 09 measured
+  that A0''s seed spread on T1 is dominated by *when* the retrieval circuit forms, against
+  a fixed-step rule that intersects a still-rising curve; prompt 11 measured both architectures
+  still rising at 2000 steps. A fixed-budget comparison of two still-rising curves measures
+  the two learning rates of circuit formation, not two asymptotes. (c) THE GAP IS SEED NOISE.
+  A0''s own seed-to-seed standard deviation at this operating point is 0.054 with an eight-seed
+  range of 0.163; one run per arm cannot separate an architecture difference from a seed difference
+  below about 0.15. (d) THE HARNESS IS MEASURING ITSELF: an undeclared configuration difference,
+  unequal data, or unequal work between the arms would produce a gap out of nothing. (e) A1
+  IS INERT: if A1 trains as a position-wise MLP with a decorative mixer, the finding is ''one
+  architecture has a working mechanism'', which is a much weaker statement than ''two working
+  mechanisms differ''.'
+CONTROL_THAT_RULES_IT_OUT: '(d) is ruled out mechanically and in four places: both arms are
+  constructed from one rung preset with only arch.arch replaced; the construction refuses
+  an undeclared difference before a model is built; resolution requires equal split hashes
+  and equal measured work; and bin/check_no_rescue.sh re-derives the whole diff from the two
+  recorded manifests afterwards. The non-vacuity check on all of that is the R1 matched pair,
+  where the true answer is known to be null: a harness that manufactures gaps would manufacture
+  one there. (e) is ruled out by §6.3''s three activity gates plus the four state measures
+  A0 cannot have — state_norm, write_norm, write_to_state_ratio, state_growth_ratio — every
+  one of which has a reachable degenerate value asserted in tests/identity/test_a1_model.py
+  rather than hoped for. (a), (b) and (c) are NOT ruled out and are carried as stated limits
+  on the scope of this claim rather than argued away. (a) needs a width sweep of both arms,
+  which is prompt 14''s phase diagram; what is done instead is that the width is frozen, identical
+  for both arms, and was chosen on the control before the candidate existed, so the number
+  is honest about which regime it describes. (b) is not ruled out but is *measured*: both
+  arms'' complete evaluation histories are recorded and the final-step gain is reported per
+  arm, so a reader can see whether either was still rising — and the budget is a §7.2 frozen
+  variable that is not moved after the result is seen. (c) is not ruled out, and it is the
+  reason this packet stops at rung 1; prompt 15 owns the replication that would rule it out.'
+PRIMARY_METRIC: 'associative_recall_accuracy — exact answer-set recall on the held-out evaluation
+  split — frozen by prompt 03 before either architecture existed and unchanged since. The
+  comparison statistic is the paired per-cell difference, control minus candidate, at one
+  seed, reported as a raw difference with NO confidence interval, because a single pair has
+  none. Prompt 09''s conversion is the yardstick it is read against: 0.128 is the smallest
+  difference five seeds could resolve here, 0.076 the smallest ten could, and a single pair
+  resolves nothing at all in the statistical sense. Seven further §6.1 metrics are recorded
+  beside it and none of them may be substituted for it after the fact.'
+MECHANISM_ACTIVITY_METRIC: '§6.3, for both architectures, computed by one copy of the ruler
+  from each mechanism''s induced row-stochastic matrix: off_diagonal_mass >= 0.05, entropy_ratio
+  <= 0.95, retrieval lift on the true source >= 2.0x chance, taken over the best layer per
+  measure. For A0 additionally the attention entropy in nats and as a ratio, self_mass, max_weight,
+  and the full source-selection distribution — source_mass, best_head_source_mass, chance_mass,
+  lift and argmax_hit_rate — per layer. For A1 additionally the five state measures A0 cannot
+  have: state_norm, write_norm, write_to_state_ratio, state_growth_ratio and readout_magnitude,
+  with normalizer_mean as the check that the 1e-6 clamp is nowhere near binding. An architecture
+  that trains while ignoring its distinctive branch is a failed mechanism experiment even
+  where its task loss is good; these are the numbers that decide it, and they are reported
+  at every cell whether or not they flatter the capability result.'
+POSITIVE_CONTROL: 'The a0_vs_a1_r1 matched pair: §4.4''s known-easy positive control at the
+  frozen R1 preset — d = d_recommended = 48, distance one to two, no distractors, one association,
+  32768 examples, 4000 steps — run as one control and one candidate at the same seed, with
+  every §7.2 variable shared. Both arms must clear prompt 03''s frozen 0.80 and both mechanisms
+  must be active, and the two must differ by less than 0.128. This is the comparison''s own
+  §7.3 R1 and it is not skipped: prompt 04 recorded A0 at 0.9055 and prompt 11 recorded A1
+  at 0.8954, so the pair''s answer is known before it runs, and a harness that reports a gap
+  there is measuring itself. Failure is an implementation or optimisation defect to debug,
+  never a finding to interpret, and nothing further runs until it is fixed. Within every run
+  of every rung, the program oracle must clear the threshold and the training-marginal predictor
+  must fall below it (instrument_ok).'
+NEGATIVE_CONTROL: '§4.4''s information-destroyed condition, at the pilot''s own operating
+  point, run for BOTH architectures — prompt 09 measured A0 at exactly 0.0000 there and A1
+  has never been run on it at all, so A1''s 0.0000 is a prediction made here and not a result
+  being cited. Either arm above 0.05 exact recall, or above 0.05 normalized skill, is a hard
+  stop for the entire laboratory and not merely for this claim: a trained model beating an
+  information-destroyed control means the task leaks and every capability number recorded
+  to date is measuring the leak. Because the program oracle scores at or below an input-blind
+  predictor on this condition, the comparison that decides it is against the frequency ceiling
+  fitted on the split being scored, per prompt 03''s committed CEILING_DOMINATED_METRICS,
+  and not against the oracle. Independently, the §6.3 activity report must reach its degenerate
+  values when a mechanism is made degenerate, which is asserted in the identity tests rather
+  than hoped for.'
+KILL_CONDITION: 'Six, each able to fire, none renegotiable after the data is seen. (1) R1
+  PAIR: either arm below 0.80 exact recall, either mechanism inactive, or the two arms differing
+  by more than 0.128. The claim dies and the harness is debugged; a gap measured at R2 or
+  R3 by a harness that failed here is a measurement of the harness. (2) NEGATIVE CONTROL:
+  either arm above 0.05 exact recall or 0.05 normalized skill on the information-destroyed
+  condition. Hard stop for the laboratory. (3) DIRECTION: if A1 attains recall greater than
+  or equal to A0''s at the base cell of the pilot, this CLAIM as written is dead and is reported
+  dead. The first action is a search for a defect in the comparison harness, the data path
+  or the metric — NOT a report of a discovery. Softmax attention is a known-strong associative-recall
+  mechanism and linear attention is known to lose on multi-binding recall; a reversal here
+  is far more likely to be a bug than a finding, and treating it as one is the discipline
+  this mission exists to demonstrate. (4) INERT CANDIDATE: at any pilot cell, all three of
+  A1''s §6.3 gates failing, or state_growth_ratio at or below 1.0, or normalizer_mean within
+  100x of the 1e-6 clamp. The capability number at that cell then compares one mechanism against
+  none, and component (3) of the CLAIM is dead at that cell and is reported dead. (5) ANY
+  RUN: a §8.5 invariant failure, a non-finite training loss, a dirty working tree, or a comparison
+  the harness or bin/check_no_rescue.sh refuses to record. (6) NO OPERATING POINT: if the
+  R2 screen finds no cell at which both arms exceed 0.05 exact recall, then the intersection
+  of the two competence envelopes is empty at this width and budget, the pilot does not run
+  there, and that emptiness is the reported finding rather than a reason to widen the search
+  until something survives.'
+REPLICATION_REQUIREMENT: 'NONE IS SATISFIED BY THIS PACKET''S EVIDENCE, and that is a limit
+  of the claim rather than a waiver. Every cell of every rung here is one seed. §7.5 rung
+  2, capability_difference_replicates, requires at least five seeds with per-seed results,
+  effect sizes and bootstrap confidence intervals per §7.4, and prompt 09 measured what that
+  buys at this operating point: five seeds cannot see a T1 recall difference below 0.128,
+  ten reach 0.076, twenty reach 0.050. evaluate_rungs returns no verdict for rung 2 from a
+  single run at all, and absent is read as not passed. This packet therefore claims rung 1,
+  and a single-seed gap of any size — including one several times the five-seed detection
+  threshold — is recorded as a single-seed observation and nothing more. Prompt 15 owns the
+  replication. The required repetition at rungs 0 and 1 is deterministic re-execution, checked
+  by each run''s own reproduce.sh.'
+primary_metric_key: associative_recall_accuracy
+claimed_rung: 1
