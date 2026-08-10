@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+.venv/
+.uv/
+.pytest_cache/
+.ruff_cache/
+
+# Large or regenerable run artifacts. Manifests, summaries, metrics, claim
+# gates, and figures ARE committed — they are the evidence. Checkpoints and
+# raw tensors are not.
+runs/**/checkpoint/
+runs/**/*.pt
+runs/**/*.safetensors
+data/cache/
+wandb/
