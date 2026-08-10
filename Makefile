@@ -3,7 +3,9 @@
         r0 r1 r2 index figure1 figures geometry-table geometry-across-seeds \
         t1-r1 t1-r2 t1-r3 t1-r4 t1-r4-extended t1-report t1-ladder \
         comparisons comparisons-check comparison-dry-run \
-        a0-a1-r1 a0-a1-screen a0-a1-pilot a0-a1-report a0-a1
+        a0-a1-r1 a0-a1-screen a0-a1-pilot a0-a1-report a0-a1 \
+        phase-r1 phase-null phase-d16 phase-d32 phase-d64 phase-length \
+        phase-sweep phase-report figure2 phase
 
 # The pre-registration every ladder run below is a child of. A recorded run
 # must have one: bin/check_prereg.sh refuses a manifest without it, and the
@@ -127,6 +129,51 @@ a0-a1-report:
 
 a0-a1: a0-a1-r1 a0-a1-screen a0-a1-pilot a0-a1-report
 
+# ------------------------------------------------------------------ P14 ---
+# The §10.2 figure 2 sweep: architecture x sparsity x bottleneck ratio, over
+# the §4.5 grid, at §7.3's R2 screening depth, one seed. The grid, its price
+# and everything cut from it are in experiments/phase_grid.py.
+#
+# The order below is §7.3's and is not a convenience. phase-r1 is this
+# mission's own positive control and comes first, with --assert-pass, because
+# seventy screening runs from a broken instrument are seventy measurements of
+# the bug. phase-null is the map's own information-destroyed control and comes
+# second, because if the task leaks the map is void and that costs two runs to
+# find out. The three width panels are the map. The length ribbon is last
+# because it is the part that would be dropped if the budget ran out.
+#
+# No --assert-pass on the R2 stages: a cell where an arm collapses is a
+# measured corner of the map and stopping there would discard it.
+phase-r1:
+	$(CMP) phase_r1 --ladder R1 --emit-bundle --assert-pass
+
+phase-null:
+	$(CMP) phase_negative_control_d32 --ladder R2 --emit-bundle
+
+phase-d16:
+	$(CMP) phase_T32_d16 --ladder R2 --emit-bundle
+
+phase-d32:
+	$(CMP) phase_T32_d32 --ladder R2 --emit-bundle
+
+phase-d64:
+	$(CMP) phase_T32_d64 --ladder R2 --emit-bundle
+
+phase-length:
+	$(CMP) phase_length_d32 --ladder R2 --emit-bundle
+
+phase-sweep: phase-r1 phase-null phase-d16 phase-d32 phase-d64 phase-length
+
+# Read back from recorded artifacts only; runs no model.
+phase-report:
+	$(TABLE) --phase --json reports/phase_diagram.json
+
+figure2:
+	uv run python -m architecture_mechanics.reporting.figures --figure 2 \
+	  --verify-deterministic
+
+phase: phase-sweep phase-report figure2
+
 # The section 7.3 run ladder. R0 builds the model and checks the section 8.5
 # invariants without training; R1 is the known-easy positive control and exits
 # non-zero if A0 does not solve it; R2 is the capacity-stressed kill screen.
@@ -191,4 +238,4 @@ figure1:
 	uv run python -m architecture_mechanics.reporting.figures --figure 1 \
 	  --verify-deterministic
 
-figures: figure1
+figures: figure1 figure2

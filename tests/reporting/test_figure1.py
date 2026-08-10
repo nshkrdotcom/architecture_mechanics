@@ -236,11 +236,19 @@ def test_delete_and_regenerate_is_byte_identical(built, tmp_path):
 # --------------------------------------------------------------------------- #
 
 
-@pytest.mark.parametrize(("number", "prompt"), [(2, "prompt 14"), (3, "prompt 22"), (4, "prompt 23")])
+@pytest.mark.parametrize(("number", "prompt"), [(3, "prompt 22"), (4, "prompt 23")])
 def test_unbuilt_figures_name_the_prompt_that_owns_them(number, prompt, tmp_path):
     with pytest.raises(NotImplementedError) as excinfo:
         figures.build_figure(number, tmp_path)
     assert prompt in str(excinfo.value)
+
+
+def test_figure_two_is_built_rather_than_planned():
+    """Prompt 14 delivered it. Its own tests are in ``test_figure2.py``; what is
+    checked here is that the programme's figure registry knows it exists, so the
+    "not yet written" branch above cannot go on claiming it."""
+    assert sorted(figures.BUILDERS) == [1, 2]
+    assert figures.FIGURE_STEMS[2] == "fig2_phase_diagram"
 
 
 def test_an_unknown_figure_is_refused(tmp_path):

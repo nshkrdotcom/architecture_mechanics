@@ -16,8 +16,16 @@ Figure 1 has no parent run: it is the benchmark itself, drawn from one example
 the generator produces on demand. Its inputs are therefore its dataset
 configuration, and the caption carries all of them.
 
-Figures 2-4 (north star 10.2) arrive at prompts 14, 22 and 23 and will read
-recorded run outputs under ``runs/``. They share
+Figure 2 (prompt 14) is the first figure here with parent runs. It draws north
+star 10.2's capability-and-geometry phase diagram from
+:func:`architecture_mechanics.reporting.tables.phase_report`, which reads
+``runs/`` and ``reports/comparisons/`` and computes nothing that is not already
+on disk. It is *screening* evidence — one seed per cell — and saying so is part
+of the artifact and not only of the surrounding prose: the caption's first two
+sentences say it, a line inside the image says it, and
+``tests/reporting/test_figure2.py`` fails if either stops saying it.
+
+Figures 3 and 4 arrive at prompts 22 and 23. All four share
 :mod:`architecture_mechanics.reporting.figure_style`.
 """
 
@@ -41,7 +49,14 @@ from ..data.feature_program import (
 from ..experiments.manifest import lab_root
 from . import figure_style as style
 
-FIGURE_VERSION = "am-fig-1.0.0"
+# ``tables`` is imported at module scope on purpose.
+# tests/reporting/test_figure_provenance.py audits every file the *build* opens,
+# and a deferred import would open this module's own source inside the audited
+# window — a read of the source tree, which is precisely what the audit exists to
+# catch. Importing here puts it before the hook, where it belongs.
+from .tables import PURITY_FIVE_SEED_MDE, phase_report
+
+FIGURE_VERSION = "am-fig-1.1.0"
 
 ARTIFACT_READ_ROOTS: tuple[str, ...] = ("runs", "reports")
 """The only directories inside the laboratory a figure may take a *number* from.
@@ -688,8 +703,682 @@ def draw_figure1(dataset: FeatureProgramDataset) -> Figure:
     return fig
 
 # --------------------------------------------------------------------------- #
+# Figure 2 — capability and geometry phase diagram
+# --------------------------------------------------------------------------- #
+
+FIGURE2_CAPABILITY = "recall"
+FIGURE2_GEOMETRY = "content_purity"
+"""The two surfaces §10.2 asks to be drawn over one pair of axes: exact
+answer-set recall, prompt 03's frozen primary metric, and the content bank's
+mean feature purity, the §6.2 measure declared in this sweep's claim packet.
+Both come from ``reporting.tables.phase_report``, which reads recorded runs and
+computes nothing that is not already on disk."""
+
+RECALL_FIVE_SEED_MDE = 0.128
+"""Prompt 09's five-seed minimum detectable effect for T1 exact recall. Used
+here for one thing only: deciding which cells of the map are *capability-tied* —
+below what five pairs could resolve — so that the disagreement region can be
+outlined. A single pair resolves nothing at all, so this is a lower bound on
+what one pair would need and the caption says so."""
+
+
+def _grid_axes(report: dict) -> tuple[list[dict], list[float]]:
+    """The map's rows and columns, derived from the points the sweep recorded.
+
+    Rows are ``(F, d)`` points ordered by bottleneck ratio and, within a ratio,
+    by decreasing width — so the two cells that share a ratio are adjacent and
+    the "does the ratio alone decide it" question is answerable by looking at two
+    neighbouring rows rather than by hunting across the figure.
+    """
+    seen: dict[tuple[int, int], dict] = {}
+    for point in report["points"]:
+        key = (point["f_content"], point["d_model"])
+        seen.setdefault(
+            key,
+            {
+                "f_content": point["f_content"],
+                "f_total": point["f_total"],
+                "d_model": point["d_model"],
+                "ratio_content": point["ratio_content"],
+                "ratio_total": point["ratio_total"],
+            },
+        )
+    rows = sorted(seen.values(), key=lambda row: (row["ratio_content"], -row["d_model"]))
+    columns = sorted({point["activation_prob"] for point in report["points"]})
+    return rows, columns
+
+
+def _surface(report: dict, rows: list[dict], columns: list[float]) -> dict:
+    """Every panel's matrix, plus the per-cell marks, in one pass over the points.
+
+    ``numpy.nan`` means "no run recorded here", which the figure draws as a
+    distinct colour rather than as zero.
+    """
+    shape = (len(rows), len(columns))
+    index = {(row["f_content"], row["d_model"]): i for i, row in enumerate(rows)}
+    column_index = {value: j for j, value in enumerate(columns)}
+
+    def blank():
+        return np.full(shape, np.nan)
+
+    out = {
+        "control_recall": blank(),
+        "candidate_recall": blank(),
+        "control_purity": blank(),
+        "candidate_purity": blank(),
+        "recall_difference": blank(),
+        "purity_difference": blank(),
+    }
+    marks: dict[str, list[tuple[int, int]]] = {
+        "control_at_chance": [],
+        "control_at_ceiling": [],
+        "candidate_at_chance": [],
+        "candidate_at_ceiling": [],
+        "inert": [],
+        "either_saturated": [],
+        "candidate_ahead_recall": [],
+        "candidate_ahead_purity": [],
+        "disagreement": [],
+    }
+
+    for point in report["points"]:
+        i = index[(point["f_content"], point["d_model"])]
+        j = column_index[point["activation_prob"]]
+        control, candidate = point["control"], point["candidate"]
+        out["control_recall"][i, j] = _number(control["recall"])
+        out["candidate_recall"][i, j] = _number(candidate["recall"])
+        out["control_purity"][i, j] = _number(control["content_purity"])
+        out["candidate_purity"][i, j] = _number(candidate["content_purity"])
+        out["recall_difference"][i, j] = _number(point["difference"]["recall"])
+        out["purity_difference"][i, j] = _number(point["difference"]["content_purity"])
+
+        for side, arm in (("control", "control"), ("candidate", "candidate")):
+            state = point["saturation"][arm]
+            if state == "at_chance":
+                marks[f"{side}_at_chance"].append((i, j))
+            elif state == "at_ceiling":
+                marks[f"{side}_at_ceiling"].append((i, j))
+        if not point["both_mechanisms_active"]:
+            marks["inert"].append((i, j))
+        if set(point["saturation"].values()) - {"interior"}:
+            marks["either_saturated"].append((i, j))
+
+        recall_difference = point["difference"]["recall"]
+        purity_difference = point["difference"]["content_purity"]
+        if isinstance(recall_difference, (int, float)) and recall_difference < 0:
+            marks["candidate_ahead_recall"].append((i, j))
+        if isinstance(purity_difference, (int, float)) and purity_difference < 0:
+            marks["candidate_ahead_purity"].append((i, j))
+        if (
+            isinstance(recall_difference, (int, float))
+            and isinstance(purity_difference, (int, float))
+            and abs(recall_difference) < RECALL_FIVE_SEED_MDE
+            and abs(purity_difference) > PURITY_FIVE_SEED_MDE
+        ):
+            marks["disagreement"].append((i, j))
+
+    return {"matrices": out, "marks": marks}
+
+
+def _number(value):
+    return float(value) if isinstance(value, (int, float)) else np.nan
+
+
+def _finite_range(*arrays) -> tuple[float, float]:
+    values = np.concatenate([np.asarray(array).ravel() for array in arrays])
+    values = values[np.isfinite(values)]
+    if values.size == 0:
+        return 0.0, 1.0
+    low, high = float(values.min()), float(values.max())
+    return (low, high) if high > low else (low, low + 1.0)
+
+
+def figure2_params(report: dict) -> dict:
+    """Every input needed to regenerate figure 2, read off the recorded sweep."""
+    rows, columns = _grid_axes(report)
+    surface = _surface(report, rows, columns)
+    marks = surface["marks"]
+    matrices = surface["matrices"]
+    points = report["points"]
+
+    def cell_label(index: tuple[int, int]) -> str:
+        row, column = rows[index[0]], columns[index[1]]
+        return f"F{row['f_content']}/d{row['d_model']}@p{column:.2f}"
+
+    controls = {}
+    for name, entries in sorted(report["controls"].items()):
+        controls[name] = [
+            {
+                "cell": entry["cell"],
+                "d_model": entry["d_model"],
+                "seq_len": entry["seq_len"],
+                "control_recall": entry["control"]["recall"],
+                "candidate_recall": entry["candidate"]["recall"],
+                "control_skill": entry["control"]["recall_skill"],
+                "candidate_skill": entry["candidate"]["recall_skill"],
+                "control_purity": entry["control"]["content_purity"],
+                "candidate_purity": entry["candidate"]["content_purity"],
+                "both_mechanisms_active": entry["both_mechanisms_active"],
+            }
+            for entry in entries
+        ]
+
+    purity_low, purity_high = _finite_range(
+        matrices["control_purity"], matrices["candidate_purity"]
+    )
+    return {
+        "figure_version": FIGURE_VERSION,
+        "schema": report["schema"],
+        "ladder": report["ladder"],
+        "seed": sorted({point["seed"] for point in points}),
+        "n_points": len(points),
+        "n_runs": 2 * (len(points) + sum(len(v) for v in report["controls"].values())),
+        "main_seq_len": report["main_seq_len"],
+        "content_group_size": report["content_group_size"],
+        "rows": rows,
+        "sparsities": columns,
+        "window": report["window"],
+        "recall_five_seed_mde": RECALL_FIVE_SEED_MDE,
+        "purity_five_seed_mde": PURITY_FIVE_SEED_MDE,
+        "purity_scale": [round(purity_low, 4), round(purity_high, 4)],
+        "max_abs_recall_difference": round(
+            float(np.nanmax(np.abs(matrices["recall_difference"]))), 4
+        ),
+        "max_abs_purity_difference": round(
+            float(np.nanmax(np.abs(matrices["purity_difference"]))), 4
+        ),
+        "n_interior": sum(1 for point in points if point["both_alive"]),
+        "n_control_at_chance": len(marks["control_at_chance"]),
+        "n_control_at_ceiling": len(marks["control_at_ceiling"]),
+        "n_candidate_at_chance": len(marks["candidate_at_chance"]),
+        "n_candidate_at_ceiling": len(marks["candidate_at_ceiling"]),
+        "n_inert": len(marks["inert"]),
+        "n_candidate_ahead_recall": len(marks["candidate_ahead_recall"]),
+        "disagreement_cells": sorted(cell_label(index) for index in marks["disagreement"]),
+        "controls": controls,
+        "cuts": [entry["cut"] for entry in report["cuts"]],
+        "resolution": report["resolution"],
+        **style.style_provenance(),
+    }
+
+
+def figure2_caption(params: dict) -> str:
+    """The caption. One seed and screening depth are its first two sentences.
+
+    Not a stylistic choice: a figure outlives its caption's context far more
+    often than it outlives its caption, and a phase diagram read as a replicated
+    result is the specific misreading this mission was told to make impossible.
+    """
+    rows = params["rows"]
+    ratios = sorted({row["ratio_content"] for row in rows})
+    disagreement = params["disagreement_cells"]
+    controls = params["controls"]
+    null_pair = (controls.get("phase_negative_control_d32") or [{}])[0]
+    r1_pair = (controls.get("phase_r1") or [{}])[0]
+    ribbon = controls.get("phase_length_d32") or []
+    ribbon_text = "; ".join(
+        f"T={entry['seq_len']}: A0 {_caption_number(entry['control_recall'])}, "
+        f"A1 {_caption_number(entry['candidate_recall'])}"
+        for entry in sorted(ribbon, key=lambda entry: entry["seq_len"] or 0)
+    )
+    disagreement_text = (
+        "none of the cells met both conditions"
+        if not disagreement
+        else ", ".join(f"`{name}`" for name in disagreement)
+    )
+    return (
+        "**Figure 2. Capability and geometry over the same axes — SCREENING "
+        "EVIDENCE, ONE SEED PER CELL.** Every cell of this map is a single "
+        f"training run per architecture at seed {params['seed'][0]} and §7.3's "
+        f"{params['ladder']} screening budget; nothing in it is replicated and "
+        "nothing in it is claimed at claim-ladder rung 2 or 3. Prompt 09 "
+        "measured that *five* paired seeds at this scale cannot resolve an exact "
+        f"recall difference below {params['recall_five_seed_mde']} or a mean "
+        f"purity difference below {params['purity_five_seed_mde']}, and a single "
+        "pair has no interval at all, so the panels are a map of where to look "
+        "and not a measurement of how much. "
+        "Top row: exact answer-set recall on held-out programs. Bottom row: mean "
+        "feature purity of the content bank at each run's primary site "
+        "(`final_norm`). Columns: A0 (causal softmax attention), A1 (kernelized "
+        "linear attention, phi = elu + 1, no erasure), and the paired difference "
+        "A0 − A1 with magnitude as darkness — cells where A1 leads carry a minus "
+        "sign. "
+        f"Rows are the {len(rows)} (F, d) points of §4.5's grid ordered by "
+        f"bottleneck ratio F/d ({', '.join(f'{ratio:g}' for ratio in ratios)}); "
+        "three of those ratios are realised by two different (F, d) pairs, drawn "
+        "as adjacent rows, so a reader can see directly whether the ratio alone "
+        "decides the result. The heavy rule marks F/d = 1, where superposition "
+        "of the content bank becomes forced; F here is the content bank and a "
+        "further 28 addressing features (24 key, 4 operator) sit in every cell, "
+        "so the whole-bank ratio is (F+28)/d and crosses 1 within the same band. "
+        f"Columns are the per-group activation probability at a fixed group of "
+        f"{params['content_group_size']} content features, so a position carries "
+        f"{params['content_group_size']}·p active content features in expectation "
+        "at every F and the sparsity axis means the same thing on every row. "
+        f"Sequence length is {params['main_seq_len']} throughout the map"
+        + (f"; the ribbon at F=64/d=32/p=0.12 reads {ribbon_text}. " if ribbon_text else ". ")
+        + "Open circles mark cells at or below the pre-registered chance floor "
+        f"({params['window']['floor']}), filled triangles cells at or above the "
+        f"ceiling ({params['window']['ceiling']}); saturated cells cannot carry a "
+        "difference in either direction and the difference panels shade them. "
+        f"{params['n_interior']} of {params['n_points']} cells have both "
+        "architectures strictly inside that window. Heavy outlines mark the "
+        "cells where the two surfaces disagree — the paired recall difference "
+        "below what five seeds could resolve while the paired purity difference "
+        f"is above it: {disagreement_text}. "
+        + (
+            "Every mechanism was active at every cell by §6.3's three gates. "
+            if params["n_inert"] == 0
+            else f"{params['n_inert']} cell(s) had an inactive mechanism and are marked; "
+            "no difference at those cells separates two mechanisms. "
+        )
+        + "Controls: the known-easy positive control returns A0 "
+        f"{_caption_number(r1_pair.get('control_recall'))} against A1 "
+        f"{_caption_number(r1_pair.get('candidate_recall'))}, a comparison whose "
+        "answer is known in advance to be null; §4.4's information-destroyed "
+        "condition at the map's middle point returns A0 "
+        f"{_caption_number(null_pair.get('control_recall'))} and A1 "
+        f"{_caption_number(null_pair.get('candidate_recall'))}. "
+        f"{params['n_runs']} runs in total, every §7.2 variable shared between "
+        "the arms of every pair, `permitted_differences` empty. Regenerate with "
+        "`python -m architecture_mechanics.reporting.figures --figure 2`; "
+        f"figure {params['figure_version']}, style "
+        f"{params['figure_style_version']}, matplotlib "
+        f"{params['matplotlib_version']}, grid and cuts in "
+        "`architecture_mechanics.experiments.phase_grid`, pre-registration "
+        "`claims/phase-map-a0-a1-sparsity-bottleneck.yml`."
+    )
+
+
+def _caption_number(value) -> str:
+    return f"{value:.4f}" if isinstance(value, (int, float)) else "not recorded"
+
+
+def draw_figure2(report: dict) -> Figure:
+    """Draw the phase diagram: two surfaces, three columns, one pair of axes.
+
+    Laid out in inches for the same reason figure 1 is — a figure claiming to be
+    page width must be page width, and the bytes must not move when matplotlib's
+    layout heuristics change.
+    """
+    style.apply_style()
+    rows, columns = _grid_axes(report)
+    surface = _surface(report, rows, columns)
+    matrices, marks = surface["matrices"], surface["marks"]
+    params = figure2_params(report)
+
+    width = style.PAGE_WIDTH_IN
+    height = 5.0
+    fig = Figure(figsize=(width, height), dpi=style.SAVE_DPI)
+    fig.patch.set_facecolor(style.PAPER)
+
+    def rect(x0: float, y0: float, w: float, h: float):
+        return fig.add_axes([x0 / width, y0 / height, w / width, h / height])
+
+    left, panel_w, gap = 0.95, 1.72, 0.20
+    xs = [left + index * (panel_w + gap) for index in range(3)]
+    row_y = [3.18, 1.44]
+    panel_h = 1.34
+    cmap = style.sequential_colormap()
+
+    purity_low, purity_high = params["purity_scale"]
+    recall_difference_max = max(params["max_abs_recall_difference"], 1e-6)
+    purity_difference_max = max(params["max_abs_purity_difference"], 1e-6)
+
+    # The heavy rule sits above the first row whose bottleneck ratio reaches 1:
+    # every row below it superposes more content features than the residual
+    # stream has dimensions.
+    transition = next(
+        (index for index, row in enumerate(rows) if row["ratio_content"] >= 1.0), None
+    )
+
+    panels = (
+        ("A0  softmax attention", matrices["control_recall"], 0.0, 1.0, "control"),
+        ("A1  linear attention", matrices["candidate_recall"], 0.0, 1.0, "candidate"),
+        ("A0 $-$ A1", np.abs(matrices["recall_difference"]), 0.0, recall_difference_max, "diff"),
+        (None, matrices["control_purity"], purity_low, purity_high, "control"),
+        (None, matrices["candidate_purity"], purity_low, purity_high, "candidate"),
+        (
+            None,
+            np.abs(matrices["purity_difference"]),
+            0.0,
+            purity_difference_max,
+            "diff",
+        ),
+    )
+
+    for index, (header, matrix, vmin, vmax, kind) in enumerate(panels):
+        band, column = divmod(index, 3)
+        axes = rect(xs[column], row_y[band], panel_w, panel_h)
+        _draw_panel(
+            axes,
+            matrix,
+            vmin=vmin,
+            vmax=vmax,
+            cmap=cmap,
+            rows=rows,
+            columns=columns,
+            show_row_labels=column == 0,
+            transition=transition,
+        )
+        if header:
+            axes.set_title(header, fontsize=style.FONT_SIZE_SMALL, pad=3.0)
+        if column == 0:
+            axes.set_ylabel(
+                "exact recall" if band == 0 else "content-feature purity",
+                fontsize=style.FONT_SIZE_SMALL,
+                labelpad=20.0,
+            )
+        _mark_panel(
+            axes,
+            matrix,
+            vmin=vmin,
+            vmax=vmax,
+            marks=marks,
+            kind=kind,
+            band=band,
+        )
+
+    fig.text(
+        (xs[1] + panel_w / 2.0) / width,
+        (row_y[1] - 0.30) / height,
+        "per-group activation probability  (denser $\\rightarrow$)",
+        ha="center",
+        va="center",
+        fontsize=style.FONT_SIZE_SMALL,
+    )
+    fig.text(
+        (xs[0] - 0.72) / width,
+        (row_y[0] + panel_h + 0.30) / height,
+        "bottleneck ratio $F/d$   (tighter $\\downarrow$)",
+        ha="left",
+        va="center",
+        fontsize=style.FONT_SIZE_SMALL,
+    )
+
+    _draw_colourbars(
+        fig,
+        width=width,
+        height=height,
+        cmap=cmap,
+        scales=(
+            ("exact recall", 0.0, 1.0),
+            ("|A0 $-$ A1| recall", 0.0, recall_difference_max),
+            ("content purity", purity_low, purity_high),
+            ("|A0 $-$ A1| purity", 0.0, purity_difference_max),
+        ),
+    )
+    _draw_figure2_legend(fig, width=width, height=height, params=params)
+    return fig
+
+
+def _draw_panel(
+    axes,
+    matrix,
+    *,
+    vmin: float,
+    vmax: float,
+    cmap,
+    rows: list[dict],
+    columns: list[float],
+    show_row_labels: bool,
+    transition: int | None,
+) -> None:
+    n_rows, n_columns = matrix.shape
+    axes.set_facecolor(style.MISSING)
+    axes.imshow(
+        matrix,
+        cmap=cmap,
+        vmin=vmin,
+        vmax=vmax,
+        aspect="auto",
+        origin="upper",
+        interpolation="nearest",
+        extent=(-0.5, n_columns - 0.5, n_rows - 0.5, -0.5),
+    )
+    axes.set_xlim(-0.5, n_columns - 0.5)
+    axes.set_ylim(n_rows - 0.5, -0.5)
+    axes.set_xticks(range(n_columns))
+    axes.set_xticklabels([f"{value:g}" for value in columns], fontsize=tiny_size())
+    axes.set_yticks(range(n_rows))
+    axes.set_yticklabels(
+        [f"{row['ratio_content']:g}  {row['f_content']}/{row['d_model']}" for row in rows]
+        if show_row_labels
+        else [""] * n_rows,
+        fontsize=tiny_size(),
+    )
+    axes.tick_params(length=1.5, pad=1.5)
+    for spine in axes.spines.values():
+        spine.set_visible(True)
+        spine.set_linewidth(0.5)
+        spine.set_color(style.INK_STRONG)
+    # Cell borders, so a saturated mark reads as belonging to one cell.
+    for row in range(1, n_rows):
+        axes.axhline(row - 0.5, color=style.PAPER, linewidth=0.4)
+    for column in range(1, n_columns):
+        axes.axvline(column - 0.5, color=style.PAPER, linewidth=0.4)
+    if transition:
+        axes.axhline(
+            transition - 0.5, color=style.INK, linewidth=1.1, solid_capstyle="butt"
+        )
+
+
+def tiny_size() -> float:
+    return style.FONT_SIZE_TINY
+
+
+def _mark_panel(axes, matrix, *, vmin, vmax, marks, kind, band) -> None:
+    """Saturation, inert mechanisms, sign and the disagreement region.
+
+    Marks rather than colours, because this programme's figures carry no hue and
+    a second greyscale ramp on top of the first would be unreadable. Each mark's
+    ink is chosen against the cell it sits on, so the darkest and lightest cells
+    — which are exactly the saturated ones — stay legible.
+
+    ``kind`` is ``control``, ``candidate`` or ``diff``: an arm panel marks its
+    own arm's saturation, and a difference panel marks the cells where *either*
+    arm is saturated, because a difference between two saturated numbers is not
+    a difference between two architectures.
+    """
+    span = (vmax - vmin) or 1.0
+
+    def ink_at(index: tuple[int, int]) -> str:
+        value = matrix[index[0], index[1]]
+        if not np.isfinite(value):
+            return style.INK
+        return style.contrast_ink((float(value) - vmin) / span)
+
+    if kind in ("control", "candidate"):
+        side = kind
+        for index in marks[f"{side}_at_chance"]:
+            axes.plot(
+                index[1], index[0], marker="o", markersize=1.9, markerfacecolor="none",
+                markeredgecolor=ink_at(index), markeredgewidth=0.45, linestyle="none",
+            )
+        for index in marks[f"{side}_at_ceiling"]:
+            axes.plot(
+                index[1], index[0], marker="^", markersize=2.1,
+                markerfacecolor=ink_at(index), markeredgecolor=ink_at(index),
+                markeredgewidth=0.0, linestyle="none",
+            )
+        for index in marks["inert"]:
+            axes.plot(
+                index[1], index[0], marker="x", markersize=2.4,
+                markeredgecolor=ink_at(index), markeredgewidth=0.6, linestyle="none",
+            )
+        return
+
+    for index in marks["either_saturated"]:
+        axes.add_patch(
+            Rectangle(
+                (index[1] - 0.5, index[0] - 0.5),
+                1.0,
+                1.0,
+                fill=False,
+                hatch="////",
+                edgecolor=ink_at(index),
+                linewidth=0.0,
+            )
+        )
+    ahead = marks["candidate_ahead_recall"] if band == 0 else marks["candidate_ahead_purity"]
+    for index in ahead:
+        axes.text(
+            index[1], index[0], "$-$", ha="center", va="center",
+            fontsize=style.FONT_SIZE_TINY, color=ink_at(index),
+        )
+    for index in marks["disagreement"]:
+        axes.add_patch(
+            Rectangle(
+                (index[1] - 0.5, index[0] - 0.5),
+                1.0,
+                1.0,
+                fill=False,
+                edgecolor=ink_at(index),
+                linewidth=1.0,
+                zorder=6,
+            )
+        )
+
+
+def _draw_colourbars(fig, *, width, height, cmap, scales) -> None:
+    bar_w, bar_h, bar_y = 1.20, 0.075, 0.86
+    xs = [0.52 + index * 1.62 for index in range(len(scales))]
+    ramp = np.linspace(0.0, 1.0, 256).reshape(1, -1)
+    for x0, (label, low, high) in zip(xs, scales, strict=True):
+        axes = fig.add_axes([x0 / width, bar_y / height, bar_w / width, bar_h / height])
+        axes.imshow(ramp, cmap=cmap, vmin=0.0, vmax=1.0, aspect="auto", interpolation="nearest")
+        axes.set_yticks([])
+        axes.set_xticks([0, 255])
+        axes.set_xticklabels([f"{low:g}", f"{high:.3g}"], fontsize=style.FONT_SIZE_TINY)
+        axes.tick_params(length=1.2, pad=1.0)
+        for spine in axes.spines.values():
+            spine.set_visible(True)
+            spine.set_linewidth(0.4)
+            spine.set_color(style.INK_STRONG)
+        axes.set_title(label, fontsize=style.FONT_SIZE_TINY, pad=1.8)
+
+
+def _draw_figure2_legend(fig, *, width, height, params) -> None:
+    """The marks, then the two lines that stop this being read as a result."""
+    axes = fig.add_axes([0.30 / width, 0.40 / height, (width - 0.60) / width, 0.30 / height])
+    axes.set_xlim(0.0, 1.0)
+    axes.set_ylim(0.0, 1.0)
+    axes.set_xticks([])
+    axes.set_yticks([])
+    axes.patch.set_alpha(0.0)
+    for spine in axes.spines.values():
+        spine.set_visible(False)
+
+    entries = (
+        ("o", f"at chance ($\\leq$ {params['window']['floor']:.2f})", False),
+        ("^", f"at ceiling ($\\geq$ {params['window']['ceiling']:.2f})", True),
+        ("x", "mechanism inert", False),
+    )
+    x = 0.0
+    for marker, label, filled in entries:
+        axes.plot(
+            [x], [0.72], marker=marker, markersize=2.2,
+            markerfacecolor=style.INK if filled else "none",
+            markeredgecolor=style.INK, markeredgewidth=0.5, linestyle="none",
+            clip_on=False,
+        )
+        axes.text(x + 0.016, 0.72, label, ha="left", va="center", fontsize=style.FONT_SIZE_TINY)
+        x += 0.20
+    axes.add_patch(
+        Rectangle((x, 0.60), 0.013, 0.24, fill=False, edgecolor=style.INK, linewidth=1.0,
+                  clip_on=False)
+    )
+    axes.text(
+        x + 0.020,
+        0.72,
+        "capability tied, geometry not",
+        ha="left",
+        va="center",
+        fontsize=style.FONT_SIZE_TINY,
+    )
+    x += 0.29
+    axes.add_patch(
+        Rectangle((x, 0.60), 0.013, 0.24, fill=False, hatch="////", edgecolor=style.INK_STRONG,
+                  linewidth=0.0, clip_on=False)
+    )
+    axes.text(
+        x + 0.020,
+        0.72,
+        "an arm is saturated",
+        ha="left",
+        va="center",
+        fontsize=style.FONT_SIZE_TINY,
+    )
+
+    axes.text(
+        0.0,
+        0.16,
+        "ONE SEED PER CELL, R2 screening budget — a map of where to look, not a "
+        "measurement of how much. Five paired seeds could not resolve a recall "
+        f"difference below {params['recall_five_seed_mde']:.3f} or a purity "
+        f"difference below {params['purity_five_seed_mde']:.3f}.",
+        ha="left",
+        va="center",
+        fontsize=style.FONT_SIZE_TINY,
+        color=style.INK,
+    )
+
+    controls = params["controls"]
+    ribbon = controls.get("phase_length_d32") or []
+    null_pair = (controls.get("phase_negative_control_d32") or [{}])[0]
+    r1_pair = (controls.get("phase_r1") or [{}])[0]
+    lines = (
+        (
+            "R1 positive control (known-easy, answer known to be null): "
+            f"A0 {_caption_number(r1_pair.get('control_recall'))}  "
+            f"A1 {_caption_number(r1_pair.get('candidate_recall'))}   |   "
+            "information-destroyed control at F64/d32/p0.12: "
+            f"A0 {_caption_number(null_pair.get('control_recall'))}  "
+            f"A1 {_caption_number(null_pair.get('candidate_recall'))}"
+        ),
+        "sequence-length ribbon at F64/d32/p0.12: "
+        + "  ".join(
+            f"T={entry['seq_len']} A0 {_caption_number(entry['control_recall'])} "
+            f"A1 {_caption_number(entry['candidate_recall'])}"
+            for entry in sorted(ribbon, key=lambda entry: entry["seq_len"] or 0)
+        )
+        + f"   |   map drawn at T={params['main_seq_len']}",
+    )
+    for offset, text in zip((0.22, 0.10), lines, strict=True):
+        fig.text(
+            0.30 / width,
+            offset / height,
+            text,
+            ha="left",
+            va="bottom",
+            fontsize=4.2,
+            family="monospace",
+            color=style.INK_MID,
+        )
+
+
+# --------------------------------------------------------------------------- #
 # Build, save, record
 # --------------------------------------------------------------------------- #
+
+
+def build_figure2(out_dir: Path) -> FigureResult:
+    """Read the recorded sweep, draw it, save it, and write its caption."""
+    report = phase_report()
+    if not report["points"]:
+        raise ValueError(
+            "no recorded phase-sweep runs to draw: reports/comparisons holds no resolved "
+            "declaration for any phase_T* comparison. Run `make phase-sweep` first; this "
+            "figure reads recorded artifacts and never re-runs anything."
+        )
+    params = figure2_params(report)
+    fig = draw_figure2(report)
+    stem = FIGURE_STEMS[2]
+    path = Path(out_dir) / f"{stem}.png"
+    digest = style.save_png(fig, path)
+    caption = figure2_caption(params)
+    Path(out_dir).joinpath(f"{stem}.caption.md").write_text(caption + "\n")
+    return FigureResult(number=2, path=path, sha256=digest, caption=caption, params=params)
 
 
 def build_figure1(out_dir: Path) -> FigureResult:
@@ -705,12 +1394,12 @@ def build_figure1(out_dir: Path) -> FigureResult:
     return FigureResult(number=1, path=path, sha256=digest, caption=caption, params=params)
 
 
-BUILDERS = {1: build_figure1}
+BUILDERS = {1: build_figure1, 2: build_figure2}
 
 
 def build_figure(number: int, out_dir: Path) -> FigureResult:
     if number not in BUILDERS:
-        planned = {2: "prompt 14", 3: "prompt 22", 4: "prompt 23"}
+        planned = {3: "prompt 22", 4: "prompt 23"}
         if number in planned:
             raise NotImplementedError(
                 f"figure {number} (north star 10.2) is owned by {planned[number]}; "

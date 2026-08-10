@@ -233,6 +233,40 @@ def magnitude_colormap() -> LinearSegmentedColormap:
     )
 
 
+MISSING = "#eeeeee"
+"""A cell nobody ran. Lighter than :data:`INK_FAINT` so that "not measured" and
+"measured as zero" are different marks on a heatmap; a phase diagram that drew
+them the same would invent data at exactly the corners where a reader most wants
+to know whether anything is there."""
+
+
+def sequential_colormap(*, floor: float = 0.0) -> LinearSegmentedColormap:
+    """A plain paper-to-ink ramp for heatmaps, with no discontinuity.
+
+    Distinct from :func:`magnitude_colormap`, which jumps at the first nonzero
+    value because figure 1 needs "inactive" and "active but small" to look
+    different. A phase diagram needs the opposite: a continuous scale on which a
+    reader can compare two cells, and on which a cell at the bottom of the range
+    is genuinely the lightest cell rather than a special case. ``floor`` gives
+    the ramp's lightest end a little ink when a panel's minimum is a real
+    measurement rather than an absence.
+    """
+    start = 1.0 - floor
+    return LinearSegmentedColormap.from_list(
+        "am_sequential", [(0.0, (start, start, start)), (1.0, (0.0, 0.0, 0.0))], N=1024
+    )
+
+
+def contrast_ink(normalized: float) -> str:
+    """Ink that stays legible on top of :func:`sequential_colormap` at this level.
+
+    A marker drawn in black on a cell that is nearly black is a marker nobody
+    can see, and the cells a phase diagram most needs to mark — the saturated
+    ones — are exactly the darkest and the lightest.
+    """
+    return PAPER if normalized > 0.55 else INK
+
+
 def sha256_file(path: str | Path) -> str:
     """Hex digest of a file's bytes. The unit a figure's reproducibility is in."""
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()

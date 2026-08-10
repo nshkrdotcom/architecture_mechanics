@@ -491,13 +491,36 @@ def _parameters(model_config: ModelConfig) -> int:
     return parameters_for(model_config)
 
 
-def _cell_by_name(name: str) -> Cell:
+def _known_cells() -> dict[str, Cell]:
+    """Every cell any declared comparison may name, and where each comes from.
+
+    Two registries, merged here rather than in either of them: the R3 task matrix
+    in ``experiments/t1_ladder.py`` (plus §4.4's two controls as cells), and
+    prompt 14's phase grid in ``experiments/phase_grid.py``. A collision is
+    refused rather than resolved — two cells with one name would make a
+    comparison's ``cell`` field ambiguous, and that field is what a resolved
+    declaration and every downstream table are keyed on.
+    """
+    from architecture_mechanics.experiments.phase_grid import phase_cells
+
     known = {cell.name: cell for cell in cells()}
     known[NEGATIVE_CONTROL_CELL.name] = NEGATIVE_CONTROL_CELL
     known[POSITIVE_CONTROL_CELL.name] = POSITIVE_CONTROL_CELL
+    for cell in phase_cells():
+        if cell.name in known:
+            raise ComparisonError(
+                f"cell {cell.name!r} is declared by two registries; a comparison's cell "
+                "name has to identify one dataset"
+            )
+        known[cell.name] = cell
+    return known
+
+
+def _cell_by_name(name: str) -> Cell:
+    known = _known_cells()
     if name not in known:
         raise ComparisonError(
-            f"unknown cell {name!r}; the R3 matrix declares {sorted(known)}"
+            f"unknown cell {name!r}; the declared cells are {sorted(known)}"
         )
     return known[name]
 
@@ -1717,7 +1740,35 @@ DECLARED_COMPARISONS: dict[str, dict] = {
 Written here rather than typed into JSON so the committed plans are regenerable
 and a test can assert that the files on disk are what this source tree produces.
 A comparison whose declaration cannot be regenerated is a file nobody can check.
+
+Prompt 14's phase-diagram sweep is merged in below rather than written out here:
+it is one entry per model width and they are generated from the grid in
+``experiments/phase_grid.py``, so that the grid and the comparisons that cover it
+cannot disagree. The merge is the last statement in this module's data section on
+purpose — there is still exactly one registry, and ``make comparisons``
+regenerates all of it.
 """
+
+def _phase_comparisons() -> dict[str, dict]:
+    """Prompt 14's sweep, one declared comparison per model width.
+
+    Deferred like :func:`_known_cells`'s import and for the same reason: the grid
+    module is data about cells, this module is what a comparison is, and keeping
+    the dependency one-way and lazy means neither can be made to depend on the
+    other's import order.
+    """
+    from architecture_mechanics.experiments.phase_grid import PHASE_COMPARISONS
+
+    return dict(PHASE_COMPARISONS)
+
+
+_PHASE_COMPARISONS = _phase_comparisons()
+_collisions = sorted(set(_PHASE_COMPARISONS) & set(DECLARED_COMPARISONS))
+if _collisions:  # pragma: no cover - a source-tree error, not a runtime one
+    raise ComparisonError(
+        f"the phase grid redeclares comparisons that already exist: {_collisions}"
+    )
+DECLARED_COMPARISONS |= _PHASE_COMPARISONS
 
 
 def declare(name: str, *, lab: Path | None = None, write: bool = True) -> list[ComparisonPlan]:

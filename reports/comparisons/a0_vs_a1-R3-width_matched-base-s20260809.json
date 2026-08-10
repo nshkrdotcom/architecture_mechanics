@@ -1,0 +1,88 @@
+{
+  "schema": "am.comparison_declaration.v1",
+  "name": "a0_vs_a1-R3-width_matched-base-s20260809",
+  "comparison": "a0_vs_a1",
+  "claim": "a1-vs-a0-t1-capability-gap",
+  "primary_metric": "associative_recall_accuracy",
+  "primary_metric_source": "claims/a1-vs-a0-t1-capability-gap.yml#primary_metric_key",
+  "control_run": "R3-softmax-capacity_stressed-s20260809-ed1b42f5a07c",
+  "candidate_runs": [
+    "R3-linear-capacity_stressed-s20260809-7bfc18a7fc8e"
+  ],
+  "matching_strategy": "width_matched",
+  "permitted_differences": {},
+  "ladder": "R3",
+  "task": "T1",
+  "cell": "base",
+  "seed": 20260809,
+  "seed_set": [
+    20260809
+  ],
+  "control_arch": "softmax",
+  "candidate_arch": "linear",
+  "plan": "reports/comparisons/planned/a0_vs_a1-R3-width_matched.json",
+  "parameter_accounting": {
+    "strategy": "width_matched",
+    "control": {
+      "arch": "softmax",
+      "d_model": 64,
+      "n_layers": 2,
+      "parameters": 127288
+    },
+    "candidate": {
+      "arch": "linear",
+      "d_model": 64,
+      "n_layers": 2,
+      "parameters": 127288
+    },
+    "parameter_difference": 0,
+    "relative_difference": 0.0
+  },
+  "config_differences": {},
+  "compute_ledger": {
+    "control": {
+      "run_id": "R3-softmax-capacity_stressed-s20260809-ed1b42f5a07c",
+      "declared_steps": 3000,
+      "measured_steps": 3000,
+      "stopped_early": false,
+      "batch_size": 128,
+      "examples_processed": 384000,
+      "train_examples": null,
+      "evaluations": 6,
+      "wall_clock_seconds": 81.443,
+      "train_seconds": 31.043,
+      "peak_allocated_mib": 1344.92,
+      "cost_source": "cost.json"
+    },
+    "candidate": {
+      "run_id": "R3-linear-capacity_stressed-s20260809-7bfc18a7fc8e",
+      "declared_steps": 3000,
+      "measured_steps": 3000,
+      "stopped_early": false,
+      "batch_size": 128,
+      "examples_processed": 384000,
+      "train_examples": null,
+      "evaluations": 6,
+      "wall_clock_seconds": 98.118,
+      "train_seconds": 49.673,
+      "peak_allocated_mib": 2904.92,
+      "cost_source": "cost.json"
+    },
+    "parity": {
+      "measured_steps_equal": true,
+      "examples_processed_equal": true,
+      "candidate_did_more_work": false,
+      "wall_clock_ratio_candidate_over_control": 1.6001,
+      "wall_clock_is_declared_as_the_claim": false,
+      "verdict": "matched"
+    }
+  },
+  "checks": {
+    "runs_match_the_declared_configs": true,
+    "config_diff_within_permitted_differences": true,
+    "split_hashes_identical": true,
+    "seed_is_shared_by_both_arms": true,
+    "measured_work_matched": true
+  },
+  "resolved_utc": "2026-08-10T21:29:39+00:00"
+}

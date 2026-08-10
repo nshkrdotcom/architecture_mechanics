@@ -45,13 +45,17 @@ __all__ = [
     "A0_SEED_SD",
     "MAX_PILOT_DIFFICULTY_CELLS",
     "MECHANISM_STATE_MEASURES",
+    "PHASE_GEOMETRY_METRIC",
+    "PHASE_TABLE_SCHEMA",
     "PILOT_CEILING",
     "PILOT_FLOOR",
+    "PURITY_FIVE_SEED_MDE",
     "TABLE_SCHEMA",
     "UNCONDITIONAL_PILOT_CELLS",
     "arm_record",
     "comparison_report",
     "main",
+    "phase_report",
     "resolved_declarations",
     "surviving_cells",
 ]
@@ -173,6 +177,13 @@ def arm_record(summary: dict) -> dict:
             "primary_site": geometry.get("primary_site"),
             **{name: primary.get(name) for name in GEOMETRY_METRICS},
             "interference_fraction": primary.get("interference_fraction"),
+            # The same measures split by feature bank, quoted from the run's own
+            # summary. Content, key and operator features are three different
+            # kinds of thing, and a mean over all three changes meaning when the
+            # banks change size relative to one another — which is exactly what
+            # prompt 14's phase grid does as it moves F. Carried here so a report
+            # that needs the comparable version does not have to reopen the run.
+            "by_bank": geometry.get("by_bank") or {},
             "matched_sites": [
                 {
                     "candidate_site": (entry.get("sites") or {}).get("candidate_site"),
@@ -412,6 +423,204 @@ def surviving_cells(report: dict) -> dict:
     }
 
 
+PHASE_TABLE_SCHEMA = "am.phase_map.v1"
+
+PHASE_GEOMETRY_METRIC = "mean_purity"
+"""The §6.2 measure the phase map's geometry panel is drawn from, taken over the
+*content* bank. Declared in
+``claims/phase-map-a0-a1-sparsity-bottleneck.yml#PRIMARY_METRIC`` with the reason
+and with what is not known about its seed noise."""
+
+PURITY_FIVE_SEED_MDE = 0.049
+"""Prompt 09's five-seed minimum detectable effect for whole-bank ``mean_purity``
+at the R3/R4 operating point, from ``reports/a0_t1_seed_variance.json``.
+
+Used as the yardstick beside the content-bank restriction because it is the
+nearest thing that was measured, and labelled as such everywhere it appears: the
+content-bank purity has no separately measured seed spread at any operating
+point, and quoting this number for it is an approximation and not a measurement.
+"""
+
+
+def _phase_arm(arm: dict) -> dict:
+    """One arm of one map point: what the figure draws and what qualifies it."""
+    geometry = arm["geometry"]
+    content = (geometry.get("by_bank") or {}).get("content") or {}
+    kill = arm.get("kill") or {}
+    return {
+        "run_id": arm["run_id"],
+        "arch": arm["arch"],
+        "d_model": arm["d_model"],
+        "parameters": arm["parameters"],
+        "recall": arm["capability"]["associative_recall_accuracy"],
+        "feature_f1": arm["capability"]["feature_f1"],
+        "reconstruction_loss": arm["capability"]["reconstruction_loss"],
+        "content_purity": content.get(PHASE_GEOMETRY_METRIC),
+        "content_probe_r2": content.get("probe_macro_r2"),
+        "content_features": content.get("n_features"),
+        "all_bank_purity": geometry.get("mean_purity"),
+        "interference_fraction": geometry.get("interference_fraction"),
+        "probe_macro_r2": geometry.get("probe_macro_r2"),
+        "effective_rank": geometry.get("effective_rank"),
+        "participation_ratio": geometry.get("participation_ratio"),
+        "mechanism_active": arm["mechanism"]["active"],
+        "mechanism_reasons": arm["mechanism"]["reasons"],
+        "kill_fired": kill.get("fired") or [],
+        "recall_skill": (arm.get("references") or {}).get(
+            "associative_recall_accuracy"
+        ),
+        "final_step_gain": arm["training"]["final_step_gain"],
+        "still_rising": arm["training"]["still_rising"],
+    }
+
+
+def _saturation(recall, *, floor: float = PILOT_FLOOR, ceiling: float = PILOT_CEILING) -> str:
+    """Where this arm sits against the pre-registered window.
+
+    Three states and not two. A cell at the floor and a cell at the ceiling are
+    both unable to carry a difference, and they are unable to carry it for
+    opposite reasons; a figure that marked only "saturated" would lose which. The
+    thresholds are prompt 09's, reused unchanged, and they are the same numbers
+    ``surviving_cells`` applies.
+    """
+    if not isinstance(recall, (int, float)):
+        return "unmeasured"
+    if recall <= floor:
+        return "at_chance"
+    if recall >= ceiling:
+        return "at_ceiling"
+    return "interior"
+
+
+def phase_report(*, lab: Path | None = None) -> dict:
+    """§10.2's figure 2 as a record: every point of the sweep, from runs only.
+
+    One row per (cell, width) point of the grid declared in
+    ``experiments/phase_grid.py``, assembled from the resolved declarations of
+    the comparisons that cover it. Like every other function in this module it
+    decides nothing: it reports each arm's number, the paired difference, the
+    seed-noise yardstick that says whether a difference of that size is
+    resolvable at all — it is not, at one pair — and where each arm sits against
+    the pre-registered floor and ceiling. The figure marks; the reader does not
+    interpret.
+    """
+    from architecture_mechanics.experiments.phase_grid import (
+        PHASE_COMPARISONS,
+        PHASE_CUTS,
+        PHASE_GROUP_SIZE,
+        PHASE_LADDER,
+        PHASE_MAIN_SEQ_LEN,
+        PHASE_SPARSITIES,
+        PHASE_WIDTH_FEATURE_POINTS,
+        cell_axes,
+        phase_cost_model,
+    )
+
+    lab = Path(lab or lab_root())
+    points: list[dict] = []
+    controls: dict[str, list[dict]] = {}
+
+    for name, spec in PHASE_COMPARISONS.items():
+        ladder = next(iter(spec["rungs"]))
+        for record in resolved_declarations(name, ladder, strategy="width_matched", lab=lab):
+            control = arm_record(_summary(record["control_run"], lab))
+            candidate = arm_record(_summary(record["candidate_runs"][0], lab))
+            cell = record.get("cell")
+            axes = cell_axes(cell) if cell not in {"positive-control"} else {}
+            width = spec["d_model"] or control["d_model"]
+            left, right = _phase_arm(control), _phase_arm(candidate)
+            point = {
+                "comparison": name,
+                "ladder": ladder,
+                "cell": cell,
+                "seed": record.get("seed"),
+                "condition": axes.get("condition", "positive_control"),
+                "d_model": width,
+                "f_content": axes.get("f_content"),
+                "f_total": axes.get("f_total"),
+                "seq_len": axes.get("seq_len"),
+                "activation_prob": axes.get("activation_prob"),
+                "expected_active_content_features": axes.get(
+                    "expected_active_content_features"
+                ),
+                "ratio_content": (
+                    round(axes["f_content"] / width, 6) if axes.get("f_content") else None
+                ),
+                "ratio_total": (
+                    round(axes["f_total"] / width, 6) if axes.get("f_total") else None
+                ),
+                "control": left,
+                "candidate": right,
+                "difference": {
+                    "recall": _sub(left["recall"], right["recall"]),
+                    "content_purity": _sub(left["content_purity"], right["content_purity"]),
+                    "all_bank_purity": _sub(left["all_bank_purity"], right["all_bank_purity"]),
+                    "interference_fraction": _sub(
+                        left["interference_fraction"], right["interference_fraction"]
+                    ),
+                    "probe_macro_r2": _sub(left["probe_macro_r2"], right["probe_macro_r2"]),
+                },
+                "saturation": {
+                    "control": _saturation(left["recall"]),
+                    "candidate": _saturation(right["recall"]),
+                },
+                "both_alive": _both_alive(control, candidate),
+                "both_mechanisms_active": bool(
+                    left["mechanism_active"] and right["mechanism_active"]
+                ),
+                "compute_ledger": record.get("compute_ledger"),
+                "checks": record.get("checks"),
+                "permitted_differences": record.get("permitted_differences"),
+            }
+            if name.startswith("phase_T"):
+                points.append(point)
+            else:
+                controls.setdefault(name, []).append(point)
+
+    points.sort(
+        key=lambda row: (
+            row["ratio_content"] if row["ratio_content"] is not None else -1.0,
+            -(row["d_model"] or 0),
+            row["activation_prob"] or 0.0,
+        )
+    )
+    return {
+        "schema": PHASE_TABLE_SCHEMA,
+        "ladder": PHASE_LADDER,
+        "main_seq_len": PHASE_MAIN_SEQ_LEN,
+        "sparsities": list(PHASE_SPARSITIES),
+        "width_feature_points": [list(pair) for pair in PHASE_WIDTH_FEATURE_POINTS],
+        "content_group_size": PHASE_GROUP_SIZE,
+        "window": {"floor": PILOT_FLOOR, "ceiling": PILOT_CEILING},
+        "resolution": {
+            "n_seeds": 1,
+            "a0_seed_sd_recall": A0_SEED_SD,
+            "sd_of_a_paired_difference": round(math.sqrt(2) * A0_SEED_SD, 4),
+            "smallest_resolvable_recall_difference": _minimum_detectable(5),
+            "purity_five_seed_mde": PURITY_FIVE_SEED_MDE,
+            "source": "reports/a0_t1_seed_variance.json — prompt 09, eight seeds",
+            "note": (
+                "Every point of this map is ONE PAIR. The figures quoted are what FIVE pairs "
+                "would reach at prompt 09's operating point and are therefore lower bounds on "
+                "what one pair would need; a single pair has no interval at all. The purity "
+                "figure was measured for whole-bank mean_purity and is used beside the "
+                "content-bank restriction as the nearest available yardstick, not as a "
+                "measurement of it."
+            ),
+        },
+        "cuts": [dict(entry) for entry in PHASE_CUTS],
+        "cost_model": phase_cost_model(),
+        "controls": controls,
+        "points": points,
+    }
+
+
+def _sub(left, right):
+    if isinstance(left, (int, float)) and isinstance(right, (int, float)):
+        return left - right
+    return None
+
+
 def _minimum_detectable(n_seeds: int) -> float:
     """Prompt 09's conversion, for the seed counts it measured. ``None`` elsewhere.
 
@@ -426,17 +635,78 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Tabulate a resolved comparison from recorded artifacts only."
     )
-    parser.add_argument("--comparison", required=True)
-    parser.add_argument("--ladder", required=True)
+    parser.add_argument("--comparison", default=None)
+    parser.add_argument("--ladder", default=None)
     parser.add_argument("--seeds", type=int, default=1, help="pairs behind each difference")
     parser.add_argument("--json", default=None, help="write the table here")
     parser.add_argument("--lab", default=None)
+    parser.add_argument(
+        "--phase",
+        action="store_true",
+        help="tabulate prompt 14's whole phase-diagram sweep instead of one comparison",
+    )
     return parser
+
+
+def _print_phase(report: dict) -> None:
+    """The map as text, in the same order the figure draws its rows."""
+    print(
+        f"phase map, {report['ladder']}, one seed, T = {report['main_seq_len']} "
+        f"(ribbon points excepted)"
+    )
+    print(
+        f"{'F/d':>5}  {'F':>4}  {'d':>3}  {'p_act':>5}  {'A0':>8}  {'A1':>8}  "
+        f"{'diff':>8}  {'pur A0':>7}  {'pur A1':>7}  {'d pur':>7}  sat A0/A1  act"
+    )
+    for row in report["points"]:
+        left, right = row["control"], row["candidate"]
+        print(
+            f"{row['ratio_content']:>5.2f}  {row['f_content']:>4}  {row['d_model']:>3}  "
+            f"{row['activation_prob']:>5.2f}  "
+            f"{_fmt(left['recall'])}  {_fmt(right['recall'])}  "
+            f"{_fmt(row['difference']['recall'])}  "
+            f"{_fmt7(left['content_purity'])}  {_fmt7(right['content_purity'])}  "
+            f"{_fmt7(row['difference']['content_purity'])}  "
+            f"{row['saturation']['control'][:9]:>9}/{row['saturation']['candidate'][:9]:<9}  "
+            f"{'yes' if row['both_mechanisms_active'] else 'NO'}"
+        )
+    for name, rows in report["controls"].items():
+        for row in rows:
+            print(
+                f"\n{name}: {row['cell']}  A0 {_fmt(row['control']['recall'])}  "
+                f"A1 {_fmt(row['candidate']['recall'])}  "
+                f"diff {_fmt(row['difference']['recall'])}  "
+                f"skill A0 {row['control']['recall_skill']} A1 {row['candidate']['recall_skill']}"
+            )
+    resolution = report["resolution"]
+    print(
+        f"\nONE SEED PER CELL. Five pairs could not resolve a recall difference below "
+        f"{resolution['smallest_resolvable_recall_difference']} or a purity difference below "
+        f"{resolution['purity_five_seed_mde']} at prompt 09's operating point; one pair "
+        "resolves nothing."
+    )
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     lab = Path(args.lab) if args.lab else None
+
+    if args.phase:
+        report = phase_report(lab=lab)
+        if not report["points"]:
+            print("no resolved declarations for the phase sweep")
+            return 1
+        _print_phase(report)
+        if args.json:
+            path = Path(args.json)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps(report, indent=2) + "\n")
+            print(f"wrote {path}")
+        return 0
+
+    if not args.comparison or not args.ladder:
+        print("--comparison and --ladder are required unless --phase is given")
+        return 2
     report = comparison_report(args.comparison, args.ladder, n_seeds=args.seeds, lab=lab)
     if not report["rows"]:
         print(f"no resolved declarations for {args.comparison} at {args.ladder}")
@@ -494,6 +764,10 @@ def _both_alive(control: dict, candidate: dict, *, floor: float = 0.05) -> bool:
 
 def _fmt(value) -> str:
     return f"{value:>8.4f}" if isinstance(value, (int, float)) else f"{'-':>8}"
+
+
+def _fmt7(value) -> str:
+    return f"{value:>7.4f}" if isinstance(value, (int, float)) else f"{'-':>7}"
 
 
 if __name__ == "__main__":  # pragma: no cover

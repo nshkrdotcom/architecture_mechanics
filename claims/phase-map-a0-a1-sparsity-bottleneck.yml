@@ -1,0 +1,317 @@
+claim_id: phase-map-a0-a1-sparsity-bottleneck
+schema: am.claim_packet.v1
+owner_prompt: '14'
+scope: |
+  The §10.2 figure 2 sweep: A0 (causal softmax attention) against A1 (kernelized linear
+  attention) over the §4.5 grid — content feature bank F in {32, 64, 128}, model width d in
+  {16, 32, 64}, per-group activation probability in {0.06, 0.12, 0.24, 0.40}, sequence length
+  32 with a two-point ribbon at 64 and 128 — at §7.3's R2 screening rung, one seed, both arms
+  at every cell. Thirty-six cells, seventy-two runs, priced at about seventy minutes of GPU
+  before any of it ran (experiments/phase_grid.py#phase_cost_model). Its children are
+  phase_r1 (this mission's own positive control), phase_negative_control_d32 (the map's own
+  information-destroyed control), phase_T32_d16, phase_T32_d32, phase_T32_d64 and
+  phase_length_d32. The grid, and everything cut from it with the cost of keeping it, are in
+  experiments/phase_grid.py#PHASE_WIDTH_FEATURE_POINTS and #PHASE_CUTS.
+
+  This packet claims rung 1 and no higher, and that ceiling is structural rather than
+  cautious: every cell is one seed, so no capability difference and no geometry difference
+  recorded here is evidence at §7.5 rung 2 or 3 however large it is. A phase diagram is a map.
+
+  There is deliberately NO covers: block. A covers: block ranges over (ladder, arch,
+  condition), and (R1|R2, softmax|linear, positive_control|capacity_stressed|negative_control)
+  is already claimed by a0-baseline-solves-t0.yml, a0-t1-associative-recall.yml and
+  a1-linear-solves-positive-control.yml; adding one here would give those missions' runs two
+  parents and an ambiguous prediction. Every run of this packet names it explicitly, which
+  the comparison harness does by construction.
+CLAIM: |
+  Over the §4.5 grid at R2 screening depth, one seed per cell, both architectures trained
+  under every §7.2 variable shared, the capability surface and the geometry surface of A0 and
+  A1 have DIFFERENT SHAPES, and the region where they disagree is non-empty.
+
+  Six components, each falsifiable, each checkable from the recorded sweep alone.
+
+  (1) THE MAP HAS AN INTERIOR. At least four cells have both arms strictly above 0.05 exact
+  answer-set recall and strictly below 0.95, and at least one cell has A0 at or above 0.80
+  while at least one other has both arms at or below 0.05. The map spans chance to ceiling
+  rather than measuring one regime.
+
+  (2) SPARSITY IS MONOTONE. For each architecture at each (F, d) point, exact recall does not
+  increase as the per-group activation probability rises through 0.06, 0.12, 0.24, 0.40, at
+  every point where the arm is above 0.05 at the sparsest level. Denser positions mean larger
+  answer sets and more features superposed at once, and both make the task harder.
+
+  (3) THE BOTTLENECK RATIO IS MONOTONE BUT NOT SUFFICIENT. At fixed sparsity, exact recall
+  does not increase as F/d rises — and the ratio alone does not determine the result. Three
+  ratios in this grid are realised by two different (F, d) pairs each: 1 at (32, 32) and
+  (64, 64), 2 at (32, 16) and (64, 32), 4 at (64, 16) and (128, 32). At at least one of the
+  three, the two cells sharing a ratio differ in A0's exact recall by more than 0.076, the
+  standard deviation of a difference between two single-seed runs at prompt 09's measured
+  A0 seed spread of 0.054. Predicted direction: the larger absolute d is the better of the
+  pair, because a residual stream of 64 dimensions can hold more than one of 32 even when
+  each is equally oversubscribed.
+
+  (4) A0 LEADS A1 WHEREVER BOTH ARE ALIVE, and the lead is smallest where the bottleneck is
+  loosest. A0's exact recall is at or above A1's at every cell where both arms exceed 0.05,
+  and the mean A0 - A1 difference over cells with F/d <= 1 is smaller than the mean over
+  cells with F/d >= 4.
+
+  (5) THE GEOMETRY SURFACE DISAGREES WITH THE CAPABILITY SURFACE SOMEWHERE. There are at
+  least two cells at which the two arms' exact recall differs by less than 0.128 — prompt
+  09's measured five-seed minimum detectable effect, which a single pair cannot reach — while
+  their content-bank mean feature purity differs by more than 0.049, the five-seed minimum
+  detectable effect prompt 09 measured for mean purity. Predicted direction: A1 the less pure,
+  as prompt 13 measured at six of six pilot cells. This is the component the figure exists to
+  show, and it is the one most likely to be wrong.
+
+  (6) BOTH MECHANISMS ARE ACTIVE EVERYWHERE. All three §6.3 activity gates pass for both arms
+  at every cell of the map, including cells where an arm answers nothing, so the surface being
+  drawn separates two working mechanisms rather than announcing an inert branch.
+
+  Nothing here is claimed at §7.5 rung 2 or above. One seed is not replication, and a
+  difference of any size at one seed is an observation.
+MECHANISM: |
+  The two architectures differ in exactly one thing: how a query's weight over the causal
+  prefix is formed. A0 forms it by softmax over inner products, so the weight on the matching
+  key can be made arbitrarily large relative to every non-matching one by scaling the logits.
+  A1 forms it as phi(q).phi(k) normalized over the prefix while reading a single fixed-size
+  state S_t = sum_{j<=t} phi(k_j) (x) [v_j, 1] with phi = elu + 1 strictly positive, so every
+  write in the prefix contributes to both numerator and denominator and no write can be given
+  zero weight. The trunk, the MLP and the position table are shared and are not part of either
+  mechanism.
+
+  Why that difference should produce two differently shaped surfaces rather than one shifted
+  surface. A1's state is d_head x (d_head + 1) and holds every binding superposed; its binding
+  constraint is therefore the number of live bindings relative to the state size, which the
+  grid moves through d. A0 has no state: its constraint is whether the residual stream can
+  carry the retrieved value, which the grid moves through F/d. So A1 is predicted to be hurt
+  by the same axes as A0 and additionally by everything that adds writes, which is why its
+  surface should fall away faster along the ratio axis than A0's.
+
+  Why the geometry surface should not track the capability surface. Exact answer-set recall is
+  a threshold on a reconstruction; feature purity is a statement about how the residual stream
+  allocates directions to features. Two models can reach the same threshold from differently
+  packed representations, and a linear superposition into a fixed state is the mechanism most
+  likely to reach it from the less pure one. §10.2 asks for both surfaces on one pair of axes
+  precisely because a capability-only plot cannot see this.
+STRUCTURALLY_ENFORCED_PROPERTIES:
+- 'one preset, two arms: both configurations come from a single ladder_config call with
+  arch.arch alone replaced, and the pairwise config diff is computed and refused before a
+  model is built, so an unmatched cell cannot reach the GPU'
+- 'the sparsity axis means the same thing at every F: PHASE_GROUP_SIZE fixes the content group
+  at 16 features and n_content_groups is derived from F, so the expected number of active
+  content features at a position is 16 * activation_prob in every cell of the map. A cell that
+  could set one without the other is not representable — experiments/phase_grid.py#_cell
+  builds both from one argument and refuses an F that is not a multiple of the group size'
+- 'the model width is declared by the comparison and the dataset by the cell, so the grid is
+  assembled from one committed §7.2 matched comparison per width rather than from a loop with
+  a width variable in it'
+- identical parameter counts at every width in this laboratory (10120 at d = 16, 32408 at 32,
+  113848 at 64 on the map's shapes), so §7.2's width-matched and parameter-matched comparisons
+  are literally the same two runs and neither strategy can be the flattering one that gets
+  reported
+- 'identical data and not merely identical requests for it: resolution requires the two runs''
+  recorded train and eval split hashes to be equal'
+- 'measured compute parity: the resolver reads each run''s own step count and examples
+  processed out of its history and refuses a pair in which the candidate did more of the work'
+- 'one copy of every ruler: A0''s and A1''s mechanism activity and geometry are computed by the
+  same code, so a difference in either cannot be a difference between two implementations'
+- fixed-step stopping with the final evaluation reported rather than the best, at every cell
+- 'the figure reads recorded artifacts only: reporting/figures.py may open nothing inside the
+  laboratory except runs/ and reports/ and its own output, and tests/reporting/test_figure_
+  provenance.py audits every path the build process opens, with a paired control build that
+  must be flagged so the audit is not vacuous'
+LEARNED_OR_HOPED_PROPERTIES:
+- that the capability surface and the geometry surface disagree anywhere at all — component
+  (5), the reason the figure has two panels and the single most likely thing here to be wrong
+- that the bottleneck ratio is not sufficient and absolute width matters at equal ratio —
+  component (3), which is the whole reason the grid is kept two-dimensional rather than
+  collapsed onto F/d
+- that the map has an interior at this budget rather than being saturated at both ends, which
+  is a property of a step budget and a scale as much as of the architectures
+- that A1's degradation is steeper than A0's along the ratio axis, which is the mechanistic
+  prediction and would be the first quantitative statement about *where* the two architectures
+  differ rather than *that* they do
+- that both mechanisms stay active at cells where capability is at the floor, as prompt 09
+  found for A0 across widths and prompt 13 found for A1 across difficulty
+NEAREST_BORING_EXPLANATION: |
+  Five, and three of them are not ruled out here.
+
+  (a) THE WHOLE MAP IS AN OPTIMISATION TIMING EFFECT. Prompt 13 measured this directly and it
+  is the most dangerous explanation on this list: between 2000 and 3000 steps A1 gained 0.229
+  to 0.284 at four of five pilot cells while A0 gained 0.057 to 0.098, and both arms were
+  still rising at the stopping rule. A fixed-budget comparison of two still-rising curves
+  measures two rates of circuit formation and not two asymptotes. Every A0 - A1 difference on
+  this map is therefore a difference at 2000 steps and is reported as one.
+
+  (b) THE MAP IS SEED NOISE. A0's own seed-to-seed standard deviation at prompt 09's operating
+  point is 0.054 exact recall, so a single pair resolves nothing below about 0.15 and five
+  pairs resolve nothing below 0.128. Every cell here is one pair.
+
+  (c) THE GEOMETRY DIFFERENCE IS A SNAPSHOT ARTEFACT. Prompt 13 measured a geometry difference
+  between these two architectures REVERSING DIRECTION between 2000 and 3000 steps at the same
+  operating point: probe_macro_r2 favoured A1 at 8 of 10 screened cells and A0 at 5 of 6 pilot
+  cells. Purity and interference were the two measures that pointed the same way at both
+  budgets, which is why purity and not probe R-squared is this claim's geometry measure — but
+  "stable across two budgets at one operating point" is not "stable", and component (5) is
+  exposed to this.
+
+  (d) THE HARNESS IS MEASURING ITSELF: an undeclared configuration difference, unequal data or
+  unequal work between the arms would produce a surface out of nothing.
+
+  (e) A1 IS INERT: if A1 trains as a position-wise MLP with a decorative mixer, the map shows
+  one architecture and one control, which is a much weaker statement than two surfaces.
+CONTROL_THAT_RULES_IT_OUT: |
+  (d) is ruled out mechanically and in four places: both arms are constructed from one rung
+  preset with only arch.arch replaced; the construction refuses an undeclared difference
+  before a model is built; resolution requires equal split hashes and equal measured work; and
+  bin/check_no_rescue.sh re-derives the whole diff from the two recorded manifests afterwards.
+  The non-vacuity check on all of that is phase_r1, the matched pair on the known-easy
+  positive control, whose answer is known in advance to be null.
+
+  (e) is ruled out by §6.3's three activity gates plus the four state measures A0 cannot have —
+  state_norm, write_norm, write_to_state_ratio, state_growth_ratio — each of which has a
+  reachable degenerate value asserted in tests/identity/test_a1_model.py rather than hoped for.
+
+  (a), (b) and (c) are NOT ruled out and are carried as stated limits rather than argued away.
+  (a) is not ruled out but is MEASURED: every run's complete evaluation history is recorded, so
+  the final-step gain per arm per cell is readable from the sweep, and the budget is a §7.2
+  frozen variable that is not moved after the result is seen. (b) is not ruled out and is the
+  reason this packet stops at rung 1 and the reason the figure's caption says one seed; prompt
+  15 owns the replication and the last section of state/14_figure2.md names the cells it should
+  replicate at. (c) is not ruled out at all, and component (5) is stated with its direction and
+  its measure named in advance so that a reversal is a recorded miss rather than a
+  reinterpretation.
+PRIMARY_METRIC: |
+  associative_recall_accuracy — exact answer-set recall on the held-out evaluation split —
+  frozen by prompt 03 before either architecture existed and unchanged since. The comparison
+  statistic is the paired per-cell difference, control minus candidate, at one seed, reported
+  as a raw difference with NO confidence interval, because a single pair has none. Prompt 09's
+  conversion is the yardstick it is read against: 0.128 is the smallest difference five seeds
+  could resolve at that operating point, 0.076 the smallest ten could, and 0.076 is also the
+  standard deviation of a difference between two single-seed runs.
+
+  The declared GEOMETRY measure, which is the figure's second panel, is the content bank's
+  mean feature purity at each run's primary site — summary.json's geometry.by_bank.content.
+  mean_purity. The content bank and not the whole bank, because the key and operator banks are
+  a fixed 28 features in every cell and are therefore 47% of the bank at F = 32 and 18% at
+  F = 128; an average over all three would change meaning down the rows of the figure. The
+  cost of that choice is stated rather than hidden: prompt 09's five-seed minimum detectable
+  effect of 0.049 was measured for the whole-bank mean_purity, the content-bank restriction
+  has no separately measured seed noise at any operating point, and 0.049 is used as the
+  nearest available yardstick and not as a measurement of this quantity. Whole-bank mean_purity,
+  interference_fraction, probe_macro_r2, effective_rank and participation_ratio are recorded
+  beside it at every cell and none of them may be substituted for it after the fact.
+MECHANISM_ACTIVITY_METRIC: |
+  §6.3, for both architectures, computed by one copy of the ruler from each mechanism's induced
+  row-stochastic matrix: off_diagonal_mass >= 0.05, entropy_ratio <= 0.95, retrieval lift on
+  the true source >= 2.0x chance, taken over the best layer per measure. For A0 additionally
+  the attention entropy in nats and as a ratio, self_mass, max_weight and the full
+  source-selection distribution. For A1 additionally the five state measures A0 cannot have —
+  state_norm, write_norm, write_to_state_ratio, state_growth_ratio and readout_magnitude — with
+  normalizer_mean as the check that the 1e-6 clamp is nowhere near binding.
+
+  An architecture that trains while ignoring its distinctive branch is a failed mechanism
+  experiment even where its task loss is good. On a phase diagram this matters more than
+  usual, because a map has corners: a cell where an arm answers nothing is exactly where an
+  inert mechanism would be easiest to mistake for a hard task, and §6.3 is what tells them
+  apart. Activity is reported at every cell whether or not it flatters the capability surface,
+  and prompt 09, prompt 11 and prompt 13 have each already recorded a cell where a mechanism
+  was fully active and the task was not solved.
+POSITIVE_CONTROL: |
+  phase_r1: §4.4's known-easy positive control at the frozen R1 preset — d = d_recommended =
+  48, distance one to two, no distractors, one association, 32768 examples, 4000 steps — run
+  as one control and one candidate at the same seed with every §7.2 variable shared, BEFORE
+  any cell of the map. Both arms must clear prompt 03's frozen 0.80, both mechanisms must be
+  active, and the two must differ by less than 0.128. Prompt 04 recorded A0 at 0.9055 and
+  prompt 11 recorded A1 at 0.8954, so the pair's answer is known before it runs and a harness
+  that reports a gap there is measuring itself. §7.3's "never skip R1" applies to a mission and
+  not only to an architecture: seventy screening runs from a broken instrument are seventy
+  measurements of the bug. Failure is an implementation or optimisation defect to debug, never
+  a finding to interpret, and nothing further runs until it is fixed.
+
+  The map carries a second positive control that is internal to it and is a prediction rather
+  than a citation: the cell at F = 32, d = 64, activation probability 0.06 is the loosest
+  corner of the grid — bottleneck ratio 0.5 on the content bank, 0.94 on the whole bank, about
+  one active content feature per position — and A0 is predicted to reach at least 0.80 exact
+  recall there. A map whose easiest corner is not easy is not measuring difficulty.
+
+  Within every run of every rung, the program oracle must clear the threshold and the
+  training-marginal predictor must fall below it (instrument_ok).
+NEGATIVE_CONTROL: |
+  phase_negative_control_d32: §4.4's information-destroyed condition at the map's own middle
+  point — F = 64, d = 32, sequence length 32, activation probability 0.12 — run for BOTH
+  architectures, and matched to a cell of the map in every §7.2 variable except the one thing
+  that is removed. The source is deleted, so the answer exists nowhere in the input and
+  I(input; target) is zero by construction.
+
+  It is run rather than cited. Prompt 13 measured both architectures at exactly 0.0000 on the
+  information-destroyed condition, but at a different feature bank, a different group
+  structure and a different sequence length; "the task does not leak" is a property of a
+  generator configuration and does not transfer across a change of one merely because the
+  generator is the same code.
+
+  Either arm above 0.05 exact recall, or above 0.05 normalized skill, is a hard stop for the
+  entire laboratory and not merely for this claim: a trained model beating an
+  information-destroyed control means the task leaks and every capability number recorded to
+  date is measuring the leak. Because the program oracle scores at or below an input-blind
+  predictor on this condition, the comparison that decides it is against the frequency ceiling
+  fitted on the split being scored, per prompt 03's committed CEILING_DOMINATED_METRICS.
+KILL_CONDITION: |
+  Six, each able to fire, none renegotiable after the data is seen.
+
+  (1) R1 PAIR: either arm below 0.80 exact recall, either mechanism inactive, or the two arms
+  differing by more than 0.128. The claim dies and the harness is debugged. A map drawn by a
+  harness that failed here is a picture of the harness, and no cell of it runs.
+
+  (2) NEGATIVE CONTROL: either arm above 0.05 exact recall or 0.05 normalized skill on
+  phase_negative_control_d32. Hard stop for the laboratory, not merely for this claim.
+
+  (3) NO INTERIOR: if fewer than four cells of the map have both arms strictly between 0.05
+  and 0.95, component (1) of the CLAIM is dead. The map is then saturated at this budget and
+  scale, and THAT is the reported finding: the figure is still drawn, still committed and
+  still says so, and the grid is not widened until something survives. A phase diagram whose
+  cells are all at chance is a result about the operating point.
+
+  (4) DIRECTION REVERSED: if A1's exact recall exceeds A0's by more than 0.128 at a majority
+  of the cells where both arms are alive, component (4) is dead and is reported dead. The
+  first action is a search for a defect in the comparison harness, the data path or the
+  metric — NOT a report of a discovery. Softmax attention is a known-strong associative-recall
+  mechanism and prompt 13 measured A0 ahead at every one of its pilot cells; a reversal across
+  a map is far more likely to be a bug than a finding.
+
+  (5) INERT CANDIDATE: at any cell, all three of A1's §6.3 gates failing, or state_growth_ratio
+  at or below 1.0, or normalizer_mean within 100x of the 1e-6 clamp. Component (6) is then dead
+  at that cell, the cell is marked inert on the figure rather than dropped from it, and no
+  capability or geometry difference at that cell is read as a difference between two
+  mechanisms.
+
+  (6) ANY RUN: a §8.5 invariant failure, a non-finite training loss, a dirty working tree, or
+  a comparison the harness or bin/check_no_rescue.sh refuses to record.
+
+  Note on what is NOT a kill condition. A cell where an arm scores 0.0000, or where an R2 kill
+  screen fires gross_baseline_failure, is not a failure of this claim — it is a measured corner
+  of the map and the reason the map has corners. Component (1) requires an interior, not that
+  every cell has one.
+REPLICATION_REQUIREMENT: |
+  NONE IS SATISFIED BY THIS PACKET'S EVIDENCE, and that is the design rather than a limit
+  discovered afterwards. §4.5 asks for one screening seed and §7.3's R2 is a one-seed rung;
+  this sweep is seventy-two runs at seed 20260809 and nothing else.
+
+  §7.5 rung 2, capability_difference_replicates, requires at least five seeds with per-seed
+  results, effect sizes and bootstrap confidence intervals per §7.4; rung 3,
+  representation_difference_replicates, requires the same of a geometry difference.
+  evaluate_rungs returns no verdict for either from a single run, and the gates file reads
+  absent as not passed. Prompt 09 measured what seeds buy at this scale: five cannot resolve a
+  T1 recall difference below 0.128, ten reach 0.076, twenty reach 0.050. This packet therefore
+  claims rung 1, and a single-seed difference of any size — including one several times those
+  thresholds — is recorded as a single-seed observation and nothing more.
+
+  This applies to the figure as an artifact and not only to the prose: the caption of
+  paper/figures/fig2_phase_diagram.png states one seed per cell and screening depth in its
+  first two sentences, and a test asserts that it does, because a figure that outlives its
+  caption is the most common way a screening result becomes a claim.
+
+  Prompt 15 owns the replication. The required repetition at rungs 0 and 1 is deterministic
+  re-execution, checked by each run's own reproduce.sh.
+primary_metric_key: associative_recall_accuracy
+claimed_rung: 1
