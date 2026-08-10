@@ -1655,6 +1655,62 @@ DECLARED_COMPARISONS: dict[str, dict] = {
             "rather than against another architecture."
         ),
     },
+    "a0_vs_a1_pilot": {
+        "claim_id": "a1-vs-a0-t1-capability-gap",
+        "primary_metric": "associative_recall_accuracy",
+        "control_arch": "softmax",
+        "candidate_archs": ("linear",),
+        "task": "T1",
+        # Chosen by reporting.tables.surviving_cells() from the screen's table,
+        # under the rule committed in state/13_a0_a1_pilots.md before the
+        # screen's output was read. The screen measured (A0, A1):
+        #
+        #   sparsity-p006          0.6545  0.4548   piloted
+        #   associations-a2        0.5620  0.2866   piloted
+        #   base                   0.4807  0.0964   piloted, unconditionally
+        #   key_collisions-on      0.4795  0.1816   piloted
+        #   source_distance-d4-6   0.3521  0.1626   piloted
+        #   associations-a4        0.5129  0.2312   qualified, capped
+        #   source_distance-d34-40 0.3057  0.0742   qualified, capped
+        #   associations-a10       0.3237  0.0642   qualified, capped
+        #   sparsity-p024          0.0706  0.0103   A1 at or below the 0.05 floor
+        #   sparsity-p040          0.0059  0.0000   both below the floor; A1 fired
+        #                                           gross_baseline_failure
+        #
+        # The three capped cells are not dropped from the record — they are
+        # measured at R2 in reports/a0_a1_screens.json, and what the cap costs
+        # them is the rung, not the measurement.
+        "cells": (
+            BASE_CELL,
+            "associations-a2",
+            "key_collisions-on",
+            "source_distance-d4-6",
+            "sparsity-p006",
+            NEGATIVE_CONTROL_CELL.name,
+        ),
+        "d_model": None,
+        "owner_prompt": "13",
+        "rungs": {"R3": 1},
+        "notes": (
+            "The R3 pilot, on the cells where the screen found both architectures alive, plus "
+            "the two cells piloted unconditionally. Operating point: the frozen R3 preset — "
+            "capacity_stressed, d = 64, 16384 training examples, 4096 held out, 3000 steps — "
+            "so this comparison and prompt 09's recorded A0 matrix share every §7.2 variable "
+            "except the seed set's length. "
+            "`base` is piloted whether or not it survives the rule, because it is the "
+            "operating point prompt 12's a0_vs_a1 comparison declared and a mission that "
+            "moved off it without reporting what happens there would be choosing its own "
+            "result. `negative-control` is piloted because it is the standing control for a "
+            "capability claim and A1 has never been run on the information-destroyed "
+            "condition at all; the screen deliberately did not include it, since it is not a "
+            "difficulty cell and not a search for an operating point. "
+            "This is one seed per cell. §7.5 rung 2 is a statement about a difference that "
+            "*replicates*, and prompt 09 measured that five seeds at this operating point "
+            "cannot resolve a T1 recall difference below 0.128 while ten reach 0.076. No "
+            "capability difference recorded here is claimed at rung 2 however large it is; "
+            "prompt 15 owns the replication."
+        ),
+    },
 }
 """Every comparison this laboratory declares, as data.
 

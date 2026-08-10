@@ -1,0 +1,182 @@
+{
+  "schema": "am.manifest.v1",
+  "run_id": "R2-linear-capacity_stressed-s20260809-ff088daca925",
+  "ladder_rung": "R2",
+  "git_commit": "7563f141f8a9b2c3e3edea43c939380abbe40bb7",
+  "git_branch": "main",
+  "git_source": "work_tree",
+  "dirty_tree": false,
+  "dirty_paths": [],
+  "config": {
+    "ladder": "R2",
+    "seed": 20260809,
+    "device": "cuda",
+    "capture_examples": 256,
+    "geometry_examples": 1024,
+    "arch": {
+      "arch": "linear",
+      "d_model": 64,
+      "n_layers": 2,
+      "n_heads": 2,
+      "mlp_ratio": 4,
+      "bias": true,
+      "init_std": 0.02,
+      "residual_write": "ordinary",
+      "positional": "learned",
+      "scale_residual_projections": true
+    },
+    "data": {
+      "condition": "capacity_stressed",
+      "n_train": 16384,
+      "n_eval": 4096,
+      "data_seed": null,
+      "generator_overrides": {
+        "activation_prob": 0.24
+      }
+    },
+    "optim": {
+      "optimizer": "adamw",
+      "learning_rate": 0.003,
+      "beta1": 0.9,
+      "beta2": 0.95,
+      "eps": 1e-08,
+      "weight_decay": 0.01,
+      "decay_matrices_only": true,
+      "grad_clip": 1.0,
+      "schedule": "cosine",
+      "warmup_fraction": 0.1,
+      "min_lr_fraction": 0.1,
+      "batch_size": 128,
+      "max_steps": 2000,
+      "eval_every": 500,
+      "stopping_rule": "fixed_steps",
+      "precision": "fp32",
+      "float32_matmul_precision": "highest",
+      "loss": "importance_weighted_mse + activity_bce",
+      "value_loss_weight": 1.0,
+      "activity_loss_weight": 1.0
+    },
+    "generator_version": "fpg-1.0.0",
+    "metric_version": "cap-1.0.0",
+    "model_version": "am-model-1.0.0"
+  },
+  "architecture_id": "linear-L2H2d64-ordinary-learned@am-model-1.0.0",
+  "parameter_count": 127288,
+  "parameter_report": {
+    "encoder": 8000,
+    "position": 3072,
+    "norm_out": 128,
+    "value_head": 8060,
+    "active_head": 8060,
+    "mixing": 33280,
+    "mlp": 66176,
+    "block_norms": 512,
+    "total": 127288,
+    "trainable": 127288
+  },
+  "operation_state_summary": {
+    "seq_len": 48,
+    "d_model": 64,
+    "n_features": 124,
+    "n_layers": 2,
+    "trunk_multiply_accumulates_per_sequence": 4288512,
+    "mixing_multiply_accumulates_per_sequence": 1978368,
+    "total_multiply_accumulates_per_sequence": 6266880,
+    "recurrent_state_scalars": 4224,
+    "mixing": [
+      {
+        "mechanism": "linear_attention",
+        "feature_map": "elu_plus_one",
+        "ops_per_sequence": "O(T d d_head + T d^2) \u2014 linear in T",
+        "state_growth": "O(d d_head) \u2014 constant in context; one d_head x (d_head + 1) matrix per head, carrying its own normalizer",
+        "multiply_accumulates_per_sequence": 989184,
+        "recurrent_state_scalars": 2112,
+        "materialises_pairwise_matrix": false,
+        "breakdown": {
+          "qkv_projection": 589824,
+          "state_update": 101376,
+          "state_read": 101376,
+          "output_projection": 196608
+        }
+      },
+      {
+        "mechanism": "linear_attention",
+        "feature_map": "elu_plus_one",
+        "ops_per_sequence": "O(T d d_head + T d^2) \u2014 linear in T",
+        "state_growth": "O(d d_head) \u2014 constant in context; one d_head x (d_head + 1) matrix per head, carrying its own normalizer",
+        "multiply_accumulates_per_sequence": 989184,
+        "recurrent_state_scalars": 2112,
+        "materialises_pairwise_matrix": false,
+        "breakdown": {
+          "qkv_projection": 589824,
+          "state_update": 101376,
+          "state_read": 101376,
+          "output_projection": 196608
+        }
+      }
+    ]
+  },
+  "dataset_generator_version": "fpg-1.0.0",
+  "split_hashes": {
+    "train": "0ea0fd9eccfdd7e8934facc7b7b4a921a768247f322d52219d95b8c22ea119f6",
+    "eval": "e4f3e1d08ba09f3253eee121f920353701666afc53e25a376a33e79a9b4a9312",
+    "train_n_examples": 16384,
+    "eval_n_examples": 4096
+  },
+  "seed": 20260809,
+  "device": {
+    "requested": "cuda",
+    "resolved": "cuda:0",
+    "fell_back": false,
+    "device_name": "NVIDIA GeForce RTX 5060 Ti",
+    "compute_capability": "12.0",
+    "total_memory_bytes": 17102864384,
+    "multi_processor_count": 36,
+    "torch_version": "2.11.0+cu128",
+    "cuda_version": "12.8",
+    "cudnn_version": 91900,
+    "float32_matmul_precision": "highest"
+  },
+  "precision": "fp32",
+  "numerics": {
+    "precision": "fp32",
+    "float32_matmul_precision": "highest",
+    "torch_version": "2.11.0+cu128"
+  },
+  "dependency_lock_hash": "6e018e7cf306742270ee2ff7a986657860cf18e656e14f1bcf7f28797abfb81e",
+  "source_tree_hash": "0c2951531ca50a6c29aa9a9343872db7c7875d09579fa0ee7e856c0f1675f4c8",
+  "environment": {
+    "python": "3.12.13",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "executable": "/home/home/p/g/n/architecture_mechanics/.venv/bin/python3",
+    "lab_root": "/home/home/p/g/n/architecture_mechanics"
+  },
+  "parent_claim_packet": "claims/a1-vs-a0-t1-capability-gap.yml",
+  "claimed_rung": 1,
+  "primary_metric": "associative_recall_accuracy",
+  "started_utc": "2026-08-10T20:05:27+00:00",
+  "finished_utc": "2026-08-10T20:06:54+00:00",
+  "checkpoint_hashes": {},
+  "evidence_index": [
+    {
+      "path": "geometry_metrics.npz",
+      "bytes": 1649150,
+      "sha256": "24c4741d1570a412f9e4fcc30567173ff218304ba621939f7bf9818bf0418472"
+    },
+    {
+      "path": "metrics.jsonl",
+      "bytes": 1203,
+      "sha256": "546498e07f94b9a8a06452b3488af19035e61641b8a53961b333a1da6214ac4e"
+    },
+    {
+      "path": "reproduce.sh",
+      "bytes": 4162,
+      "sha256": "f14fef8724ac1d5eb5a0e3e6b02b9f4352355954938d9c5df86a4491f345e0b4"
+    },
+    {
+      "path": "summary.json",
+      "bytes": 45724,
+      "sha256": "651e758ce48fb93f7f981d06dd6978f6574087b77afa90ced50da59b1258e276"
+    }
+  ]
+}

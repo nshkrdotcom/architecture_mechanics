@@ -155,3 +155,93 @@ def test_the_resolution_yardstick_is_prompt_09s_measurement_and_not_a_formula():
     assert tables._minimum_detectable(20) == 0.050
     assert tables._minimum_detectable(1) == 0.128
     assert tables._minimum_detectable(7) == 0.128
+
+
+# --------------------------------------------------------------------------- #
+# The pilot-selection rule
+# --------------------------------------------------------------------------- #
+
+
+def _row(cell, control, candidate, *, kill=None, work_matched=True):
+    def arm(value):
+        return {
+            "capability": {"associative_recall_accuracy": value},
+            "kill": {"fired": list(kill or [])} if kill else {"fired": []},
+        }
+
+    return {
+        "cell": cell,
+        "control": arm(control),
+        "candidate": arm(candidate),
+        "checks": {"measured_work_matched": work_matched},
+    }
+
+
+def test_the_rule_pilots_a_cell_only_where_both_arms_are_alive():
+    report = {
+        "rows": [
+            _row("base", 0.48, 0.10),
+            _row("sparsity-p040", 0.14, 0.01),
+            _row("associations-a2", 0.62, 0.40),
+        ]
+    }
+    verdict = tables.surviving_cells(report)
+    assert verdict["cells"]["base"]["qualifies"]
+    assert verdict["cells"]["associations-a2"]["qualifies"]
+    assert not verdict["cells"]["sparsity-p040"]["qualifies"]
+    assert "candidate at or below the floor" in verdict["cells"]["sparsity-p040"]["reasons"][0]
+
+
+def test_a_fired_kill_condition_stops_the_cell_however_good_the_number():
+    report = {"rows": [_row("associations-a2", 0.62, 0.40, kill=["mechanism_inactive"])]}
+    verdict = tables.surviving_cells(report)
+    assert not verdict["cells"]["associations-a2"]["qualifies"]
+    assert any("mechanism_inactive" in reason for reason in verdict["cells"]["associations-a2"]["reasons"])
+
+
+def test_unequal_measured_work_stops_the_cell():
+    report = {"rows": [_row("associations-a2", 0.62, 0.40, work_matched=False)]}
+    verdict = tables.surviving_cells(report)
+    assert not verdict["cells"]["associations-a2"]["qualifies"]
+
+
+def test_the_two_unconditional_cells_are_piloted_whatever_the_rule_says():
+    """base and the negative control are named in advance so that neither can be
+    dropped for being inconvenient — the negative control is *expected* to fail
+    the floor test, because scoring zero there is what it is for."""
+    report = {"rows": [_row("base", 0.48, 0.02), _row("negative-control", 0.0, 0.0)]}
+    verdict = tables.surviving_cells(report)
+    assert not verdict["cells"]["base"]["qualifies"]
+    assert not verdict["cells"]["negative-control"]["qualifies"]
+    assert verdict["piloted"] == ["base", "negative-control"]
+
+
+def test_the_budget_cap_keeps_one_cell_per_axis_and_names_what_it_dropped():
+    """A silently truncated matrix reads as 'everything survived'."""
+    report = {
+        "rows": [
+            _row("base", 0.55, 0.20),
+            _row("sparsity-p006", 0.75, 0.40),
+            _row("sparsity-p024", 0.37, 0.15),
+            _row("associations-a2", 0.62, 0.45),
+            _row("associations-a4", 0.56, 0.25),
+            _row("associations-a10", 0.54, 0.12),
+            _row("source_distance-d4-6", 0.56, 0.22),
+            _row("source_distance-d34-40", 0.50, 0.18),
+            _row("key_collisions-on", 0.55, 0.14),
+        ]
+    }
+    verdict = tables.surviving_cells(report)
+    difficulty = [cell for cell in verdict["piloted"] if cell not in ("base", "negative-control")]
+    assert len(difficulty) <= tables.MAX_PILOT_DIFFICULTY_CELLS
+    # one per axis, and the most-alive point on each
+    assert "sparsity-p006" in difficulty and "sparsity-p024" not in difficulty
+    assert "associations-a2" in difficulty and "associations-a10" not in difficulty
+    assert "source_distance-d4-6" in difficulty
+    assert verdict["piloted"][0] == "base" and verdict["piloted"][-1] == "negative-control"
+    dropped = [
+        cell
+        for cell, entry in verdict["cells"].items()
+        if any("capped" in reason for reason in entry["reasons"])
+    ]
+    assert set(dropped) == {"sparsity-p024", "associations-a4", "associations-a10", "source_distance-d34-40"}

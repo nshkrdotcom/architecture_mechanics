@@ -1,0 +1,93 @@
+{
+  "schema": "am.comparison_declaration.v1",
+  "name": "a0_vs_a1_r1-R1-parameter_matched-positive-control-s20260809",
+  "comparison": "a0_vs_a1_r1",
+  "claim": "a1-vs-a0-t1-capability-gap",
+  "primary_metric": "associative_recall_accuracy",
+  "primary_metric_source": "claims/a1-vs-a0-t1-capability-gap.yml#primary_metric_key",
+  "control_run": "R1-softmax-positive_control-s20260809-054e9c4daddd",
+  "candidate_runs": [
+    "R1-linear-positive_control-s20260809-6b8f4df4119b"
+  ],
+  "matching_strategy": "parameter_matched",
+  "permitted_differences": {},
+  "ladder": "R1",
+  "task": "T1",
+  "cell": "positive-control",
+  "seed": 20260809,
+  "seed_set": [
+    20260809
+  ],
+  "control_arch": "softmax",
+  "candidate_arch": "linear",
+  "plan": "reports/comparisons/planned/a0_vs_a1_r1-R1-parameter_matched.json",
+  "parameter_accounting": {
+    "strategy": "parameter_matched",
+    "control": {
+      "arch": "softmax",
+      "d_model": 48,
+      "n_layers": 2,
+      "parameters": 62520
+    },
+    "candidate": {
+      "arch": "linear",
+      "d_model": 48,
+      "n_layers": 2,
+      "parameters": 62520
+    },
+    "parameter_difference": 0,
+    "relative_difference": 0.0,
+    "adjustment": {
+      "adjusted": false,
+      "reason": "the control already has exactly the candidate's parameter count at this width, so the width-matched and parameter-matched comparisons are the same comparison",
+      "coincides_with_width_matched": true
+    }
+  },
+  "config_differences": {},
+  "compute_ledger": {
+    "control": {
+      "run_id": "R1-softmax-positive_control-s20260809-054e9c4daddd",
+      "declared_steps": 4000,
+      "measured_steps": 4000,
+      "stopped_early": false,
+      "batch_size": 128,
+      "examples_processed": 512000,
+      "train_examples": null,
+      "evaluations": 4,
+      "wall_clock_seconds": 86.889,
+      "train_seconds": 41.185,
+      "peak_allocated_mib": 378.31,
+      "cost_source": "cost.json"
+    },
+    "candidate": {
+      "run_id": "R1-linear-positive_control-s20260809-6b8f4df4119b",
+      "declared_steps": 4000,
+      "measured_steps": 4000,
+      "stopped_early": false,
+      "batch_size": 128,
+      "examples_processed": 512000,
+      "train_examples": null,
+      "evaluations": 4,
+      "wall_clock_seconds": 85.381,
+      "train_seconds": 40.48,
+      "peak_allocated_mib": 573.49,
+      "cost_source": "cost.json"
+    },
+    "parity": {
+      "measured_steps_equal": true,
+      "examples_processed_equal": true,
+      "candidate_did_more_work": false,
+      "wall_clock_ratio_candidate_over_control": 0.9829,
+      "wall_clock_is_declared_as_the_claim": false,
+      "verdict": "matched"
+    }
+  },
+  "checks": {
+    "runs_match_the_declared_configs": true,
+    "config_diff_within_permitted_differences": true,
+    "split_hashes_identical": true,
+    "seed_is_shared_by_both_arms": true,
+    "measured_work_matched": true
+  },
+  "resolved_utc": "2026-08-10T19:58:52+00:00"
+}

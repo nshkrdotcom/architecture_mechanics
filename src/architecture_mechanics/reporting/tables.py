@@ -38,16 +38,22 @@ from architecture_mechanics.experiments.t1_ladder import (
     CAPABILITY_METRICS,
     GEOMETRY_METRICS,
     MECHANISM_METRICS,
+    cells,
 )
 
 __all__ = [
     "A0_SEED_SD",
+    "MAX_PILOT_DIFFICULTY_CELLS",
     "MECHANISM_STATE_MEASURES",
+    "PILOT_CEILING",
+    "PILOT_FLOOR",
     "TABLE_SCHEMA",
+    "UNCONDITIONAL_PILOT_CELLS",
     "arm_record",
     "comparison_report",
     "main",
     "resolved_declarations",
+    "surviving_cells",
 ]
 
 TABLE_SCHEMA = "am.comparison_table.v1"
@@ -294,6 +300,115 @@ def comparison_report(
             ),
         },
         "rows": rows,
+    }
+
+
+PILOT_FLOOR: float = 0.05
+PILOT_CEILING: float = 0.95
+"""The window prompt 09 pre-registered for a T1 operating point, reused here as
+the definition of "alive". Below the floor a run measures the floor; at the
+ceiling it cannot carry a difference in either direction."""
+
+UNCONDITIONAL_PILOT_CELLS: tuple[str, ...] = ("base", "negative-control")
+"""Piloted whether or not they survive the rule.
+
+``base`` because it is the operating point prompt 12's comparison declared, and a
+mission that moved off the inherited operating point without reporting what
+happens there would be choosing its own result. ``negative-control`` because it
+is the standing control for a capability claim and is not a difficulty cell."""
+
+MAX_PILOT_DIFFICULTY_CELLS: int = 5
+"""The budget cap, as a rule rather than a choice. Six pilot cells at both arms
+is twelve runs, about eighteen minutes on this machine."""
+
+
+def surviving_cells(report: dict) -> dict:
+    """Apply the declared pilot-selection rule to a screen's table.
+
+    Executable rather than prose, because a rule applied by hand after the
+    numbers are visible is indistinguishable from a preference. Every cell the
+    screen ran appears in the output with a reason, including the ones the budget
+    cap drops — a silently truncated matrix reads as "everything survived".
+
+    The rule: a cell is piloted iff both arms exceed :data:`PILOT_FLOOR`, neither
+    reaches :data:`PILOT_CEILING`, no §7.3 R2 kill condition fired for either
+    arm, and the pair's measured work matched. If more than
+    :data:`MAX_PILOT_DIFFICULTY_CELLS` difficulty cells qualify, one per axis is
+    kept — the survivor with the largest ``min(control, candidate)`` recall,
+    which is the most-alive point on that axis — and the rest are recorded as
+    capped.
+    """
+    axis_of = {cell.name: cell.axis for cell in cells()}
+    verdicts: dict[str, dict] = {}
+
+    for row in report.get("rows") or []:
+        cell = row["cell"]
+        control = row["control"]["capability"].get("associative_recall_accuracy")
+        candidate = row["candidate"]["capability"].get("associative_recall_accuracy")
+        reasons: list[str] = []
+        for role, value in (("control", control), ("candidate", candidate)):
+            if not isinstance(value, (int, float)):
+                reasons.append(f"{role} recorded no primary metric")
+            elif value <= PILOT_FLOOR:
+                reasons.append(f"{role} at or below the floor ({value:.4f} <= {PILOT_FLOOR})")
+            elif value >= PILOT_CEILING:
+                reasons.append(f"{role} at or above the ceiling ({value:.4f} >= {PILOT_CEILING})")
+        for role in ("control", "candidate"):
+            fired = ((row[role].get("kill") or {}).get("fired")) or []
+            if fired:
+                reasons.append(f"{role} kill condition fired: {', '.join(fired)}")
+        if not (row.get("checks") or {}).get("measured_work_matched", True):
+            reasons.append("the pair's measured work did not match")
+        verdicts[cell] = {
+            "axis": axis_of.get(cell, "unknown"),
+            "control_recall": control,
+            "candidate_recall": candidate,
+            "min_recall": (
+                min(control, candidate)
+                if isinstance(control, (int, float)) and isinstance(candidate, (int, float))
+                else None
+            ),
+            "qualifies": not reasons,
+            "reasons": reasons,
+        }
+
+    qualifying = [name for name, entry in verdicts.items() if entry["qualifies"]]
+    difficulty = [name for name in qualifying if name not in UNCONDITIONAL_PILOT_CELLS]
+    kept = difficulty
+    if len(difficulty) > MAX_PILOT_DIFFICULTY_CELLS:
+        best_per_axis: dict[str, str] = {}
+        for name in difficulty:
+            axis = verdicts[name]["axis"]
+            current = best_per_axis.get(axis)
+            if current is None or verdicts[name]["min_recall"] > verdicts[current]["min_recall"]:
+                best_per_axis[axis] = name
+        kept = sorted(best_per_axis.values(), key=difficulty.index)[:MAX_PILOT_DIFFICULTY_CELLS]
+
+    for name in difficulty:
+        if name not in kept:
+            verdicts[name]["reasons"].append(
+                "capped: the budget rule keeps one surviving cell per axis"
+            )
+            verdicts[name]["qualifies"] = False
+
+    piloted = list(UNCONDITIONAL_PILOT_CELLS[:1]) + kept + list(UNCONDITIONAL_PILOT_CELLS[1:])
+    for name in UNCONDITIONAL_PILOT_CELLS:
+        entry = verdicts.setdefault(
+            name,
+            {"axis": axis_of.get(name, "unknown"), "control_recall": None,
+             "candidate_recall": None, "min_recall": None, "qualifies": False, "reasons": []},
+        )
+        entry["piloted_unconditionally"] = True
+
+    return {
+        "rule": {
+            "floor": PILOT_FLOOR,
+            "ceiling": PILOT_CEILING,
+            "unconditional": list(UNCONDITIONAL_PILOT_CELLS),
+            "max_difficulty_cells": MAX_PILOT_DIFFICULTY_CELLS,
+        },
+        "piloted": piloted,
+        "cells": verdicts,
     }
 
 
