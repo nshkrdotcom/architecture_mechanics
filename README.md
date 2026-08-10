@@ -34,12 +34,12 @@ eight seeds that differ only in initialisation and batch order:
 
 | | across-seed sd | smallest difference visible at 5 seeds |
 |---|---|---|
-| `associative_recall_accuracy` | **0.054** on a mean of 0.491 | **0.150**, which is 31% of the mean |
-| `geometry.mean_purity` | 0.021 on 0.184 | 0.056, 31% |
-| `geometry.participation_ratio` | 2.74 on 14.5 | 5.82, 41% |
+| `associative_recall_accuracy` | **0.054** on a mean of 0.491 | **0.129**, which is 26% of the mean |
+| `geometry.mean_purity` | 0.021 on 0.184 | 0.049, 27% |
+| `geometry.participation_ratio` | 2.74 on 14.5 | 6.51, 45% |
 
 **Five seeds cannot see an architecture difference on T1 recall smaller than
-about 0.15 exact recall.** Ten seeds reach 0.076 and twenty reach 0.051. The
+about 0.13 exact recall.** Ten seeds reach 0.076 and twenty reach 0.050. The
 spread is training variance and not scoring noise — the evaluation split is
 bitwise identical across seeds and its binomial noise bound is 0.0078, seven
 times smaller — and it shrinks monotonically through training, so it is mostly
