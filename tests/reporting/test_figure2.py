@@ -263,6 +263,41 @@ def test_the_figure_is_page_width_and_drawn_in_ink_only(report, tmp_path):
     assert height > 0
 
 
+def test_the_saturation_marks_say_which_metric_they_are_about(report):
+    """The circles and triangles are drawn on the geometry row as well as the
+    capability row, but they are computed from recall alone. The purity ramp
+    starts near 0.03, so "at chance" with no metric named is readable as a claim
+    about purity — and would be wrong at every cell where an arm is at chance on
+    recall while its purity sits mid-scale."""
+    fig = figures.draw_figure2(report)
+    labels = [text.get_text() for axes in fig.axes for text in axes.texts]
+    marks = [label for label in labels if "at chance" in label or "at ceiling" in label]
+    assert marks, "the figure drew no saturation legend"
+    assert all("recall" in label for label in marks), marks
+    caption = figures.figure2_caption(figures.figure2_params(report))
+    assert "exact recall is at or below" in caption
+    assert "drawn on the geometry row as well" in caption
+
+
+def test_no_text_runs_off_the_canvas(report):
+    """Prompt 14 shipped a warning line whose last words were outside the image.
+    Nothing is clipped when that happens — the text is simply not there — so the
+    only way to notice is to measure."""
+    from matplotlib.backends.backend_agg import FigureCanvasAgg
+
+    fig = figures.draw_figure2(report)
+    FigureCanvasAgg(fig)
+    fig.canvas.draw()
+    renderer = fig.canvas.get_renderer()
+    width = fig.get_window_extent().width
+    everything = [text for axes in fig.axes for text in axes.texts] + list(fig.texts)
+    assert everything
+    for text in everything:
+        box = text.get_window_extent(renderer=renderer)
+        assert box.x0 >= 0.0, text.get_text()
+        assert box.x1 <= width, text.get_text()
+
+
 def test_building_figure_two_without_a_recorded_sweep_refuses_rather_than_invents(
     tmp_path, monkeypatch
 ):

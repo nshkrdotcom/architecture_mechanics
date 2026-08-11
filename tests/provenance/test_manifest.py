@@ -175,6 +175,10 @@ def _manifest(**overrides) -> RunManifest:
         "claimed_rung": 1,
         "primary_metric": "associative_recall_accuracy",
         "started_utc": "2026-08-09T00:00:00+00:00",
+        # A complete manifest describes the bytes it sits next to. RunManifest
+        # fills this in at write time; the fixture never writes, so it states
+        # the finished shape itself.
+        "evidence_index": [{"path": "summary.json", "sha256": "e" * 64, "bytes": 1}],
     }
     base.update(overrides)
     return RunManifest(**base)

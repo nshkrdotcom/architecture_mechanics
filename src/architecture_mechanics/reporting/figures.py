@@ -56,7 +56,13 @@ from . import figure_style as style
 # catch. Importing here puts it before the hook, where it belongs.
 from .tables import PURITY_FIVE_SEED_MDE, phase_report
 
-FIGURE_VERSION = "am-fig-1.1.0"
+FIGURE_VERSION = "am-fig-1.1.1"
+"""Drawn into both figures' provenance footers, so a bump moves both files'
+bytes. 1.1.1 names one change and no new number: figure 2's saturation marks now
+say in the legend and the caption that they are computed from recall, because
+they are drawn on the geometry row too and did not say so. Figure 1's science is
+untouched; its hash is re-recorded rather than the determinism check loosened,
+which is the case prompt 06 wrote down in advance."""
 
 ARTIFACT_READ_ROOTS: tuple[str, ...] = ("runs", "reports")
 """The only directories inside the laboratory a figure may take a *number* from.
@@ -957,10 +963,14 @@ def figure2_caption(params: dict) -> str:
         "at every F and the sparsity axis means the same thing on every row. "
         f"Sequence length is {params['main_seq_len']} throughout the map"
         + (f"; the ribbon at F=64/d=32/p=0.12 reads {ribbon_text}. " if ribbon_text else ". ")
-        + "Open circles mark cells at or below the pre-registered chance floor "
-        f"({params['window']['floor']}), filled triangles cells at or above the "
-        f"ceiling ({params['window']['ceiling']}); saturated cells cannot carry a "
-        "difference in either direction and the difference panels shade them. "
+        + "Open circles mark cells whose exact recall is at or below the "
+        f"pre-registered chance floor ({params['window']['floor']}), filled "
+        "triangles cells at or above the ceiling "
+        f"({params['window']['ceiling']}); both marks are a property of "
+        "capability and are drawn on the geometry row as well, where they say "
+        "the purity was measured on an arm that was not solving the task. "
+        "Saturated cells cannot carry a difference in either direction and the "
+        "difference panels shade them. "
         f"{params['n_interior']} of {params['n_points']} cells have both "
         "architectures strictly inside that window. Heavy outlines mark the "
         "cells where the two surfaces disagree — the paired recall difference "
@@ -1269,9 +1279,12 @@ def _draw_figure2_legend(fig, *, width, height, params) -> None:
     for spine in axes.spines.values():
         spine.set_visible(False)
 
+    # "recall" is in both labels because these marks are drawn on the geometry
+    # row too, where a bare "at chance" reads as a statement about purity — and
+    # the purity ramp starts near 0.03, so that misreading is available.
     entries = (
-        ("o", f"at chance ($\\leq$ {params['window']['floor']:.2f})", False),
-        ("^", f"at ceiling ($\\geq$ {params['window']['ceiling']:.2f})", True),
+        ("o", f"recall at chance ($\\leq$ {params['window']['floor']:.2f})", False),
+        ("^", f"recall at ceiling ($\\geq$ {params['window']['ceiling']:.2f})", True),
         ("x", "mechanism inert", False),
     )
     x = 0.0

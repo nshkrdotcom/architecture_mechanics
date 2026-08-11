@@ -88,12 +88,21 @@ PROVENANCE_FIELDS: tuple[str, ...] = (
     "dependency_lock_hash",
     "parent_claim_packet",
     "started_utc",
+    "evidence_index",
 )
-"""The fields ``bin/check_evidence.sh`` requires to be present and non-empty.
+"""The fields the external ``ml.evidence`` contract requires to be non-empty.
 
-Mirrored here rather than imported because the gate is a bash script and the
-laboratory must not be able to satisfy it by rewriting it.
-``tests/provenance/test_gate_agreement.py`` reads the gate and fails if this
+The order matters: the gate is compared element by element, not as a set.
+``evidence_index`` was added to the gate after prompt 14's runs were recorded,
+and the laboratory learned of it from its own drift test rather than from a red
+gate — which is what that test exists for. It costs nothing here because
+:meth:`RunManifest.write` computes the index before it checks, so a run that
+emitted nothing to index is the only thing the new field can refuse, and a run
+that emitted nothing has no evidence.
+
+Mirrored here rather than imported because the packet-owned contract must stay
+independent of the laboratory it verifies.
+``tests/provenance/test_gate_agreement.py`` reads the contract and fails if this
 tuple ever drifts from it."""
 
 SOURCE_PATHS: tuple[str, ...] = ("src", "tests", "configs", "pyproject.toml", "uv.lock")
