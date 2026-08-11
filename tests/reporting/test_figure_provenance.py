@@ -36,12 +36,12 @@ from pathlib import Path
 
 from architecture_mechanics.reporting import figures
 
-mode, out = sys.argv[1], Path(sys.argv[2])
+mode, out, number = sys.argv[1], Path(sys.argv[2]), int(sys.argv[3])
 
 # Unaudited warm-up: lazy imports and matplotlib's font cache happen once here
 # so that the audited build below sees data reads and nothing else.
 with tempfile.TemporaryDirectory() as warm:
-    figures.build_figure(1, Path(warm))
+    figures.build_figure(number, Path(warm))
 
 opened = []
 recording = False
@@ -54,7 +54,7 @@ def hook(event, args):
 
 sys.addaudithook(hook)
 recording = True
-figures.build_figure(1, out)
+figures.build_figure(number, out)
 if mode == "violating":
     # What a figure that made its numbers up would look like from outside.
     (Path(figures.lab_root()) / "pyproject.toml").read_text()
@@ -64,13 +64,13 @@ sys.stdout.write(json.dumps(opened))
 '''
 
 
-def _audited_build(mode: str, out: Path) -> list[dict]:
+def _audited_build(mode: str, out: Path, number: int = 1) -> list[dict]:
     proc = subprocess.run(
-        [sys.executable, "-c", AUDIT_SCRIPT, mode, str(out)],
+        [sys.executable, "-c", AUDIT_SCRIPT, mode, str(out), str(number)],
         capture_output=True,
         text=True,
         env={**os.environ},
-        timeout=600,
+        timeout=900,
         check=False,
     )
     assert proc.returncode == 0, f"subprocess failed:\n{proc.stderr}"
@@ -174,30 +174,81 @@ import sys
 from pathlib import Path
 from architecture_mechanics.reporting import figures
 
-print(figures.build_figure(1, Path(sys.argv[1])).sha256)
+print(figures.build_figure(int(sys.argv[2]), Path(sys.argv[1])).sha256)
 """
 
 
-def _regenerate(out: Path, env: dict) -> str:
+def _regenerate(out: Path, env: dict, number: int = 1) -> str:
     proc = subprocess.run(
-        [sys.executable, "-c", REGENERATE_SCRIPT, str(out)],
+        [sys.executable, "-c", REGENERATE_SCRIPT, str(out), str(number)],
         capture_output=True,
         text=True,
         env=env,
-        timeout=600,
+        timeout=900,
         check=False,
     )
     assert proc.returncode == 0, f"subprocess failed:\n{proc.stderr}"
     return proc.stdout.strip().splitlines()[-1]
 
 
-def test_regeneration_is_byte_identical_across_processes(tmp_path):
+@pytest.mark.parametrize("number", [1, 2])
+def test_regeneration_is_byte_identical_across_processes(tmp_path, number):
     """Same-process determinism is nearly free and nearly worthless. A
     reviewer regenerating this figure next month has a fresh interpreter, a
     different hash seed, and a different working directory."""
-    first = _regenerate(tmp_path / "a", {**os.environ, "PYTHONHASHSEED": "1"})
-    second = _regenerate(tmp_path / "b", {**os.environ, "PYTHONHASHSEED": "997"})
+    first = _regenerate(tmp_path / "a", {**os.environ, "PYTHONHASHSEED": "1"}, number)
+    second = _regenerate(tmp_path / "b", {**os.environ, "PYTHONHASHSEED": "997"}, number)
     assert first == second
+
+
+# --------------------------------------------------------------------------- #
+# Figure 2 — the first figure with parent runs, and therefore the first whose
+# read audit is about data rather than about the absence of it
+# --------------------------------------------------------------------------- #
+
+
+@pytest.fixture(scope="module")
+def clean_build_figure2(tmp_path_factory):
+    out = tmp_path_factory.mktemp("audit_clean_fig2")
+    return out, _audited_build("clean", out, 2)
+
+
+def test_figure_two_reads_nothing_outside_recorded_artifacts(clean_build_figure2):
+    out, opened = clean_build_figure2
+    assert _violations(opened, out) == []
+
+
+def test_figure_two_actually_reads_the_recorded_runs(clean_build_figure2):
+    """The complement of the test above, and the one that makes it non-vacuous.
+
+    Figure 1 reads no data at all, so "read nothing forbidden" is satisfied by a
+    figure that reads nothing. Figure 2 must read the runs, and it must read a
+    lot of them: one ``summary.json`` per arm of every cell.
+    """
+    _, opened = clean_build_figure2
+    root = lab_root()
+    summaries = {
+        entry["path"]
+        for entry in opened
+        if entry["path"].endswith("summary.json")
+        and str(root / "runs") in entry["path"]
+    }
+    declarations = {
+        entry["path"]
+        for entry in opened
+        if str(root / "reports" / "comparisons") in entry["path"]
+    }
+    assert len(summaries) >= 64, f"only {len(summaries)} recorded runs were read"
+    assert declarations, "the resolved declarations were never opened"
+
+
+def test_figure_two_carries_its_own_warning_into_the_file(tmp_path):
+    """The caption is a sidecar and sidecars get separated from PNGs."""
+    result = figures.build_figure(2, tmp_path)
+    assert result.params["n_points"] >= 32
+    assert result.params["resolution"]["n_seeds"] == 1
+    written = (tmp_path / f"{figures.FIGURE_STEMS[2]}.caption.md").read_text()
+    assert "ONE SEED PER CELL" in written
 
 
 def test_the_cli_verifies_determinism_and_reports_the_two_hashes(tmp_path, capsys):

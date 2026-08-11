@@ -1,0 +1,93 @@
+{
+  "schema": "am.comparison_declaration.v1",
+  "name": "phase_T32_d32-R2-parameter_matched-phase-F64-T32-p006-s20260809",
+  "comparison": "phase_T32_d32",
+  "claim": "phase-map-a0-a1-sparsity-bottleneck",
+  "primary_metric": "associative_recall_accuracy",
+  "primary_metric_source": "claims/phase-map-a0-a1-sparsity-bottleneck.yml#primary_metric_key",
+  "control_run": "R2-softmax-capacity_stressed-s20260809-407d49d84786",
+  "candidate_runs": [
+    "R2-linear-capacity_stressed-s20260809-95cd10f5b146"
+  ],
+  "matching_strategy": "parameter_matched",
+  "permitted_differences": {},
+  "ladder": "R2",
+  "task": "T1",
+  "cell": "phase-F64-T32-p006",
+  "seed": 20260809,
+  "seed_set": [
+    20260809
+  ],
+  "control_arch": "softmax",
+  "candidate_arch": "linear",
+  "plan": "reports/comparisons/planned/phase_T32_d32-R2-parameter_matched.json",
+  "parameter_accounting": {
+    "strategy": "parameter_matched",
+    "control": {
+      "arch": "softmax",
+      "d_model": 32,
+      "n_layers": 2,
+      "parameters": 35544
+    },
+    "candidate": {
+      "arch": "linear",
+      "d_model": 32,
+      "n_layers": 2,
+      "parameters": 35544
+    },
+    "parameter_difference": 0,
+    "relative_difference": 0.0,
+    "adjustment": {
+      "adjusted": false,
+      "reason": "the control already has exactly the candidate's parameter count at this width, so the width-matched and parameter-matched comparisons are the same comparison",
+      "coincides_with_width_matched": true
+    }
+  },
+  "config_differences": {},
+  "compute_ledger": {
+    "control": {
+      "run_id": "R2-softmax-capacity_stressed-s20260809-407d49d84786",
+      "declared_steps": 2000,
+      "measured_steps": 2000,
+      "stopped_early": false,
+      "batch_size": 128,
+      "examples_processed": 256000,
+      "train_examples": null,
+      "evaluations": 4,
+      "wall_clock_seconds": 63.194,
+      "train_seconds": 20.594,
+      "peak_allocated_mib": 659.91,
+      "cost_source": "cost.json"
+    },
+    "candidate": {
+      "run_id": "R2-linear-capacity_stressed-s20260809-95cd10f5b146",
+      "declared_steps": 2000,
+      "measured_steps": 2000,
+      "stopped_early": false,
+      "batch_size": 128,
+      "examples_processed": 256000,
+      "train_examples": null,
+      "evaluations": 4,
+      "wall_clock_seconds": 124.948,
+      "train_seconds": 54.836,
+      "peak_allocated_mib": 923.91,
+      "cost_source": "cost.json"
+    },
+    "parity": {
+      "measured_steps_equal": true,
+      "examples_processed_equal": true,
+      "candidate_did_more_work": false,
+      "wall_clock_ratio_candidate_over_control": 2.6627,
+      "wall_clock_is_declared_as_the_claim": false,
+      "verdict": "matched"
+    }
+  },
+  "checks": {
+    "runs_match_the_declared_configs": true,
+    "config_diff_within_permitted_differences": true,
+    "split_hashes_identical": true,
+    "seed_is_shared_by_both_arms": true,
+    "measured_work_matched": true
+  },
+  "resolved_utc": "2026-08-10T23:50:22+00:00"
+}

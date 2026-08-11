@@ -1260,7 +1260,7 @@ def _draw_colourbars(fig, *, width, height, cmap, scales) -> None:
 
 def _draw_figure2_legend(fig, *, width, height, params) -> None:
     """The marks, then the two lines that stop this being read as a result."""
-    axes = fig.add_axes([0.30 / width, 0.40 / height, (width - 0.60) / width, 0.30 / height])
+    axes = fig.add_axes([0.30 / width, 0.56 / height, (width - 0.60) / width, 0.16 / height])
     axes.set_xlim(0.0, 1.0)
     axes.set_ylim(0.0, 1.0)
     axes.set_xticks([])
@@ -1277,20 +1277,20 @@ def _draw_figure2_legend(fig, *, width, height, params) -> None:
     x = 0.0
     for marker, label, filled in entries:
         axes.plot(
-            [x], [0.72], marker=marker, markersize=2.2,
+            [x], [0.5], marker=marker, markersize=2.2,
             markerfacecolor=style.INK if filled else "none",
             markeredgecolor=style.INK, markeredgewidth=0.5, linestyle="none",
             clip_on=False,
         )
-        axes.text(x + 0.016, 0.72, label, ha="left", va="center", fontsize=style.FONT_SIZE_TINY)
+        axes.text(x + 0.016, 0.5, label, ha="left", va="center", fontsize=style.FONT_SIZE_TINY)
         x += 0.20
     axes.add_patch(
-        Rectangle((x, 0.60), 0.013, 0.24, fill=False, edgecolor=style.INK, linewidth=1.0,
+        Rectangle((x, 0.26), 0.013, 0.48, fill=False, edgecolor=style.INK, linewidth=1.0,
                   clip_on=False)
     )
     axes.text(
         x + 0.020,
-        0.72,
+        0.5,
         "capability tied, geometry not",
         ha="left",
         va="center",
@@ -1298,30 +1298,44 @@ def _draw_figure2_legend(fig, *, width, height, params) -> None:
     )
     x += 0.29
     axes.add_patch(
-        Rectangle((x, 0.60), 0.013, 0.24, fill=False, hatch="////", edgecolor=style.INK_STRONG,
+        Rectangle((x, 0.26), 0.013, 0.48, fill=False, hatch="////", edgecolor=style.INK_STRONG,
                   linewidth=0.0, clip_on=False)
     )
     axes.text(
         x + 0.020,
-        0.72,
+        0.5,
         "an arm is saturated",
         ha="left",
         va="center",
         fontsize=style.FONT_SIZE_TINY,
     )
 
-    axes.text(
-        0.0,
-        0.16,
-        "ONE SEED PER CELL, R2 screening budget — a map of where to look, not a "
-        "measurement of how much. Five paired seeds could not resolve a recall "
-        f"difference below {params['recall_five_seed_mde']:.3f} or a purity "
-        f"difference below {params['purity_five_seed_mde']:.3f}.",
-        ha="left",
-        va="center",
-        fontsize=style.FONT_SIZE_TINY,
-        color=style.INK,
-    )
+    # Two lines rather than one, because one ran past the right edge and a
+    # sentence a reader cannot finish is not a warning.
+    for offset, text in zip(
+        (0.44, 0.34),
+        (
+            (
+                "ONE SEED PER CELL, R2 screening budget — a map of where to look, not a "
+                "measurement of how much."
+            ),
+            (
+                "Five paired seeds could not resolve a recall difference below "
+                f"{params['recall_five_seed_mde']:.3f} or a purity difference below "
+                f"{params['purity_five_seed_mde']:.3f}; one pair resolves nothing."
+            ),
+        ),
+        strict=True,
+    ):
+        fig.text(
+            0.30 / width,
+            offset / height,
+            text,
+            ha="left",
+            va="center",
+            fontsize=style.FONT_SIZE_TINY,
+            color=style.INK,
+        )
 
     controls = params["controls"]
     ribbon = controls.get("phase_length_d32") or []

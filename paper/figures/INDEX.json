@@ -50,6 +50,187 @@
       },
       "path": "/home/home/p/g/n/architecture_mechanics/paper/figures/fig1_benchmark_schematic.png",
       "sha256": "bf6732b4aaf4449a53314212fccb69e72af87a612a720040e2cc0c42f89972f3"
+    },
+    {
+      "caption": "**Figure 2. Capability and geometry over the same axes \u2014 SCREENING EVIDENCE, ONE SEED PER CELL.** Every cell of this map is a single training run per architecture at seed 20260809 and \u00a77.3's R2 screening budget; nothing in it is replicated and nothing in it is claimed at claim-ladder rung 2 or 3. Prompt 09 measured that *five* paired seeds at this scale cannot resolve an exact recall difference below 0.128 or a mean purity difference below 0.049, and a single pair has no interval at all, so the panels are a map of where to look and not a measurement of how much. Top row: exact answer-set recall on held-out programs. Bottom row: mean feature purity of the content bank at each run's primary site (`final_norm`). Columns: A0 (causal softmax attention), A1 (kernelized linear attention, phi = elu + 1, no erasure), and the paired difference A0 \u2212 A1 with magnitude as darkness \u2014 cells where A1 leads carry a minus sign. Rows are the 8 (F, d) points of \u00a74.5's grid ordered by bottleneck ratio F/d (0.5, 1, 2, 4, 8); three of those ratios are realised by two different (F, d) pairs, drawn as adjacent rows, so a reader can see directly whether the ratio alone decides the result. The heavy rule marks F/d = 1, where superposition of the content bank becomes forced; F here is the content bank and a further 28 addressing features (24 key, 4 operator) sit in every cell, so the whole-bank ratio is (F+28)/d and crosses 1 within the same band. Columns are the per-group activation probability at a fixed group of 16 content features, so a position carries 16\u00b7p active content features in expectation at every F and the sparsity axis means the same thing on every row. Sequence length is 32 throughout the map; the ribbon at F=64/d=32/p=0.12 reads T=64: A0 0.3772, A1 0.3145; T=128: A0 0.1960, A1 0.0574. Open circles mark cells at or below the pre-registered chance floor (0.05), filled triangles cells at or above the ceiling (0.95); saturated cells cannot carry a difference in either direction and the difference panels shade them. 18 of 32 cells have both architectures strictly inside that window. Heavy outlines mark the cells where the two surfaces disagree \u2014 the paired recall difference below what five seeds could resolve while the paired purity difference is above it: `F32/d16@p0.06`, `F32/d16@p0.24`. Every mechanism was active at every cell by \u00a76.3's three gates. Controls: the known-easy positive control returns A0 0.9055 against A1 0.8954, a comparison whose answer is known in advance to be null; \u00a74.4's information-destroyed condition at the map's middle point returns A0 0.0007 and A1 0.0005. 72 runs in total, every \u00a77.2 variable shared between the arms of every pair, `permitted_differences` empty. Regenerate with `python -m architecture_mechanics.reporting.figures --figure 2`; figure am-fig-1.1.0, style am-figstyle-1.0.0, matplotlib 3.11.1, grid and cuts in `architecture_mechanics.experiments.phase_grid`, pre-registration `claims/phase-map-a0-a1-sparsity-bottleneck.yml`.",
+      "number": 2,
+      "params": {
+        "column_width_in": 3.4,
+        "content_group_size": 16,
+        "controls": {
+          "phase_length_d32": [
+            {
+              "both_mechanisms_active": true,
+              "candidate_purity": 0.1634002676729966,
+              "candidate_recall": 0.057373046875,
+              "candidate_skill": 0.057373046875,
+              "cell": "phase-F64-T128-p012",
+              "control_purity": 0.17238232141036403,
+              "control_recall": 0.196044921875,
+              "control_skill": 0.196044921875,
+              "d_model": 32,
+              "seq_len": 128
+            },
+            {
+              "both_mechanisms_active": true,
+              "candidate_purity": 0.1486505809601884,
+              "candidate_recall": 0.314453125,
+              "candidate_skill": 0.314453125,
+              "cell": "phase-F64-T64-p012",
+              "control_purity": 0.174761623978124,
+              "control_recall": 0.377197265625,
+              "control_skill": 0.377197265625,
+              "d_model": 32,
+              "seq_len": 64
+            }
+          ],
+          "phase_negative_control_d32": [
+            {
+              "both_mechanisms_active": true,
+              "candidate_purity": 0.18326871176155518,
+              "candidate_recall": 0.00048828125,
+              "candidate_skill": null,
+              "cell": "phasenull-F64-T32-p012",
+              "control_purity": 0.22765960503078458,
+              "control_recall": 0.000732421875,
+              "control_skill": null,
+              "d_model": 32,
+              "seq_len": 32
+            }
+          ],
+          "phase_r1": [
+            {
+              "both_mechanisms_active": true,
+              "candidate_purity": 0.6816232841494125,
+              "candidate_recall": 0.895355224609375,
+              "candidate_skill": 0.895355224609375,
+              "cell": "positive-control",
+              "control_purity": 0.8168751462312462,
+              "control_recall": 0.905548095703125,
+              "control_skill": 0.905548095703125,
+              "d_model": 48,
+              "seq_len": null
+            }
+          ]
+        },
+        "cuts": [
+          "sequence length is not crossed with the rest of the grid",
+          "the (F=128, d=64) point",
+          "more than one seed"
+        ],
+        "disagreement_cells": [
+          "F32/d16@p0.06",
+          "F32/d16@p0.24"
+        ],
+        "dpi": 400,
+        "figure_style_version": "am-figstyle-1.0.0",
+        "figure_version": "am-fig-1.1.0",
+        "font_size_pt": 7.0,
+        "ladder": "R2",
+        "magnitude_floor": 0.35,
+        "main_seq_len": 32,
+        "matplotlib_version": "3.11.1",
+        "max_abs_purity_difference": 0.1928,
+        "max_abs_recall_difference": 0.3918,
+        "n_candidate_ahead_recall": 0,
+        "n_candidate_at_ceiling": 0,
+        "n_candidate_at_chance": 14,
+        "n_control_at_ceiling": 0,
+        "n_control_at_chance": 9,
+        "n_inert": 0,
+        "n_interior": 18,
+        "n_points": 32,
+        "n_runs": 72,
+        "purity_five_seed_mde": 0.049,
+        "purity_scale": [
+          0.0326,
+          0.6105
+        ],
+        "recall_five_seed_mde": 0.128,
+        "resolution": {
+          "a0_seed_sd_recall": 0.054,
+          "n_seeds": 1,
+          "note": "Every point of this map is ONE PAIR. The figures quoted are what FIVE pairs would reach at prompt 09's operating point and are therefore lower bounds on what one pair would need; a single pair has no interval at all. The purity figure was measured for whole-bank mean_purity and is used beside the content-bank restriction as the nearest available yardstick, not as a measurement of it.",
+          "purity_five_seed_mde": 0.049,
+          "sd_of_a_paired_difference": 0.0764,
+          "smallest_resolvable_recall_difference": 0.128,
+          "source": "reports/a0_t1_seed_variance.json \u2014 prompt 09, eight seeds"
+        },
+        "rows": [
+          {
+            "d_model": 64,
+            "f_content": 32,
+            "f_total": 60,
+            "ratio_content": 0.5,
+            "ratio_total": 0.9375
+          },
+          {
+            "d_model": 64,
+            "f_content": 64,
+            "f_total": 92,
+            "ratio_content": 1.0,
+            "ratio_total": 1.4375
+          },
+          {
+            "d_model": 32,
+            "f_content": 32,
+            "f_total": 60,
+            "ratio_content": 1.0,
+            "ratio_total": 1.875
+          },
+          {
+            "d_model": 32,
+            "f_content": 64,
+            "f_total": 92,
+            "ratio_content": 2.0,
+            "ratio_total": 2.875
+          },
+          {
+            "d_model": 16,
+            "f_content": 32,
+            "f_total": 60,
+            "ratio_content": 2.0,
+            "ratio_total": 3.75
+          },
+          {
+            "d_model": 32,
+            "f_content": 128,
+            "f_total": 156,
+            "ratio_content": 4.0,
+            "ratio_total": 4.875
+          },
+          {
+            "d_model": 16,
+            "f_content": 64,
+            "f_total": 92,
+            "ratio_content": 4.0,
+            "ratio_total": 5.75
+          },
+          {
+            "d_model": 16,
+            "f_content": 128,
+            "f_total": 156,
+            "ratio_content": 8.0,
+            "ratio_total": 9.75
+          }
+        ],
+        "schema": "am.phase_map.v1",
+        "seed": [
+          20260809
+        ],
+        "sparsities": [
+          0.06,
+          0.12,
+          0.24,
+          0.4
+        ],
+        "window": {
+          "ceiling": 0.95,
+          "floor": 0.05
+        }
+      },
+      "path": "/home/home/p/g/n/architecture_mechanics/paper/figures/fig2_phase_diagram.png",
+      "sha256": "b5a9124f11c1961d2c6643bad8d84a19443041155dcecaf65919e15a050e1a62"
     }
   ],
   "schema": "am.figures_index.v1"
